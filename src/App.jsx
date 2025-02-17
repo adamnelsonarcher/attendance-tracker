@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import './App.css';
+import AddEventForm from './components/AddEventForm';
+import AddPersonForm from './components/AddPersonForm';
 
 function App() {
   const [people, setPeople] = useState([
@@ -24,6 +26,11 @@ function App() {
   });
 
   const [showSettings, setShowSettings] = useState(false);
+
+  const [showAddEvent, setShowAddEvent] = useState(false);
+  const [showAddPerson, setShowAddPerson] = useState(false);
+
+  const [sortDirection, setSortDirection] = useState('none');
 
   const handleAttendanceChange = (personId, eventId, status) => {
     setAttendance({
@@ -67,15 +74,48 @@ function App() {
     };
   };
 
+  const handleAddEvent = (newEvent) => {
+    setEvents([...events, newEvent]);
+  };
+
+  const handleAddPerson = (newPeople) => {
+    // If single person is added, wrap in array
+    const peopleToAdd = Array.isArray(newPeople) ? newPeople : [newPeople];
+    setPeople([...people, ...peopleToAdd]);
+  };
+
+  const getSortedPeople = () => {
+    if (sortDirection === 'none') return people;
+    
+    return [...people].sort((a, b) => {
+      const comparison = a.name.localeCompare(b.name);
+      return sortDirection === 'asc' ? comparison : -comparison;
+    });
+  };
+
+  const handleNameHeaderClick = () => {
+    setSortDirection(current => {
+      if (current === 'none') return 'asc';
+      if (current === 'asc') return 'desc';
+      return 'none';
+    });
+  };
+
   return (
     <div className="App">
-      <button 
-        className="settings-button"
-        onClick={() => setShowSettings(true)}
-      >
-        ⚙️ Settings
-      </button>
-      
+      <div className="top-bar">
+        <button 
+          className="settings-button"
+          onClick={() => setShowSettings(true)}
+        >
+          ⚙️ Settings
+        </button>
+        <div className="action-buttons">
+          <button onClick={() => setShowAddPerson(true)}>Add Person</button>
+          <button onClick={() => setShowAddEvent(true)}>Add Event</button>
+        </div>
+      </div>
+
       {showSettings && (
         <div className="settings-overlay">
           <div className="settings-popup">
@@ -120,11 +160,28 @@ function App() {
         </div>
       )}
 
+      {showAddPerson && (
+        <AddPersonForm
+          onAdd={handleAddPerson}
+          onClose={() => setShowAddPerson(false)}
+        />
+      )}
+
+      {showAddEvent && (
+        <AddEventForm
+          onAdd={handleAddEvent}
+          onClose={() => setShowAddEvent(false)}
+        />
+      )}
+
       <h1>Attendance Tracker</h1>
+
       <table>
         <thead>
           <tr>
-            <th>Name</th>
+            <th onClick={handleNameHeaderClick} className="sortable-header">
+              Name {sortDirection !== 'none' && (sortDirection === 'asc' ? '↓' : '↑')}
+            </th>
             {events.map(event => (
               <th key={event.id}>
                 {event.name}
@@ -137,7 +194,7 @@ function App() {
           </tr>
         </thead>
         <tbody>
-          {people.map(person => {
+          {getSortedPeople().map(person => {
             const scores = calculateScores(person.id);
             return (
               <tr key={person.id}>
