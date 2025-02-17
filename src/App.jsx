@@ -139,17 +139,12 @@ function App() {
     return sortedPeople;
   };
 
-  // Add event column click handler
-  const handleEventHeaderClick = (eventId) => {
-    setEventSorting(current => ({
-      eventId: eventId,
-      isActive: !(current.eventId === eventId && current.isActive)
-    }));
-    // Reset name sorting when sorting by event
-    setSorting({ direction: 'none', type: 'fullName' });
-  };
-
+  // Update name sorting handlers to reset event sorting
   const handleNameHeaderClick = () => {
+    // Reset event sorting
+    setEventSorting({ eventId: null, isActive: false });
+    
+    // Update name sorting
     setSorting(current => ({
       type: current.type,
       direction: current.direction === 'none' ? 'asc' : 
@@ -166,8 +161,22 @@ function App() {
   };
 
   const handleSort = (type, direction = 'none') => {
+    // Reset event sorting
+    setEventSorting({ eventId: null, isActive: false });
+    
+    // Update name sorting
     setSorting({ type, direction });
     setContextMenu(null);
+  };
+
+  // Update event sorting handler to reset name sorting (already done in previous code)
+  const handleEventHeaderClick = (eventId) => {
+    setEventSorting(current => ({
+      eventId: eventId,
+      isActive: !(current.eventId === eventId && current.isActive)
+    }));
+    // Reset name sorting
+    setSorting({ direction: 'none', type: 'fullName' });
   };
 
   return (
