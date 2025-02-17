@@ -40,7 +40,7 @@ function Settings({ settings, onSave, onClose }) {
           </div>
           <div className="form-group">
             <div className="setting-row">
-              <label>Treat 'not selected' events as DNA</label>
+              <label>Treat 'not selected' events as N/A</label>
               <div className="setting-input">
                 <input
                   type="checkbox"

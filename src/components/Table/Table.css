@@ -224,29 +224,25 @@ thead th.name-column {
 }
 
 /* Update these styles for attendance status colors */
-.color-coded select option[value="Present"],
-.color-coded select:has(option[value="Present"]:checked) {
+.color-coded select[data-status="Present"] {
   background-color: #e6ffe6;  /* Light green */
 }
 
-.color-coded select option[value="Late"],
-.color-coded select:has(option[value="Late"]:checked) {
+.color-coded select[data-status="Late"] {
   background-color: #fff3e6;  /* Light orange */
 }
 
-.color-coded select option[value="Absent"],
-.color-coded select:has(option[value="Absent"]:checked) {
+.color-coded select[data-status="Absent"] {
   background-color: #ffe6e6;  /* Light red */
 }
 
-.color-coded select option[value="DNA"],
-.color-coded select:has(option[value="DNA"]:checked) {
+.color-coded select[data-status="DNA"] {
   background-color: #f2f2f2;  /* Light gray */
 }
 
-/* Add style for unselected when onlyCountAbsent is true */
-.color-coded.treat-select-as-dna select:has(option[value="Select"]:checked) {
-  background-color: #f2f2f2;  /* Same gray as DNA */
+.color-coded.treat-select-as-dna select[data-status="Select"],
+.color-coded.treat-select-as-dna select[data-status="Select"] option {
+  background-color: transparent;
 }
 
 /* Add a transition for smooth color changes */

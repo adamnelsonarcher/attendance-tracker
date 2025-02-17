@@ -130,13 +130,15 @@ function Table({
                     folder.events.map(event => (
                       <td key={event.id}>
                         <select
-                          value={attendance[`${person.id}-${event.id}`] || ''}
+                          value={attendance[`${person.id}-${event.id}`] || 'Select'}
                           onChange={(e) => onAttendanceChange(person.id, event.id, e.target.value)}
+                          data-status={attendance[`${person.id}-${event.id}`] || 'Select'}
                         >
-                          <option value="">Select</option>
-                          {attendanceStatus.map(status => (
-                            <option key={status} value={status}>{status}</option>
-                          ))}
+                          <option value="Select"></option>
+                          <option value="Present">Present</option>
+                          <option value="Absent">Absent</option>
+                          <option value="Late">Late</option>
+                          <option value="DNA">N/A</option>
                         </select>
                       </td>
                     ))
@@ -145,13 +147,15 @@ function Table({
                   folder.events.map(event => (
                     <td key={event.id}>
                       <select
-                        value={attendance[`${person.id}-${event.id}`] || ''}
+                        value={attendance[`${person.id}-${event.id}`] || 'Select'}
                         onChange={(e) => onAttendanceChange(person.id, event.id, e.target.value)}
+                        data-status={attendance[`${person.id}-${event.id}`] || 'Select'}
                       >
-                        <option value="">Select</option>
-                        {attendanceStatus.map(status => (
-                          <option key={status} value={status}>{status}</option>
-                        ))}
+                        <option value="Select"></option>
+                        <option value="Present">Present</option>
+                        <option value="Absent">Absent</option>
+                        <option value="Late">Late</option>
+                        <option value="DNA">DNA</option>
                       </select>
                     </td>
                   ))
