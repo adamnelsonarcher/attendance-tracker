@@ -80,7 +80,6 @@ th small {
   z-index: 5;
   width: 70px;
   min-width: 70px;
-  border-left: 2px solid #ddd;
 }
 
 .event-column {
@@ -152,27 +151,23 @@ tr:nth-child(odd) {
 tr:nth-child(even) td:first-child {
   background-color: #f9f9f9;
   z-index: 3;
-  border-right: 2px solid #ddd;
 }
 
 tr:nth-child(odd) td:first-child {
   background-color: white;
   z-index: 3;
-  border-right: 2px solid #ddd;
 }
 
 tr:nth-child(even) td:last-child,
 tr:nth-child(even) td:nth-last-child(2) {
   background-color: #f4f4f4;
   z-index: 3;
-  border-left: 2px solid #ddd;
 }
 
 tr:nth-child(odd) td:last-child,
 tr:nth-child(odd) td:nth-last-child(2) {
   background-color: #f8f8f8;
   z-index: 3;
-  border-left: 2px solid #ddd;
 }
 
 /* Corner cells */
@@ -181,7 +176,6 @@ thead th.name-column {
   background-color: white;
   position: sticky;
   left: 0;
-  box-shadow: 2px 0 0 0 #ddd;
 }
 
 /* Add all the table-specific styles from App.css here */
@@ -258,4 +252,36 @@ thead th.name-column {
 /* Add a transition for smooth color changes */
 select {
   transition: background-color 0.2s ease;
+}
+
+/* Add border pseudo-elements for sticky columns */
+.name-column::after {
+  content: '';
+  position: absolute;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background-color: #ddd;
+  z-index: 11;
+}
+
+.score-column::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background-color: #ddd;
+  z-index: 6;
+}
+
+/* Ensure the header cells also get the borders */
+thead th.name-column::after {
+  z-index: 12;
+}
+
+thead th.score-column::before {
+  z-index: 12;
 } 
