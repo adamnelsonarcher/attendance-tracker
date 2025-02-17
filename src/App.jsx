@@ -37,6 +37,12 @@ function App() {
   });
   const [contextMenu, setContextMenu] = useState(null);
 
+  // Add state for event column sorting
+  const [eventSorting, setEventSorting] = useState({
+    eventId: null,
+    isActive: false
+  });
+
   const handleAttendanceChange = (personId, eventId, status) => {
     setAttendance({
       ...attendance,
@@ -89,26 +95,58 @@ function App() {
     setPeople([...people, ...peopleToAdd]);
   };
 
+  // Add function to get attendance status priority for sorting
+  const getStatusPriority = (status) => {
+    switch(status) {
+      case 'Present': return 0;
+      case 'Late': return 1;
+      case 'Absent': return 2;
+      case 'DNA': return 3;
+      default: return 4; // Not selected
+    }
+  };
+
+  // Update getSortedPeople to handle event column sorting
   const getSortedPeople = () => {
-    if (sorting.direction === 'none') return people;
+    let sortedPeople = [...people];
     
-    return [...people].sort((a, b) => {
-      let compareA, compareB;
-      
-      if (sorting.type === 'firstName') {
-        compareA = a.name.split(' ')[0];
-        compareB = b.name.split(' ')[0];
-      } else if (sorting.type === 'lastName') {
-        compareA = a.name.split(' ').slice(-1)[0];
-        compareB = b.name.split(' ').slice(-1)[0];
-      } else {
-        compareA = a.name;
-        compareB = b.name;
-      }
-      
-      const comparison = compareA.localeCompare(compareB);
-      return sorting.direction === 'asc' ? comparison : -comparison;
-    });
+    if (eventSorting.isActive && eventSorting.eventId) {
+      sortedPeople.sort((a, b) => {
+        const statusA = attendance[`${a.id}-${eventSorting.eventId}`] || '';
+        const statusB = attendance[`${b.id}-${eventSorting.eventId}`] || '';
+        return getStatusPriority(statusA) - getStatusPriority(statusB);
+      });
+    } else if (sorting.direction !== 'none') {
+      sortedPeople.sort((a, b) => {
+        let compareA, compareB;
+        
+        if (sorting.type === 'firstName') {
+          compareA = a.name.split(' ')[0];
+          compareB = b.name.split(' ')[0];
+        } else if (sorting.type === 'lastName') {
+          compareA = a.name.split(' ').slice(-1)[0];
+          compareB = b.name.split(' ').slice(-1)[0];
+        } else {
+          compareA = a.name;
+          compareB = b.name;
+        }
+        
+        const comparison = compareA.localeCompare(compareB);
+        return sorting.direction === 'asc' ? comparison : -comparison;
+      });
+    }
+    
+    return sortedPeople;
+  };
+
+  // Add event column click handler
+  const handleEventHeaderClick = (eventId) => {
+    setEventSorting(current => ({
+      eventId: eventId,
+      isActive: !(current.eventId === eventId && current.isActive)
+    }));
+    // Reset name sorting when sorting by event
+    setSorting({ direction: 'none', type: 'fullName' });
   };
 
   const handleNameHeaderClick = () => {
@@ -226,10 +264,17 @@ function App() {
               )}
             </th>
             {events.map(event => (
-              <th key={event.id}>
+              <th 
+                key={event.id}
+                onClick={() => handleEventHeaderClick(event.id)}
+                className="sortable-header"
+              >
                 {event.name}
                 <br />
-                <small>(Weight: {event.weight})</small>
+                <small>
+                  (Weight: {event.weight})
+                  {eventSorting.eventId === event.id && eventSorting.isActive && ' ↓'}
+                </small>
               </th>
             ))}
             <th>Raw Score</th>

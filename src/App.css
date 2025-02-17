@@ -216,10 +216,17 @@ td:last-child, td:nth-last-child(2) {
 .sortable-header {
   cursor: pointer;
   user-select: none;
+  transition: background-color 0.2s;
 }
 
 .sortable-header:hover {
   background-color: #e4e4e4;
+}
+
+.sortable-header small {
+  margin-left: 4px;
+  color: #666;
+  font-weight: normal;
 }
 
 .context-menu-overlay {
@@ -247,10 +254,4 @@ td:last-child, td:nth-last-child(2) {
 
 .context-menu div:hover {
   background-color: #f4f4f4;
-}
-
-.sortable-header small {
-  margin-left: 4px;
-  color: #666;
-  font-weight: normal;
 }
