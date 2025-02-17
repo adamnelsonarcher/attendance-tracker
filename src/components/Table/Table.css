@@ -1,0 +1,203 @@
+/* Move all table-related styles here */
+.table-container {
+  position: relative;
+  overflow-x: auto;
+  overflow-y: auto;
+  max-width: 100%;
+  height: 80vh;
+  border: 1px solid #ddd;
+}
+
+table {
+  border-collapse: collapse;
+  width: 100%;
+  margin-top: 20px;
+}
+
+th, td {
+  border: 1px solid #ddd;
+  padding: 8px;
+  text-align: left;
+  white-space: nowrap;
+  min-width: 120px;
+  max-width: 200px;
+}
+
+th {
+  background-color: #f4f4f4;
+}
+
+select {
+  width: 100%;
+  padding: 5px;
+}
+
+th small {
+  font-weight: normal;
+  color: #666;
+}
+
+.name-column {
+  position: sticky;
+  left: 0;
+  background-color: #fff;
+  z-index: 5;
+  width: 200px;
+  min-width: 200px;
+  border-right: 2px solid #ddd;
+}
+
+.score-column {
+  position: sticky;
+  right: 0;
+  background-color: #f8f8f8;
+  z-index: 5;
+  width: 70px;
+  min-width: 70px;
+  border-left: 2px solid #ddd;
+}
+
+.event-column {
+  width: 120px;
+  min-width: 120px;
+  background-color: #fff;
+  z-index: 1;
+}
+
+.event-folder {
+  background-color: #eef2f5;
+}
+
+.folder-header {
+  cursor: pointer;
+  padding: 8px;
+  user-select: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: background-color 0.2s;
+}
+
+.folder-header:hover {
+  background-color: #e4e8eb;
+}
+
+.folder-icon {
+  font-size: 12px;
+  width: 12px;
+  display: inline-block;
+}
+
+/* Sticky header styles */
+thead {
+  position: sticky;
+  top: 0;
+  z-index: 4;
+  background-color: white;
+}
+
+thead tr {
+  position: sticky;
+  top: 0;
+}
+
+thead th {
+  background-color: white;
+  border-bottom: 2px solid #ddd;
+  box-shadow: 0 2px 2px -1px rgba(0, 0, 0, 0.1);
+}
+
+thead th.event-folder {
+  background-color: #eef2f5;
+}
+
+/* Striped rows */
+tr:nth-child(even) {
+  background-color: #f9f9f9;
+}
+
+tr:nth-child(odd) {
+  background-color: white;
+}
+
+/* Ensure sticky columns have proper background in striped rows */
+tr:nth-child(even) td:first-child {
+  background-color: #f9f9f9;
+  z-index: 3;
+  border-right: 2px solid #ddd;
+}
+
+tr:nth-child(odd) td:first-child {
+  background-color: white;
+  z-index: 3;
+  border-right: 2px solid #ddd;
+}
+
+tr:nth-child(even) td:last-child,
+tr:nth-child(even) td:nth-last-child(2) {
+  background-color: #f4f4f4;
+  z-index: 3;
+  border-left: 2px solid #ddd;
+}
+
+tr:nth-child(odd) td:last-child,
+tr:nth-child(odd) td:nth-last-child(2) {
+  background-color: #f8f8f8;
+  z-index: 3;
+  border-left: 2px solid #ddd;
+}
+
+/* Corner cells */
+thead th.name-column,
+thead th.score-column {
+  z-index: 6;
+}
+
+/* Add all the table-specific styles from App.css here */
+
+/* ... rest of table styles ... */
+
+.collapsed-folder {
+  padding: 0;
+  background-color: #eef2f5;
+  width: 120px;
+  min-width: 120px;
+  border: 1px solid #ddd;
+}
+
+/* Add any missing table styles from App.css that aren't already in Table.css */
+
+/* Add these styles to the existing Table.css */
+
+.event-column.sortable-header {
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.event-column.sortable-header:hover {
+  background-color: #e4e4e4;
+}
+
+.name-column.sortable-header {
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.name-column.sortable-header:hover {
+  background-color: #e4e4e4;
+}
+
+/* Update the folder header hover */
+.folder-header {
+  cursor: pointer;
+  padding: 8px;
+  user-select: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: background-color 0.2s;
+}
+
+.folder-header:hover {
+  background-color: #e4e8eb;
+} 

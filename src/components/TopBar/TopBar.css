@@ -1,0 +1,25 @@
+.top-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 10px;
+}
+
+.action-buttons button,
+.settings-button {
+  padding: 8px 16px;
+  cursor: pointer;
+  background-color: #f4f4f4;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+.action-buttons button:hover,
+.settings-button:hover {
+  background-color: #e4e4e4;
+} 

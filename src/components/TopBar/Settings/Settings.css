@@ -1,0 +1,31 @@
+.setting-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 15px;
+}
+
+.setting-input {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.setting-example {
+  color: #666;
+  font-size: 0.9em;
+}
+
+.form-group input[type="number"] {
+  width: 70px;
+}
+
+.form-group input[type="checkbox"] {
+  margin: 0;
+  cursor: pointer;
+}
+
+.form-group label {
+  margin-right: 10px;
+  cursor: pointer;
+} 
