@@ -143,16 +143,11 @@ function App() {
   const [showAddPerson, setShowAddPerson] = useState(false);
 
   const [sorting, setSorting] = useState({
-    direction: 'none',
-    type: 'fullName'
+    type: 'none', // 'none', 'name', or 'event'
+    direction: 'none', // 'none', 'asc', or 'desc'
+    eventId: null // only used when type is 'event'
   });
   const [contextMenu, setContextMenu] = useState(null);
-
-  // Add state for event column sorting
-  const [eventSorting, setEventSorting] = useState({
-    eventId: null,
-    isActive: false
-  });
 
   const handleAttendanceChange = (personId, eventId, status) => {
     setAttendance({
@@ -231,48 +226,46 @@ function App() {
 
   // Update getSortedPeople to handle event column sorting
   const getSortedPeople = () => {
-    let sortedPeople = [...people];
+    if (sorting.type === 'none') return people;
     
-    if (eventSorting.isActive && eventSorting.eventId) {
-      sortedPeople.sort((a, b) => {
-        const statusA = attendance[`${a.id}-${eventSorting.eventId}`] || '';
-        const statusB = attendance[`${b.id}-${eventSorting.eventId}`] || '';
-        return getStatusPriority(statusA) - getStatusPriority(statusB);
-      });
-    } else if (sorting.direction !== 'none') {
-      sortedPeople.sort((a, b) => {
-        let compareA, compareB;
-        
-        if (sorting.type === 'firstName') {
-          compareA = a.name.split(' ')[0];
-          compareB = b.name.split(' ')[0];
-        } else if (sorting.type === 'lastName') {
-          compareA = a.name.split(' ').slice(-1)[0];
-          compareB = b.name.split(' ').slice(-1)[0];
-        } else {
-          compareA = a.name;
-          compareB = b.name;
-        }
-        
-        const comparison = compareA.localeCompare(compareB);
+    return [...people].sort((a, b) => {
+      if (sorting.type === 'name') {
+        const comparison = a.name.localeCompare(b.name);
         return sorting.direction === 'asc' ? comparison : -comparison;
-      });
-    }
-    
-    return sortedPeople;
+      }
+      
+      if (sorting.type === 'event') {
+        // Find the event in any folder
+        const eventExists = events.some(folder => 
+          folder.events?.some(event => event.id === sorting.eventId)
+        );
+        
+        if (!eventExists) return 0;
+        
+        const aStatus = attendance[`${a.id}-${sorting.eventId}`] || '';
+        const bStatus = attendance[`${b.id}-${sorting.eventId}`] || '';
+        
+        // Custom sort order: Present > Late > Absent > DNA > ''
+        const statusOrder = { 'Present': 0, 'Late': 1, 'Absent': 2, 'DNA': 3, '': 4 };
+        return statusOrder[aStatus] - statusOrder[bStatus];
+      }
+      
+      return 0;
+    });
   };
 
   // Update name sorting handlers to reset event sorting
   const handleNameHeaderClick = () => {
-    // Reset event sorting
-    setEventSorting({ eventId: null, isActive: false });
-    
-    // Update name sorting
-    setSorting(current => ({
-      type: current.type,
-      direction: current.direction === 'none' ? 'asc' : 
-                current.direction === 'asc' ? 'desc' : 'none'
-    }));
+    setSorting(prev => {
+      if (prev.type === 'name') {
+        if (prev.direction === 'asc') {
+          return { ...prev, direction: 'desc' };
+        } else if (prev.direction === 'desc') {
+          return { type: 'none', direction: 'none', eventId: null };
+        }
+      }
+      return { type: 'name', direction: 'asc', eventId: null };
+    });
   };
 
   const handleNameHeaderContextMenu = (e) => {
@@ -285,21 +278,18 @@ function App() {
 
   const handleSort = (type, direction = 'none') => {
     // Reset event sorting
-    setEventSorting({ eventId: null, isActive: false });
-    
-    // Update name sorting
-    setSorting({ type, direction });
+    setSorting({ type, direction, eventId: null });
     setContextMenu(null);
   };
 
   // Update event sorting handler to reset name sorting (already done in previous code)
   const handleEventHeaderClick = (eventId) => {
-    setEventSorting(current => ({
-      eventId: eventId,
-      isActive: !(current.eventId === eventId && current.isActive)
-    }));
-    // Reset name sorting
-    setSorting({ direction: 'none', type: 'fullName' });
+    setSorting(prev => {
+      if (prev.type === 'event' && prev.eventId === eventId) {
+        return { type: 'none', direction: 'none', eventId: null };
+      }
+      return { type: 'event', direction: 'asc', eventId };
+    });
   };
 
   // Add folder toggle handler
@@ -420,7 +410,16 @@ function App() {
         <table>
           <thead>
             <tr>
-              <th rowSpan="2" className="name-column">Name</th>
+              <th 
+                rowSpan="2" 
+                className="name-column sortable-header"
+                onClick={handleNameHeaderClick}
+              >
+                Name
+                {sorting.type === 'name' && (
+                  <small>{sorting.direction === 'asc' ? ' ↓' : ' ↑'}</small>
+                )}
+              </th>
               {events.filter(folder => folder.isFolder).map(folder => (
                 <th key={folder.id} colSpan={folder.isOpen ? folder.events.length : 1} className="event-folder">
                   <div className="folder-header" onClick={() => handleFolderToggle(folder.id)}>
@@ -429,13 +428,20 @@ function App() {
                   </div>
                 </th>
               ))}
-              {/* Add non-folder event headers in first row */}
               {events.filter(folder => !folder.isFolder).flatMap(folder => 
                 folder.events.map(event => (
-                  <th key={event.id} rowSpan="2" className="event-column">
+                  <th 
+                    key={event.id} 
+                    rowSpan="2" 
+                    className="event-column sortable-header"
+                    onClick={() => handleEventHeaderClick(event.id)}
+                  >
                     {event.name}
                     <br />
-                    <small>(Weight: {event.weight})</small>
+                    <small>
+                      (Weight: {event.weight})
+                      {sorting.type === 'event' && sorting.eventId === event.id && ' ↓'}
+                    </small>
                   </th>
                 ))
               )}
@@ -445,10 +451,17 @@ function App() {
             <tr>
               {events.filter(folder => folder.isFolder).flatMap(folder => 
                 folder.isOpen ? folder.events.map(event => (
-                  <th key={event.id} className="event-column">
+                  <th 
+                    key={event.id} 
+                    className="event-column sortable-header"
+                    onClick={() => handleEventHeaderClick(event.id)}
+                  >
                     {event.name}
                     <br />
-                    <small>(Weight: {event.weight})</small>
+                    <small>
+                      (Weight: {event.weight})
+                      {sorting.type === 'event' && sorting.eventId === event.id && ' ↓'}
+                    </small>
                   </th>
                 )) : [<th key={folder.id} className="collapsed-folder"></th>]
               )}
