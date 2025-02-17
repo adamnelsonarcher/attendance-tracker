@@ -11,11 +11,13 @@ import { usePeople } from './hooks/usePeople';
 import { useSort } from './hooks/useSort';
 import { useCalculateScores } from './hooks/useCalculateScores';
 import SortContextMenu from './components/Table/SortContextMenu';
+import Groups from './components/TopBar/Groups/Groups';
 
 function App() {
   const [showSettings, setShowSettings] = useState(false);
   const [showAddEvent, setShowAddEvent] = useState(false);
   const [showAddPerson, setShowAddPerson] = useState(false);
+  const [showGroups, setShowGroups] = useState(false);
   const [settings, setSettings] = useState({
     lateCredit: 0.5,
     onlyCountAbsent: true,
@@ -23,11 +25,12 @@ function App() {
   });
   const [contextMenu, setContextMenu] = useState(null);
   
-  const [people, handleAddPerson] = usePeople();
+  const [people, handleAddPerson, updatePeopleGroups] = usePeople();
   const [events, handleAddEvent, toggleFolder] = useEvents();
   const [attendance, handleAttendanceChange] = useAttendance();
   const [sorting, handleSort, getStatusPriority] = useSort();
   const calculateScores = useCalculateScores(events, attendance, settings);
+  const [groups, setGroups] = useState([]);
 
   const handleEventHeaderClick = (eventId) => {
     handleSort('event', null, eventId);
@@ -55,6 +58,7 @@ function App() {
         onSettingsClick={() => setShowSettings(true)}
         onAddPersonClick={() => setShowAddPerson(true)}
         onAddEventClick={() => setShowAddEvent(true)}
+        onGroupsClick={() => setShowGroups(true)}
       />
 
       <h1>Attendance Tracker</h1>
@@ -103,6 +107,18 @@ function App() {
           onAdd={handleAddEvent}
           onClose={() => setShowAddEvent(false)}
           folders={events.filter(e => e.isFolder)}
+        />
+      )}
+
+      {showGroups && (
+        <Groups
+          groups={groups}
+          people={people}
+          onSave={(newGroups) => {
+            setGroups(newGroups);
+            updatePeopleGroups(newGroups);
+          }}
+          onClose={() => setShowGroups(false)}
         />
       )}
     </div>

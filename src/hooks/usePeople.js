@@ -2,30 +2,37 @@ import { useState } from 'react';
 
 export function usePeople() {
   const [people, setPeople] = useState([
-    { id: 'p1', name: 'John Doe' },
-    { id: 'p2', name: 'Jane Smith' },
-    { id: 'p3', name: 'Bob Johnson' },
-    { id: 'p4', name: 'Alice Williams' },
-    { id: 'p5', name: 'Charlie Brown' },
-    { id: 'p6', name: 'Diana Ross' },
-    { id: 'p7', name: 'Edward Norton' },
-    { id: 'p8', name: 'Fiona Apple' },
-    { id: 'p9', name: 'George Lucas' },
-    { id: 'p10', name: 'Helen Hunt' },
-    { id: 'p11', name: 'Ian McKellen' },
-    { id: 'p12', name: 'Julia Roberts' },
-    { id: 'p13', name: 'Kevin Bacon' },
-    { id: 'p14', name: 'Laura Palmer' },
-    { id: 'p15', name: 'Michael Scott' },
-    { id: 'p16', name: 'Nancy Wheeler' },
-    { id: 'p17', name: 'Oscar Martinez' },
-    { id: 'p18', name: 'Pam Beesly' }
+    { id: 'p1', name: 'John Smith', groups: [] },
+    { id: 'p2', name: 'Jane Doe', groups: [] },
+    { id: 'p3', name: 'Bob Johnson', groups: [] },
+    { id: 'p4', name: 'Alice Brown', groups: [] },
+    { id: 'p5', name: 'Charlie Davis', groups: [] },
+    { id: 'p6', name: 'Eva Wilson', groups: [] },
+    { id: 'p7', name: 'Frank Miller', groups: [] },
+    { id: 'p8', name: 'Grace Taylor', groups: [] },
+    { id: 'p9', name: 'Henry Anderson', groups: [] },
+    { id: 'p10', name: 'Ivy Martinez', groups: [] },
+    { id: 'p11', name: 'Jack Thompson', groups: [] },
+    { id: 'p12', name: 'Kelly White', groups: [] },
+    { id: 'p13', name: 'Leo Garcia', groups: [] },
+    { id: 'p14', name: 'Mary Rodriguez', groups: [] },
+    { id: 'p15', name: 'Nathan Lee', groups: [] },
+    { id: 'p16', name: 'Olivia King', groups: [] },
+    { id: 'p17', name: 'Peter Wright', groups: [] },
   ]);
 
   const handleAddPerson = (newPeople) => {
-    const peopleToAdd = Array.isArray(newPeople) ? newPeople : [newPeople];
-    setPeople([...people, ...peopleToAdd]);
+    setPeople(prev => [...prev, ...newPeople.map(p => ({ ...p, groups: [] }))]);
   };
 
-  return [people, handleAddPerson];
+  const updatePeopleGroups = (groups) => {
+    setPeople(prev => prev.map(person => ({
+      ...person,
+      groups: groups
+        .filter(group => group.memberIds.includes(person.id))
+        .map(group => ({ id: group.id, color: group.color }))
+    })));
+  };
+
+  return [people, handleAddPerson, updatePeopleGroups];
 } 

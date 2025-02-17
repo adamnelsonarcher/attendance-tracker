@@ -122,7 +122,15 @@ function Table({
         <tbody>
           {sortedPeople.map(person => (
             <tr key={person.id}>
-              <td className="name-column">{person.name}</td>
+              <td 
+                className="name-column"
+                style={{
+                  '--group-color': person.groups?.length > 0 ? person.groups[0].color : 'transparent',
+                  paddingLeft: person.groups?.length > 0 ? '12px' : '5px'
+                }}
+              >
+                {person.name}
+              </td>
               {/* Render cells for each event */}
               {events.map(folder => 
                 folder.isFolder ? (

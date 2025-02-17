@@ -60,7 +60,17 @@ th small {
   z-index: 10;
   width: 200px;
   min-width: 200px;
-  border-right: 2px solid #ddd;
+}
+
+/* Update the pseudo-element to use the CSS variable */
+.name-column::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 5px;
+  background-color: var(--group-color);
 }
 
 .score-column {
