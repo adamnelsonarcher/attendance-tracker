@@ -31,6 +31,13 @@ function App() {
       events: [
         { id: 3, name: 'Workshop', weight: 3 },
       ]
+    },
+    {
+      id: 'no-folder',
+      name: 'Events',
+      isFolder: false,
+      isOpen: true,
+      events: []
     }
   ]);
 
@@ -39,8 +46,8 @@ function App() {
   const attendanceStatus = ['Present', 'Absent', 'Late', 'DNA'];
 
   const [settings, setSettings] = useState({
-    onlyCountAbsent: false,
     lateCredit: 0.5,
+    onlyCountAbsent: true,
   });
 
   const [showSettings, setShowSettings] = useState(false);
@@ -73,13 +80,13 @@ function App() {
     let weightedNumerator = 0;
     let weightedDenominator = 0;
 
-    // Flatten ALL events regardless of folder state
-    const flatEvents = events.flatMap(folder => folder.events);
+    // Get all events from all folders and non-folders
+    const flatEvents = events.flatMap(group => group.events);
 
     flatEvents.forEach(event => {
       const status = attendance[`${personId}-${event.id}`];
       
-      if (status === 'DNA' || (settings.onlyCountAbsent && !['Present', 'Absent'].includes(status))) {
+      if (status === 'DNA' || (settings.onlyCountAbsent && !['Present', 'Absent', 'Late'].includes(status))) {
         return;
       }
 
@@ -95,17 +102,22 @@ function App() {
       }
     });
 
-    const rawScore = totalEvents === 0 ? 0 : (attendedEvents / totalEvents) * 100;
-    const weightedScore = weightedDenominator === 0 ? 0 : (weightedNumerator / weightedDenominator) * 100;
+    const rawScore = totalEvents > 0 ? (attendedEvents / totalEvents) * 100 : 0;
+    const weightedScore = weightedDenominator > 0 ? 
+      (weightedNumerator / weightedDenominator) * 100 : 0;
 
     return {
-      raw: Math.round(rawScore),
-      weighted: Math.round(weightedScore)
+      raw: rawScore.toFixed(0),
+      weighted: weightedScore.toFixed(0)
     };
   };
 
-  const handleAddEvent = (newEvent) => {
-    setEvents([...events, newEvent]);
+  const handleAddEvent = ({ folderId = 'no-folder', event }) => {
+    setEvents(events.map(folder => 
+      folder.id === folderId
+        ? { ...folder, events: [...folder.events, event] }
+        : folder
+    ));
   };
 
   const handleAddPerson = (newPeople) => {
@@ -207,6 +219,68 @@ function App() {
     ));
   };
 
+  const SettingsForm = ({ settings, onSave, onClose }) => {
+    const [formData, setFormData] = useState({ ...settings });
+
+    const calculateLateExample = (credit) => {
+      return `(${(credit * 100).toFixed(0)}%)`;
+    };
+
+    return (
+      <div className="modal-overlay">
+        <div className="modal-content">
+          <h2>Settings</h2>
+          <form onSubmit={(e) => {
+            e.preventDefault();
+            onSave(formData);
+            onClose();
+          }}>
+            <div className="form-group">
+              <div className="setting-row">
+                <label>Late Credit:</label>
+                <div className="setting-input">
+                  <input
+                    type="number"
+                    min="0"
+                    max="1"
+                    step="0.1"
+                    value={formData.lateCredit}
+                    onChange={(e) => setFormData({
+                      ...formData,
+                      lateCredit: Number(e.target.value)
+                    })}
+                  />
+                  <span className="setting-example">
+                    {calculateLateExample(formData.lateCredit)}
+                  </span>
+                </div>
+              </div>
+            </div>
+            <div className="form-group">
+              <div className="setting-row">
+                <label>Treat 'not selected' events as DNA</label>
+                <div className="setting-input">
+                  <input
+                    type="checkbox"
+                    checked={formData.onlyCountAbsent}
+                    onChange={(e) => setFormData({
+                      ...formData,
+                      onlyCountAbsent: e.target.checked
+                    })}
+                  />
+                </div>
+              </div>
+            </div>
+            <div className="button-group">
+              <button type="submit">Save</button>
+              <button type="button" onClick={onClose}>Cancel</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div className="App">
       <div className="top-bar">
@@ -223,47 +297,14 @@ function App() {
       </div>
 
       {showSettings && (
-        <div className="settings-overlay">
-          <div className="settings-popup">
-            <h2>Settings</h2>
-            <div className="setting-item">
-              <label>
-                <input
-                  type="checkbox"
-                  checked={settings.onlyCountAbsent}
-                  onChange={(e) => setSettings({
-                    ...settings,
-                    onlyCountAbsent: e.target.checked
-                  })}
-                />
-                Only include Present/Absent events in calculations
-              </label>
-            </div>
-            <div className="setting-item">
-              <label>
-                Make 'Late' count for:
-                <input
-                  type="number"
-                  min="0"
-                  max="1"
-                  step="0.1"
-                  value={settings.lateCredit}
-                  onChange={(e) => setSettings({
-                    ...settings,
-                    lateCredit: Math.min(1, Math.max(0, parseFloat(e.target.value) || 0))
-                  })}
-                />
-                <span className="credit-label">({(settings.lateCredit * 100).toFixed(0)}% credit)</span>
-              </label>
-            </div>
-            <button 
-              className="close-button"
-              onClick={() => setShowSettings(false)}
-            >
-              Close
-            </button>
-          </div>
-        </div>
+        <SettingsForm
+          settings={settings}
+          onSave={(newSettings) => {
+            setSettings(newSettings);
+            setShowSettings(false);
+          }}
+          onClose={() => setShowSettings(false)}
+        />
       )}
 
       {showAddPerson && (
@@ -287,74 +328,76 @@ function App() {
           <thead>
             <tr>
               <th rowSpan="2" className="name-column">Name</th>
-              {events.map(folder => (
-                folder.isOpen ? (
-                  // When open, span all event columns
-                  <th key={folder.id} colSpan={folder.events.length} className="event-folder">
-                    <div className="folder-header" onClick={() => handleFolderToggle(folder.id)}>
-                      <span className="folder-icon">▼</span>
-                      {folder.name}
-                    </div>
-                  </th>
-                ) : (
-                  // When closed, only take up one column
-                  <th key={folder.id} colSpan="1" className="event-folder">
-                    <div className="folder-header" onClick={() => handleFolderToggle(folder.id)}>
-                      <span className="folder-icon">▶</span>
-                      {folder.name}
-                    </div>
-                  </th>
-                )
+              {events.filter(folder => folder.isFolder).map(folder => (
+                <th key={folder.id} colSpan={folder.isOpen ? folder.events.length : 1} className="event-folder">
+                  <div className="folder-header" onClick={() => handleFolderToggle(folder.id)}>
+                    <span className="folder-icon">{folder.isOpen ? '▼' : '▶'}</span>
+                    {folder.name}
+                  </div>
+                </th>
               ))}
+              {/* Add non-folder event headers in first row */}
+              {events.filter(folder => !folder.isFolder).flatMap(folder => 
+                folder.events.map(event => (
+                  <th key={event.id} rowSpan="2" className="event-column">
+                    {event.name}
+                    <br />
+                    <small>(Weight: {event.weight})</small>
+                  </th>
+                ))
+              )}
               <th rowSpan="2" className="score-column">Raw</th>
               <th rowSpan="2" className="score-column">Weighted</th>
             </tr>
             <tr>
-              {events.flatMap(folder => 
-                folder.isOpen 
-                  ? folder.events.map(event => (
-                      <th 
-                        key={event.id}
-                        onClick={() => handleEventHeaderClick(event.id)}
-                        className="sortable-header event-column"
-                      >
-                        {event.name}
-                        <br />
-                        <small>
-                          (Weight: {event.weight})
-                          {eventSorting.eventId === event.id && eventSorting.isActive && ' ↓'}
-                        </small>
-                      </th>
-                    ))
-                  : [<th key={folder.id} className="collapsed-folder"></th>] // Single column placeholder
+              {events.filter(folder => folder.isFolder).flatMap(folder => 
+                folder.isOpen ? folder.events.map(event => (
+                  <th key={event.id} className="event-column">
+                    {event.name}
+                    <br />
+                    <small>(Weight: {event.weight})</small>
+                  </th>
+                )) : [<th key={folder.id} className="collapsed-folder"></th>]
               )}
             </tr>
           </thead>
           <tbody>
             {getSortedPeople().map(person => (
               <tr key={person.id}>
-                <td>{person.name}</td>
-                {events.flatMap(folder => 
-                  folder.isOpen 
-                    ? folder.events.map(event => (
-                        <td key={event.id}>
-                          <select
-                            value={attendance[`${person.id}-${event.id}`] || ''}
-                            onChange={(e) => handleAttendanceChange(person.id, event.id, e.target.value)}
-                          >
-                            <option value="">Select</option>
-                            {attendanceStatus.map(status => (
-                              <option key={status} value={status}>
-                                {status}
-                              </option>
-                            ))}
-                          </select>
-                        </td>
-                      ))
-                    : [<td key={folder.id} className="collapsed-folder"></td>] // Single column placeholder
+                <td className="name-column">{person.name}</td>
+                {events.filter(folder => folder.isFolder).flatMap(folder => 
+                  folder.isOpen ? folder.events.map(event => (
+                    <td key={event.id}>
+                      <select
+                        value={attendance[`${person.id}-${event.id}`] || ''}
+                        onChange={(e) => handleAttendanceChange(person.id, event.id, e.target.value)}
+                      >
+                        <option value="">Select</option>
+                        {attendanceStatus.map(status => (
+                          <option key={status} value={status}>{status}</option>
+                        ))}
+                      </select>
+                    </td>
+                  )) : [<td key={folder.id} className="collapsed-folder"></td>]
                 )}
-                <td>{calculateScores(person.id).raw}%</td>
-                <td>{calculateScores(person.id).weighted}%</td>
+                {/* Add non-folder event cells */}
+                {events.filter(folder => !folder.isFolder).flatMap(folder => 
+                  folder.events.map(event => (
+                    <td key={event.id}>
+                      <select
+                        value={attendance[`${person.id}-${event.id}`] || ''}
+                        onChange={(e) => handleAttendanceChange(person.id, event.id, e.target.value)}
+                      >
+                        <option value="">Select</option>
+                        {attendanceStatus.map(status => (
+                          <option key={status} value={status}>{status}</option>
+                        ))}
+                      </select>
+                    </td>
+                  ))
+                )}
+                <td className="score-column">{calculateScores(person.id).raw}%</td>
+                <td className="score-column">{calculateScores(person.id).weighted}%</td>
               </tr>
             ))}
           </tbody>

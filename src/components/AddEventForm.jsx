@@ -3,10 +3,18 @@ import React, { useState } from 'react';
 function AddEventForm({ onAdd, onClose }) {
   const [name, setName] = useState('');
   const [weight, setWeight] = useState(1);
+  const [folderId, setFolderId] = useState('no-folder'); // Changed default
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    onAdd({ name, weight: Number(weight), id: Date.now() });
+    onAdd({
+      folderId,
+      event: {
+        id: Date.now(),
+        name,
+        weight: Number(weight)
+      }
+    });
     onClose();
   };
 
@@ -34,6 +42,18 @@ function AddEventForm({ onAdd, onClose }) {
               onChange={(e) => setWeight(e.target.value)}
               required
             />
+          </div>
+          <div className="form-group">
+            <label>Folder:</label>
+            <select
+              value={folderId}
+              onChange={(e) => setFolderId(e.target.value)}
+              required
+            >
+              <option value="weekly">Weekly Events</option>
+              <option value="special">Special Events</option>
+              <option value="no-folder">No Folder</option>
+            </select>
           </div>
           <div className="button-group">
             <button type="submit">Add Event</button>
