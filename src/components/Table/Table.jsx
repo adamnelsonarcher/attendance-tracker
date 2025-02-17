@@ -13,7 +13,8 @@ function Table({
   onNameHeaderClick,
   onFolderClick,
   getStatusPriority,
-  onNameHeaderContextMenu
+  onNameHeaderContextMenu,
+  settings
 }) {
   const attendanceStatus = ['Present', 'Absent', 'Late', 'DNA'];
 
@@ -42,7 +43,7 @@ function Table({
   });
 
   return (
-    <div className="table-container">
+    <div className={`table-container ${settings.colorCodeAttendance ? 'color-coded' : ''} ${settings.onlyCountAbsent ? 'treat-select-as-dna' : ''}`}>
       <table>
         <thead>
           <tr>

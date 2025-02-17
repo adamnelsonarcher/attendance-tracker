@@ -19,6 +19,7 @@ function App() {
   const [settings, setSettings] = useState({
     lateCredit: 0.5,
     onlyCountAbsent: true,
+    colorCodeAttendance: true
   });
   const [contextMenu, setContextMenu] = useState(null);
   
@@ -70,6 +71,7 @@ function App() {
         onFolderClick={toggleFolder}
         getStatusPriority={getStatusPriority}
         onNameHeaderContextMenu={handleNameHeaderContextMenu}
+        settings={settings}
       />
 
       {contextMenu && (

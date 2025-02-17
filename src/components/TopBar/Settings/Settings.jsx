@@ -53,6 +53,21 @@ function Settings({ settings, onSave, onClose }) {
               </div>
             </div>
           </div>
+          <div className="form-group">
+            <div className="setting-row">
+              <label>Color-code attendance status</label>
+              <div className="setting-input">
+                <input
+                  type="checkbox"
+                  checked={formData.colorCodeAttendance}
+                  onChange={(e) => setFormData({
+                    ...formData,
+                    colorCodeAttendance: e.target.checked
+                  })}
+                />
+              </div>
+            </div>
+          </div>
           <div className="button-group">
             <button type="submit">Save</button>
             <button type="button" onClick={onClose}>Cancel</button>

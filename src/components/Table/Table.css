@@ -221,4 +221,35 @@ thead th.name-column {
 
 .folder-header:hover {
   background-color: #e4e8eb;
+}
+
+/* Update these styles for attendance status colors */
+.color-coded select option[value="Present"],
+.color-coded select:has(option[value="Present"]:checked) {
+  background-color: #e6ffe6;  /* Light green */
+}
+
+.color-coded select option[value="Late"],
+.color-coded select:has(option[value="Late"]:checked) {
+  background-color: #fff3e6;  /* Light orange */
+}
+
+.color-coded select option[value="Absent"],
+.color-coded select:has(option[value="Absent"]:checked) {
+  background-color: #ffe6e6;  /* Light red */
+}
+
+.color-coded select option[value="DNA"],
+.color-coded select:has(option[value="DNA"]:checked) {
+  background-color: #f2f2f2;  /* Light gray */
+}
+
+/* Add style for unselected when onlyCountAbsent is true */
+.color-coded.treat-select-as-dna select:has(option[value="Select"]:checked) {
+  background-color: #f2f2f2;  /* Same gray as DNA */
+}
+
+/* Add a transition for smooth color changes */
+select {
+  transition: background-color 0.2s ease;
 } 
