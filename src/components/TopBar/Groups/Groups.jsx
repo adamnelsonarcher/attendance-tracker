@@ -50,7 +50,12 @@ function Groups({ groups, onSave, onClose, people }) {
   );
 
   return (
-    <Modal title="Manage Groups" onClose={onClose} className="groups-modal">
+    <Modal 
+      title="Manage Groups" 
+      onClose={onClose} 
+      className="groups-modal"
+      preventOutsideClose={true}
+    >
       <div className="groups-layout">
         <div className="groups-container">
           <div className="groups-panel">

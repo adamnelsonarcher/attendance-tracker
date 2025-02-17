@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useState } from 'react';
 import './Table.css';
 import EventFolder from './EventFolder/EventFolder';
+import GroupFilter from './GroupFilter/GroupFilter';
 
 function Table({ 
   people, 
@@ -17,10 +18,20 @@ function Table({
   settings,
   groups
 }) {
+  const [activeGroupFilters, setActiveGroupFilters] = useState(new Set());
+  const [showGroupFilter, setShowGroupFilter] = useState(false);
+
   const attendanceStatus = ['Present', 'Absent', 'Late', 'DNA'];
 
+  // Filter people based on active group filters
+  const filteredPeople = activeGroupFilters.size > 0
+    ? people.filter(person => 
+        person.groups.some(group => activeGroupFilters.has(group.id))
+      )
+    : people;
+
   // Sort people if needed
-  const sortedPeople = [...people].sort((a, b) => {
+  const sortedPeople = [...filteredPeople].sort((a, b) => {
     if (sorting.type === 'firstName') {
       const [aFirst] = a.name.split(' ');
       const [bFirst] = b.name.split(' ');
@@ -54,6 +65,14 @@ function Table({
     return 0;
   });
 
+  const handleNameHeaderClick = (e) => {
+    // Don't trigger the sort if clicking within the filter dropdown
+    if (e.target.closest('.group-filter-dropdown') || e.target.closest('.group-filter-button')) {
+      return;
+    }
+    onNameHeaderClick();
+  };
+
   return (
     <div className={`table-container ${settings.colorCodeAttendance ? 'color-coded' : ''} ${settings.onlyCountAbsent ? 'treat-select-as-dna' : ''}`}>
       <table>
@@ -62,10 +81,29 @@ function Table({
             <th 
               rowSpan="2" 
               className="name-column sortable-header"
-              onClick={onNameHeaderClick}
+              onClick={handleNameHeaderClick}
               onContextMenu={onNameHeaderContextMenu}
             >
-              Name
+              <div className="name-header">
+                <span>Name</span>
+                <button 
+                  className="group-filter-button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setShowGroupFilter(!showGroupFilter);
+                  }}
+                >
+                  👥
+                </button>
+                {showGroupFilter && (
+                  <GroupFilter
+                    groups={groups}
+                    activeFilters={activeGroupFilters}
+                    onFilterChange={setActiveGroupFilters}
+                    onClose={() => setShowGroupFilter(false)}
+                  />
+                )}
+              </div>
               {(sorting.type === 'firstName' || sorting.type === 'lastName' || sorting.type === 'group') && (
                 <small>
                   {` (${
