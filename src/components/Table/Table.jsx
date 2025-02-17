@@ -14,7 +14,8 @@ function Table({
   onFolderClick,
   getStatusPriority,
   onNameHeaderContextMenu,
-  settings
+  settings,
+  groups
 }) {
   const attendanceStatus = ['Present', 'Absent', 'Late', 'DNA'];
 
@@ -39,6 +40,17 @@ function Table({
       const bStatus = attendance[`${b.id}-${sorting.eventId}`] || '';
       return getStatusPriority(aStatus) - getStatusPriority(bStatus);
     }
+    if (sorting.type === 'group') {
+      // Put people with no groups at the end
+      if (!a.groups?.length && !b.groups?.length) return 0;
+      if (!a.groups?.length) return 1;
+      if (!b.groups?.length) return -1;
+      
+      // Get the first group's name from the groups array
+      const aGroup = groups.find(g => g.id === a.groups[0].id)?.name || '';
+      const bGroup = groups.find(g => g.id === b.groups[0].id)?.name || '';
+      return aGroup.localeCompare(bGroup);
+    }
     return 0;
   });
 
@@ -54,9 +66,13 @@ function Table({
               onContextMenu={onNameHeaderContextMenu}
             >
               Name
-              {(sorting.type === 'firstName' || sorting.type === 'lastName') && (
+              {(sorting.type === 'firstName' || sorting.type === 'lastName' || sorting.type === 'group') && (
                 <small>
-                  {` (${sorting.type === 'firstName' ? 'First' : 'Last'}) `}
+                  {` (${
+                    sorting.type === 'firstName' ? 'First' : 
+                    sorting.type === 'lastName' ? 'Last' : 
+                    'Group'
+                  }) `}
                   {sorting.direction === 'asc' ? '↓' : '↑'}
                 </small>
               )}

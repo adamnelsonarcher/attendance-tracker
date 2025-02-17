@@ -33,6 +33,15 @@ export function useSort() {
       return;
     }
 
+    if (type === 'group') {
+      setSorting({
+        type: 'group',
+        direction: 'asc',
+        eventId: null
+      });
+      return;
+    }
+
     if (direction === null) {
       // Reset to original order
       setSorting({

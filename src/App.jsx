@@ -76,6 +76,7 @@ function App() {
         getStatusPriority={getStatusPriority}
         onNameHeaderContextMenu={handleNameHeaderContextMenu}
         settings={settings}
+        groups={groups}
       />
 
       {contextMenu && (

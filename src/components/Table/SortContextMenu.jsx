@@ -30,6 +30,10 @@ function SortContextMenu({ x, y, onSort, onClose }) {
           onClose();
         }}>Sort by Last Name (Z → A)</div>
         <div onClick={() => {
+          onSort('group');
+          onClose();
+        }}>Sort by Groups</div>
+        <div onClick={() => {
           onSort('none');
           onClose();
         }}>Original Order</div>
