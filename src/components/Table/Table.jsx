@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import './Table.css';
 import EventFolder from './EventFolder/EventFolder';
 import GroupFilter from './GroupFilter/GroupFilter';
+import filterIcon from '../../assets/icons/filter.png';
 
 function Table({ 
   people, 
@@ -93,7 +94,7 @@ function Table({
                     setShowGroupFilter(!showGroupFilter);
                   }}
                 >
-                  👥
+                  <img src={filterIcon} alt="Filter groups" />
                 </button>
                 {showGroupFilter && (
                   <GroupFilter

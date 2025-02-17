@@ -60,6 +60,7 @@ th small {
   z-index: 10;
   width: 200px;
   min-width: 200px;
+  max-width: 200px;
 }
 
 /* Update the pseudo-element to use the CSS variable */
@@ -96,12 +97,13 @@ th small {
 
 .folder-header {
   cursor: pointer;
-  padding: 8px;
+  padding: 4px 8px;  /* Reduce padding */
   user-select: none;
   display: flex;
   align-items: center;
   gap: 8px;
   transition: background-color 0.2s;
+  font-size: 0.9em;  /* Slightly smaller font */
 }
 
 .folder-header:hover {
@@ -109,8 +111,8 @@ th small {
 }
 
 .folder-icon {
-  font-size: 12px;
-  width: 12px;
+  font-size: 10px;  /* Smaller folder icon */
+  width: 10px;
   display: inline-block;
 }
 
@@ -190,6 +192,11 @@ thead th.name-column {
   border: 1px solid #ddd;
 }
 
+/* Override the general th min-width for collapsed folders */
+th.collapsed-folder {
+  min-width: unset;
+}
+
 /* Add any missing table styles from App.css that aren't already in Table.css */
 
 /* Add these styles to the existing Table.css */
@@ -210,21 +217,6 @@ thead th.name-column {
 
 .name-column.sortable-header:hover {
   background-color: #e4e4e4;
-}
-
-/* Update the folder header hover */
-.folder-header {
-  cursor: pointer;
-  padding: 8px;
-  user-select: none;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  transition: background-color 0.2s;
-}
-
-.folder-header:hover {
-  background-color: #e4e8eb;
 }
 
 /* Update these styles for attendance status colors */
