@@ -48,6 +48,7 @@ th, td {
   border: 1px solid #ddd;
   padding: 8px;
   text-align: left;
+  white-space: nowrap;
 }
 
 th {
@@ -67,6 +68,16 @@ th small {
 td:last-child, td:nth-last-child(2) {
   background-color: #f8f8f8;
   font-weight: bold;
+  width: 70px;
+  text-align: right;
+}
+
+tr:nth-child(even) {
+  background-color: #f9f9f9;
+}
+
+tr:nth-child(odd) {
+  background-color: white;
 }
 
 .settings-button {
@@ -254,4 +265,60 @@ td:last-child, td:nth-last-child(2) {
 
 .context-menu div:hover {
   background-color: #f4f4f4;
+}
+
+.table-container {
+  overflow-x: auto;
+  max-width: 100%;
+  margin-top: 20px;
+}
+
+.event-folder {
+  background-color: #eef2f5;
+  border-bottom: none;
+}
+
+.folder-header {
+  cursor: pointer;
+  padding: 8px;
+  user-select: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.folder-header:hover {
+  background-color: #e4e8eb;
+}
+
+.folder-icon {
+  font-size: 12px;
+  width: 12px;
+  display: inline-block;
+}
+
+table {
+  min-width: 100%;
+  margin-top: 0;
+}
+
+/* Update existing rule */
+th, td {
+  min-width: 120px;
+  max-width: 200px;
+}
+
+td:first-child, th:first-child {
+  position: sticky;
+  left: 0;
+  background-color: #fff;
+  z-index: 1;
+}
+
+td:last-child, td:nth-last-child(2),
+th:last-child, th:nth-last-child(2) {
+  position: sticky;
+  right: 0;
+  background-color: #f8f8f8;
+  z-index: 1;
 }

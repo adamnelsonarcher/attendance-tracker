@@ -3,6 +3,7 @@ import './App.css';
 import AddEventForm from './components/AddEventForm';
 import AddPersonForm from './components/AddPersonForm';
 import SortContextMenu from './components/SortContextMenu';
+import EventFolder from './components/EventFolder';
 
 function App() {
   const [people, setPeople] = useState([
@@ -12,9 +13,25 @@ function App() {
   ]);
 
   const [events, setEvents] = useState([
-    { id: 1, name: 'Meeting 1', weight: 1 },
-    { id: 2, name: 'Meeting 2', weight: 2 },
-    { id: 3, name: 'Meeting 3', weight: 3 },
+    {
+      id: 'weekly',
+      name: 'Weekly Events',
+      isFolder: true,
+      isOpen: true,
+      events: [
+        { id: 1, name: 'Meeting 1', weight: 1 },
+        { id: 2, name: 'Meeting 2', weight: 2 },
+      ]
+    },
+    {
+      id: 'special',
+      name: 'Special Events',
+      isFolder: true,
+      isOpen: false,
+      events: [
+        { id: 3, name: 'Workshop', weight: 3 },
+      ]
+    }
   ]);
 
   const [attendance, setAttendance] = useState({});
@@ -56,7 +73,10 @@ function App() {
     let weightedNumerator = 0;
     let weightedDenominator = 0;
 
-    events.forEach(event => {
+    // Flatten ALL events regardless of folder state
+    const flatEvents = events.flatMap(folder => folder.events);
+
+    flatEvents.forEach(event => {
       const status = attendance[`${personId}-${event.id}`];
       
       if (status === 'DNA' || (settings.onlyCountAbsent && !['Present', 'Absent'].includes(status))) {
@@ -75,13 +95,12 @@ function App() {
       }
     });
 
-    const rawScore = totalEvents > 0 ? (attendedEvents / totalEvents) * 100 : 0;
-    const weightedScore = weightedDenominator > 0 ? 
-      (weightedNumerator / weightedDenominator) * 100 : 0;
+    const rawScore = totalEvents === 0 ? 0 : (attendedEvents / totalEvents) * 100;
+    const weightedScore = weightedDenominator === 0 ? 0 : (weightedNumerator / weightedDenominator) * 100;
 
     return {
-      raw: rawScore.toFixed(1),
-      weighted: weightedScore.toFixed(1)
+      raw: Math.round(rawScore),
+      weighted: Math.round(weightedScore)
     };
   };
 
@@ -179,6 +198,15 @@ function App() {
     setSorting({ direction: 'none', type: 'fullName' });
   };
 
+  // Add folder toggle handler
+  const handleFolderToggle = (folderId) => {
+    setEvents(events.map(item => 
+      item.id === folderId 
+        ? { ...item, isOpen: !item.isOpen }
+        : item
+    ));
+  };
+
   return (
     <div className="App">
       <div className="top-bar">
@@ -254,70 +282,84 @@ function App() {
 
       <h1>Attendance Tracker</h1>
 
-      <table>
-        <thead>
-          <tr>
-            <th 
-              onClick={handleNameHeaderClick}
-              onContextMenu={handleNameHeaderContextMenu}
-              className="sortable-header"
-            >
-              Name {sorting.direction !== 'none' && (
-                <>
-                  {sorting.direction === 'asc' ? '↓' : '↑'}
-                  <small>
-                    ({sorting.type === 'firstName' ? 'First' : 
-                       sorting.type === 'lastName' ? 'Last' : 'Full'})
-                  </small>
-                </>
+      <div className="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th rowSpan="2" className="name-column">Name</th>
+              {events.map(folder => (
+                folder.isOpen ? (
+                  // When open, span all event columns
+                  <th key={folder.id} colSpan={folder.events.length} className="event-folder">
+                    <div className="folder-header" onClick={() => handleFolderToggle(folder.id)}>
+                      <span className="folder-icon">▼</span>
+                      {folder.name}
+                    </div>
+                  </th>
+                ) : (
+                  // When closed, only take up one column
+                  <th key={folder.id} colSpan="1" className="event-folder">
+                    <div className="folder-header" onClick={() => handleFolderToggle(folder.id)}>
+                      <span className="folder-icon">▶</span>
+                      {folder.name}
+                    </div>
+                  </th>
+                )
+              ))}
+              <th rowSpan="2" className="score-column">Raw</th>
+              <th rowSpan="2" className="score-column">Weighted</th>
+            </tr>
+            <tr>
+              {events.flatMap(folder => 
+                folder.isOpen 
+                  ? folder.events.map(event => (
+                      <th 
+                        key={event.id}
+                        onClick={() => handleEventHeaderClick(event.id)}
+                        className="sortable-header event-column"
+                      >
+                        {event.name}
+                        <br />
+                        <small>
+                          (Weight: {event.weight})
+                          {eventSorting.eventId === event.id && eventSorting.isActive && ' ↓'}
+                        </small>
+                      </th>
+                    ))
+                  : [<th key={folder.id} className="collapsed-folder"></th>] // Single column placeholder
               )}
-            </th>
-            {events.map(event => (
-              <th 
-                key={event.id}
-                onClick={() => handleEventHeaderClick(event.id)}
-                className="sortable-header"
-              >
-                {event.name}
-                <br />
-                <small>
-                  (Weight: {event.weight})
-                  {eventSorting.eventId === event.id && eventSorting.isActive && ' ↓'}
-                </small>
-              </th>
-            ))}
-            <th>Raw Score</th>
-            <th>Weighted Score</th>
-          </tr>
-        </thead>
-        <tbody>
-          {getSortedPeople().map(person => {
-            const scores = calculateScores(person.id);
-            return (
+            </tr>
+          </thead>
+          <tbody>
+            {getSortedPeople().map(person => (
               <tr key={person.id}>
                 <td>{person.name}</td>
-                {events.map(event => (
-                  <td key={event.id}>
-                    <select
-                      value={attendance[`${person.id}-${event.id}`] || ''}
-                      onChange={(e) => handleAttendanceChange(person.id, event.id, e.target.value)}
-                    >
-                      <option value="">Select</option>
-                      {attendanceStatus.map(status => (
-                        <option key={status} value={status}>
-                          {status}
-                        </option>
-                      ))}
-                    </select>
-                  </td>
-                ))}
-                <td>{scores.raw}%</td>
-                <td>{scores.weighted}%</td>
+                {events.flatMap(folder => 
+                  folder.isOpen 
+                    ? folder.events.map(event => (
+                        <td key={event.id}>
+                          <select
+                            value={attendance[`${person.id}-${event.id}`] || ''}
+                            onChange={(e) => handleAttendanceChange(person.id, event.id, e.target.value)}
+                          >
+                            <option value="">Select</option>
+                            {attendanceStatus.map(status => (
+                              <option key={status} value={status}>
+                                {status}
+                              </option>
+                            ))}
+                          </select>
+                        </td>
+                      ))
+                    : [<td key={folder.id} className="collapsed-folder"></td>] // Single column placeholder
+                )}
+                <td>{calculateScores(person.id).raw}%</td>
+                <td>{calculateScores(person.id).weighted}%</td>
               </tr>
-            );
-          })}
-        </tbody>
-      </table>
+            ))}
+          </tbody>
+        </table>
+      </div>
 
       {contextMenu && (
         <SortContextMenu
