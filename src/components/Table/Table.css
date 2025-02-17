@@ -41,7 +41,7 @@ th small {
   position: sticky;
   left: 0;
   background-color: #fff;
-  z-index: 5;
+  z-index: 10;
   width: 200px;
   min-width: 200px;
   border-right: 2px solid #ddd;
@@ -61,11 +61,12 @@ th small {
   width: 120px;
   min-width: 120px;
   background-color: #fff;
-  z-index: 1;
+  z-index: auto;
 }
 
 .event-folder {
   background-color: #eef2f5;
+  position: relative;
 }
 
 .folder-header {
@@ -96,19 +97,20 @@ thead {
   background-color: white;
 }
 
-thead tr {
-  position: sticky;
-  top: 0;
+thead tr:first-child th {
+  z-index: 2;  /* Lower z-index for first row (folder headers) */
 }
 
-thead th {
-  background-color: white;
-  border-bottom: 2px solid #ddd;
-  box-shadow: 0 2px 2px -1px rgba(0, 0, 0, 0.1);
+thead tr:first-child th.name-column {
+  z-index: 11;  /* Keep name column on top */
 }
 
-thead th.event-folder {
-  background-color: #eef2f5;
+thead tr:first-child th.event-folder {
+  z-index: 1;  /* Ensure folder headers stay below */
+}
+
+thead tr:last-child th {
+  z-index: 3;  /* Higher z-index for second row (event headers) */
 }
 
 /* Striped rows */
@@ -148,9 +150,11 @@ tr:nth-child(odd) td:nth-last-child(2) {
 }
 
 /* Corner cells */
-thead th.name-column,
-thead th.score-column {
-  z-index: 6;
+thead th.name-column {
+  z-index: 11;
+  background-color: white;
+  position: sticky;
+  left: 0;
 }
 
 /* Add all the table-specific styles from App.css here */
