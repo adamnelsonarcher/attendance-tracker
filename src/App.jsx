@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import './App.css';
 import AddEventForm from './components/AddEventForm';
 import AddPersonForm from './components/AddPersonForm';
+import SortContextMenu from './components/SortContextMenu';
 
 function App() {
   const [people, setPeople] = useState([
@@ -30,7 +31,11 @@ function App() {
   const [showAddEvent, setShowAddEvent] = useState(false);
   const [showAddPerson, setShowAddPerson] = useState(false);
 
-  const [sortDirection, setSortDirection] = useState('none');
+  const [sorting, setSorting] = useState({
+    direction: 'none',
+    type: 'fullName'
+  });
+  const [contextMenu, setContextMenu] = useState(null);
 
   const handleAttendanceChange = (personId, eventId, status) => {
     setAttendance({
@@ -85,20 +90,46 @@ function App() {
   };
 
   const getSortedPeople = () => {
-    if (sortDirection === 'none') return people;
+    if (sorting.direction === 'none') return people;
     
     return [...people].sort((a, b) => {
-      const comparison = a.name.localeCompare(b.name);
-      return sortDirection === 'asc' ? comparison : -comparison;
+      let compareA, compareB;
+      
+      if (sorting.type === 'firstName') {
+        compareA = a.name.split(' ')[0];
+        compareB = b.name.split(' ')[0];
+      } else if (sorting.type === 'lastName') {
+        compareA = a.name.split(' ').slice(-1)[0];
+        compareB = b.name.split(' ').slice(-1)[0];
+      } else {
+        compareA = a.name;
+        compareB = b.name;
+      }
+      
+      const comparison = compareA.localeCompare(compareB);
+      return sorting.direction === 'asc' ? comparison : -comparison;
     });
   };
 
   const handleNameHeaderClick = () => {
-    setSortDirection(current => {
-      if (current === 'none') return 'asc';
-      if (current === 'asc') return 'desc';
-      return 'none';
+    setSorting(current => ({
+      type: current.type,
+      direction: current.direction === 'none' ? 'asc' : 
+                current.direction === 'asc' ? 'desc' : 'none'
+    }));
+  };
+
+  const handleNameHeaderContextMenu = (e) => {
+    e.preventDefault();
+    setContextMenu({
+      x: e.clientX,
+      y: e.clientY
     });
+  };
+
+  const handleSort = (type, direction = 'none') => {
+    setSorting({ type, direction });
+    setContextMenu(null);
   };
 
   return (
@@ -179,8 +210,20 @@ function App() {
       <table>
         <thead>
           <tr>
-            <th onClick={handleNameHeaderClick} className="sortable-header">
-              Name {sortDirection !== 'none' && (sortDirection === 'asc' ? '↓' : '↑')}
+            <th 
+              onClick={handleNameHeaderClick}
+              onContextMenu={handleNameHeaderContextMenu}
+              className="sortable-header"
+            >
+              Name {sorting.direction !== 'none' && (
+                <>
+                  {sorting.direction === 'asc' ? '↓' : '↑'}
+                  <small>
+                    ({sorting.type === 'firstName' ? 'First' : 
+                       sorting.type === 'lastName' ? 'Last' : 'Full'})
+                  </small>
+                </>
+              )}
             </th>
             {events.map(event => (
               <th key={event.id}>
@@ -221,6 +264,15 @@ function App() {
           })}
         </tbody>
       </table>
+
+      {contextMenu && (
+        <SortContextMenu
+          x={contextMenu.x}
+          y={contextMenu.y}
+          onSort={handleSort}
+          onClose={() => setContextMenu(null)}
+        />
+      )}
     </div>
   );
 }

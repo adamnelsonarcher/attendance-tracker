@@ -221,3 +221,36 @@ td:last-child, td:nth-last-child(2) {
 .sortable-header:hover {
   background-color: #e4e4e4;
 }
+
+.context-menu-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 999;
+}
+
+.context-menu {
+  background-color: white;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+  padding: 4px 0;
+}
+
+.context-menu div {
+  padding: 8px 16px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.context-menu div:hover {
+  background-color: #f4f4f4;
+}
+
+.sortable-header small {
+  margin-left: 4px;
+  color: #666;
+  font-weight: normal;
+}
