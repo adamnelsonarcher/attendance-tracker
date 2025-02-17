@@ -112,7 +112,12 @@ function App() {
     };
   };
 
-  const handleAddEvent = ({ folderId = 'no-folder', event }) => {
+  const handleAddEvent = ({ folderId = 'no-folder', event, newFolder }) => {
+    if (newFolder) {
+      setEvents([...events, newFolder]);
+      return;
+    }
+    
     setEvents(events.map(folder => 
       folder.id === folderId
         ? { ...folder, events: [...folder.events, event] }
@@ -318,6 +323,7 @@ function App() {
         <AddEventForm
           onAdd={handleAddEvent}
           onClose={() => setShowAddEvent(false)}
+          folders={events.filter(e => e.isFolder)}
         />
       )}
 

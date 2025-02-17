@@ -423,3 +423,42 @@ th.name-column, th.score-column {
   margin-right: 10px;
   cursor: pointer;
 }
+
+.input-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.input-row label {
+  min-width: 100px;
+  text-align: right;
+}
+
+.input-group {
+  flex: 1;
+  display: flex;
+  gap: 10px;
+}
+
+.folder-section {
+  display: flex;
+  flex-direction: column;
+}
+
+.new-folder-link {
+  color: #0066cc;
+  cursor: pointer;
+  font-size: 0.9em;
+  margin-left: 110px;
+  margin-top: 5px;
+}
+
+.new-folder-link:hover {
+  text-decoration: underline;
+}
+
+.input-row input[type="number"] {
+  width: 70px;
+}
