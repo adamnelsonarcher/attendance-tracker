@@ -253,3 +253,19 @@
   align-items: center;
   gap: 8px;
 }
+
+.settings-credits {
+  text-align: center;
+  margin-bottom: 20px;
+  color: #666;
+  font-size: 0.9em;
+}
+
+.settings-credits a {
+  color: #45B7D1;
+  text-decoration: none;
+}
+
+.settings-credits a:hover {
+  text-decoration: underline;
+}
