@@ -68,4 +68,25 @@ button:hover,
 .sortable-header:hover,
 .event-column.sortable-header:hover {
   background-color: #e4e4e4;
+}
+
+.danger {
+  background-color: #ffe6e6;
+  border-color: #ffb3b3;
+  color: #cc0000;
+}
+
+.danger:hover {
+  background-color: #ffcccc;
+}
+
+.reset-section {
+  margin-bottom: 20px;
+  text-align: left;
+}
+
+.modal-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
 } 

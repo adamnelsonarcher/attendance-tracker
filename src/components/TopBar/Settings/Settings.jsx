@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import './Settings.css';
 
-function Settings({ settings, onSave, onClose }) {
+function Settings({ settings, onSave, onClose, onResetData }) {
   const [localSettings, setLocalSettings] = useState({
     ...settings,
     hideTitle: settings.hideTitle || false
@@ -107,8 +107,24 @@ function Settings({ settings, onSave, onClose }) {
           </div>
 
           <div className="modal-actions">
-            <button type="submit">Save</button>
-            <button type="button" onClick={onClose}>Cancel</button>
+            <div className="reset-section">
+              <button 
+                type="button" 
+                className="danger" 
+                onClick={() => {
+                  if (window.confirm('Are you sure? This will delete ALL data!')) {
+                    onResetData();
+                    onClose();
+                  }
+                }}
+              >
+                Reset All Data
+              </button>
+            </div>
+            <div className="button-group">
+              <button type="submit">Save</button>
+              <button type="button" onClick={onClose}>Cancel</button>
+            </div>
           </div>
         </form>
       </div>

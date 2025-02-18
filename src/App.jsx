@@ -103,6 +103,22 @@ function App() {
           settings={settings}
           onSave={setSettings}
           onClose={() => setShowSettings(false)}
+          onResetData={() => {
+            handleAddPerson([]);
+            handleAddEvent([]);
+            handleAttendanceChange({});
+            setGroups([]);
+            updatePeopleGroups([]);
+            setSettings({
+              ...settings,
+              lateCredit: 0.5,
+              onlyCountAbsent: true,
+              colorCodeAttendance: true,
+              hideTitle: true,
+              showHoverHighlight: true,
+              enableStickyColumns: true
+            });
+          }}
         />
       )}
 
