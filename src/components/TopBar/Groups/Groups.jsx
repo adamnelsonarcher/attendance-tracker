@@ -135,7 +135,7 @@ function Groups({ groups, onSave, onClose, people }) {
             <div className="search-bar">
               <input
                 type="text"
-                placeholder="🔍 Search people..."
+                placeholder="Search people..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />

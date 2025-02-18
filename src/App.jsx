@@ -32,8 +32,12 @@ function App() {
   const calculateScores = useCalculateScores(events, attendance, settings);
   const [groups, setGroups] = useState([]);
 
-  const handleEventHeaderClick = (eventId) => {
-    handleSort('event', null, eventId);
+  const handleEventHeaderClick = (eventId, type = 'event', scoreType = null) => {
+    if (type === 'score') {
+      handleSort('score', null, null, scoreType);
+    } else {
+      handleSort('event', null, eventId);
+    }
   };
 
   const handleNameHeaderClick = () => {

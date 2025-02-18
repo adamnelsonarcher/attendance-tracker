@@ -63,6 +63,13 @@ function Table({
       const bGroup = groups.find(g => g.id === b.groups[0].id)?.name || '';
       return aGroup.localeCompare(bGroup);
     }
+    if (sorting.type === 'score') {
+      const aScore = calculateScores(a.id)[sorting.scoreType];
+      const bScore = calculateScores(b.id)[sorting.scoreType];
+      return sorting.direction === 'asc' 
+        ? aScore - bScore
+        : bScore - aScore;
+    }
     return 0;
   });
 
@@ -72,6 +79,10 @@ function Table({
       return;
     }
     onNameHeaderClick();
+  };
+
+  const handleScoreHeaderClick = (scoreType) => {
+    onEventHeaderClick(null, 'score', scoreType);
   };
 
   return (
@@ -151,8 +162,26 @@ function Table({
                 </th>
               ))
             )}
-            <th rowSpan="2" className="score-column">Raw</th>
-            <th rowSpan="2" className="score-column">Weighted</th>
+            <th 
+              rowSpan="2" 
+              className="score-column sortable-header"
+              onClick={() => handleScoreHeaderClick('raw')}
+            >
+              Raw
+              {sorting.type === 'score' && sorting.scoreType === 'raw' && (
+                <small> {sorting.direction === 'asc' ? '↓' : '↑'}</small>
+              )}
+            </th>
+            <th 
+              rowSpan="2" 
+              className="score-column sortable-header"
+              onClick={() => handleScoreHeaderClick('weighted')}
+            >
+              Weighted
+              {sorting.type === 'score' && sorting.scoreType === 'weighted' && (
+                <small> {sorting.direction === 'asc' ? '↓' : '↑'}</small>
+              )}
+            </th>
           </tr>
           {/* Second header row for folder events */}
           <tr>

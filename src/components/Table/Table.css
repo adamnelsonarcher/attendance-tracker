@@ -276,4 +276,12 @@ thead th.name-column::after {
 
 thead th.score-column::before {
   z-index: 12;
+}
+
+.score-column.sortable-header {
+  cursor: pointer;
+}
+
+.score-column.sortable-header:hover {
+  background-color: #e4e4e4;
 } 

@@ -4,7 +4,8 @@ export function useSort() {
   const [sorting, setSorting] = useState({
     type: 'none',
     direction: 'asc',
-    eventId: null
+    eventId: null,
+    scoreType: null
   });
 
   const getStatusPriority = (status) => {
@@ -17,17 +18,36 @@ export function useSort() {
     }
   };
 
-  const handleSort = (type, direction = null, eventId = null) => {
+  const handleSort = (type, direction = null, eventId = null, scoreType = null) => {
     if (type === 'event') {
       setSorting(prev => {
         if (prev.type === 'event' && prev.eventId === eventId) {
           // If already sorting by this event, turn off sorting
-          return { type: 'none', direction: 'asc', eventId: null };
+          return { type: 'none', direction: 'asc', eventId: null, scoreType: null };
         }
         return {
           type: 'event',
           direction: 'asc',
-          eventId
+          eventId,
+          scoreType: null
+        };
+      });
+      return;
+    }
+
+    if (type === 'score') {
+      setSorting(prev => {
+        if (prev.type === 'score' && prev.scoreType === scoreType) {
+          if (prev.direction === 'asc') {
+            return { type: 'score', direction: 'desc', eventId: null, scoreType };
+          }
+          return { type: 'none', direction: 'asc', eventId: null, scoreType: null };
+        }
+        return {
+          type: 'score',
+          direction: 'asc',
+          eventId: null,
+          scoreType
         };
       });
       return;
