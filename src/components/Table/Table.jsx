@@ -23,58 +23,75 @@ function Table({
   onRemoveEvent
 }) {
   const [activeGroupFilters, setActiveGroupFilters] = useState({});
+  const [activeFolderFilters, setActiveFolderFilters] = useState({});
   const [showGroupFilter, setShowGroupFilter] = useState(false);
   const [eventContextMenu, setEventContextMenu] = useState(null);
   const [hoveredCell, setHoveredCell] = useState({ row: null, col: null });
 
   const attendanceStatus = ['Present', 'Absent', 'Late', 'DNA'];
 
+  // Handle filter changes from GroupFilter component
+  const handleFilterChange = (newFilters) => {
+    // Separate group and folder filters
+    const groupFilters = {};
+    const folderFilters = {};
+    
+    Object.entries(newFilters).forEach(([id, state]) => {
+      if (events.some(e => e.isFolder && e.id === id)) {
+        folderFilters[id] = state;
+      } else {
+        groupFilters[id] = state;
+      }
+    });
+    
+    setActiveGroupFilters(groupFilters);
+    setActiveFolderFilters(folderFilters);
+  };
+
   // Filter people based on active group filters and folders
   const filteredPeople = Object.keys(activeGroupFilters).length > 0
     ? people.filter(person => {
-        // Handle group filters
-        const groupFilters = Object.entries(activeGroupFilters)
-          .filter(([id]) => groups.some(g => g.id === id));
+        // Get all active filters
+        const activeFilters = Object.entries(activeGroupFilters);
         
-        if (groupFilters.length > 0) {
-          const hasPositiveGroupFilter = groupFilters.some(
-            ([id, state]) => state === 1 && person.groups.some(g => g.id === id)
-          );
+        if (activeFilters.length > 0) {
+          // Check for positive filters (1)
+          const hasAnyPositiveFilter = activeFilters.some(([_, state]) => state === 1);
           
-          const hasNegativeGroupMatch = person.groups.some(
-            g => activeGroupFilters[g.id] === -1
-          );
-
-          if (Object.values(groupFilters).some(([_, state]) => state === 1) && !hasPositiveGroupFilter) {
-            return false;
+          if (hasAnyPositiveFilter) {
+            // If there are positive filters, person must match at least one
+            const hasPositiveMatch = person.groups.some(g => activeGroupFilters[g.id] === 1);
+            if (!hasPositiveMatch) return false;
           }
           
-          if (hasNegativeGroupMatch) {
-            return false;
-          }
+          // Check for negative filters (-1)
+          const hasNegativeMatch = person.groups.some(g => activeGroupFilters[g.id] === -1);
+          if (hasNegativeMatch) return false;
+          
+          // Neutral filters (0) don't affect visibility
         }
-
+        
         return true;
       })
     : people;
 
-  // Filter events based on folder filters
+  // Filter events based on folder filters only
   const filteredEvents = events.map(folder => {
     if (!folder.isFolder) return folder;
     
-    const folderState = activeGroupFilters[folder.id] || 0;
+    const folderState = activeFolderFilters[folder.id] || 0;
     
-    // If any folder has a positive filter, hide all other folders
-    const hasAnyPositiveFolder = events
-      .filter(e => e.isFolder)
-      .some(f => activeGroupFilters[f.id] === 1);
-
-    if (hasAnyPositiveFolder && folderState !== 1) {
+    if (folderState === -1) {
       return { ...folder, isOpen: false, hidden: true };
     }
 
-    if (folderState === -1) {
-      return { ...folder, isOpen: false, hidden: true };
+    const hasAnyPositiveFolder = Object.values(activeFolderFilters).some(state => state === 1);
+    if (hasAnyPositiveFolder) {
+      return { 
+        ...folder, 
+        isOpen: folderState === 1,
+        hidden: folderState !== 1
+      };
     }
 
     return folder;
@@ -166,8 +183,8 @@ function Table({
             <GroupFilter
               groups={groups}
               folders={events.filter(e => e.isFolder)}
-              activeFilters={activeGroupFilters}
-              onFilterChange={setActiveGroupFilters}
+              activeFilters={{ ...activeGroupFilters, ...activeFolderFilters }}
+              onFilterChange={handleFilterChange}
               onClose={() => setShowGroupFilter(false)}
             />
           )}
