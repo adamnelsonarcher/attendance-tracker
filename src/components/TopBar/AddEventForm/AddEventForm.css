@@ -1,3 +1,10 @@
+.folder-section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
 .input-row {
   display: flex;
   align-items: center;
@@ -7,26 +14,23 @@
 
 .input-row label {
   min-width: 100px;
-  text-align: right;
+  text-align: left;
+}
+
+.input-row input {
+  flex: 1;
+  max-width: 200px;
 }
 
 .input-group {
   flex: 1;
-  display: flex;
-  gap: 10px;
-}
-
-.folder-section {
-  display: flex;
-  flex-direction: column;
+  max-width: 200px;
 }
 
 .new-folder-link {
-  color: #0066cc;
+  color: #007bff;
   cursor: pointer;
-  font-size: 0.9em;
-  margin-left: 110px;
-  margin-top: 5px;
+  white-space: nowrap;
 }
 
 .new-folder-link:hover {
@@ -35,4 +39,8 @@
 
 .input-row input[type="number"] {
   width: 70px;
+}
+
+.weight-input {
+  max-width: 80px !important;
 } 

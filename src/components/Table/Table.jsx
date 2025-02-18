@@ -248,6 +248,13 @@ function Table({
                     {event.name}
                     <br />
                     <small>
+                      {event.startDate && (
+                        <>
+                          {new Date(event.startDate).toLocaleDateString()}
+                          {event.endDate && ` - ${new Date(event.endDate).toLocaleDateString()}`}
+                          <br />
+                        </>
+                      )}
                       (Weight: {event.weight})
                       {sorting.type === 'event' && sorting.eventId === event.id && ' ↓'}
                     </small>
@@ -292,6 +299,13 @@ function Table({
                           {event.name}
                           <br />
                           <small>
+                            {event.startDate && (
+                              <>
+                                {new Date(event.startDate).toLocaleDateString()}
+                                {event.endDate && ` - ${new Date(event.endDate).toLocaleDateString()}`}
+                                <br />
+                              </>
+                            )}
                             (Weight: {event.weight})
                             {sorting.type === 'event' && sorting.eventId === event.id && ' ↓'}
                           </small>

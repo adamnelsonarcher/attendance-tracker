@@ -36,17 +36,28 @@ export function useEvents() {
     }
   ]);
 
+  const sortEventsByDate = (events) => {
+    return [...events].sort((a, b) => {
+      if (!a.startDate && !b.startDate) return 0;
+      if (!a.startDate) return 1;
+      if (!b.startDate) return -1;
+      return new Date(a.startDate) - new Date(b.startDate);
+    });
+  };
+
   const handleAddEvent = ({ folderId = 'no-folder', event, newFolder }) => {
     if (newFolder) {
+      newFolder.events = sortEventsByDate(newFolder.events);
       setEvents(prev => [...prev, newFolder]);
       return;
     }
     
     setEvents(prev => prev.map(folder => {
       if (folder.id === folderId) {
+        const newEvents = sortEventsByDate([...folder.events, event]);
         return {
           ...folder,
-          events: [...folder.events, event]
+          events: newEvents
         };
       }
       return folder;

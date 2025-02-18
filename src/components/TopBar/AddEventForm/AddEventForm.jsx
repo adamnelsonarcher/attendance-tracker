@@ -9,10 +9,20 @@ function AddEventForm({ onAdd, onClose, folders = [] }) {
   const [folderId, setFolderId] = useState('no-folder');
   const [showNewFolderInput, setShowNewFolderInput] = useState(false);
   const [newFolderName, setNewFolderName] = useState('');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
 
   const handleSubmit = (e) => {
     e.preventDefault();
     
+    const eventData = {
+      id: Date.now(),
+      name,
+      weight: Number(weight),
+      startDate: startDate || null,
+      endDate: endDate || null
+    };
+
     if (showNewFolderInput && newFolderName.trim()) {
       const newFolderId = `folder-${Date.now()}`;
       onAdd({
@@ -21,55 +31,42 @@ function AddEventForm({ onAdd, onClose, folders = [] }) {
           name: newFolderName.trim(),
           isFolder: true,
           isOpen: true,
-          events: [{
-            id: Date.now(),
-            name,
-            weight: Number(weight)
-          }]
+          events: [eventData]
         }
       });
     } else {
       onAdd({
         folderId,
-        event: {
-          id: Date.now(),
-          name,
-          weight: Number(weight)
-        }
+        event: eventData
       });
     }
     onClose();
   };
 
   return (
-    <Modal title="Add New Event" onClose={onClose}>
+    <Modal title="Add Event" onClose={onClose}>
       <form onSubmit={handleSubmit}>
         <div className="form-group">
           <div className="input-row">
             <label>Event Name:</label>
-            <div className="input-group">
-              <input
-                type="text"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                required
-              />
-            </div>
+            <input
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              required
+            />
           </div>
-        </div>
-        <div className="form-group">
           <div className="input-row">
-            <label>Weight:</label>
-            <div className="input-group">
-              <input
-                type="number"
-                min="0"
-                max="4"
-                value={weight}
-                onChange={(e) => setWeight(e.target.value)}
-                required
-              />
-            </div>
+            <label>Weight (0-4):</label>
+            <input
+              type="number"
+              min="0"
+              max="4"
+              value={weight}
+              onChange={(e) => setWeight(e.target.value)}
+              required
+              className="weight-input"
+            />
           </div>
         </div>
         <div className="form-group">
@@ -101,18 +98,37 @@ function AddEventForm({ onAdd, onClose, folders = [] }) {
                   </select>
                 )}
               </div>
+              <div 
+                className="new-folder-link" 
+                onClick={() => {
+                  setShowNewFolderInput(!showNewFolderInput);
+                  if (showNewFolderInput) {
+                    setNewFolderName('');
+                  }
+                }}
+              >
+                {showNewFolderInput ? '- Cancel' : '+ Add new folder'}
+              </div>
             </div>
-            <div 
-              className="new-folder-link" 
-              onClick={() => {
-                setShowNewFolderInput(!showNewFolderInput);
-                if (showNewFolderInput) {
-                  setNewFolderName('');
-                }
-              }}
-            >
-              {showNewFolderInput ? '- Cancel' : '+ Add new folder'}
-            </div>
+          </div>
+        </div>
+        <div className="form-group">
+          <div className="input-row">
+            <label>Start Date:</label>
+            <input
+              type="date"
+              value={startDate}
+              onChange={(e) => setStartDate(e.target.value)}
+            />
+          </div>
+          <div className="input-row">
+            <label>End Date:</label>
+            <input
+              type="date"
+              value={endDate}
+              onChange={(e) => setEndDate(e.target.value)}
+              min={startDate}
+            />
           </div>
         </div>
         <div className="button-group">
