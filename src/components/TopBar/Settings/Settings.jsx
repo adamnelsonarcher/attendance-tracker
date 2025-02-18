@@ -5,9 +5,11 @@ import Modal from '../../Modal/Modal';
 function Settings({ settings, onSave, onClose, onResetData }) {
   const [formData, setFormData] = useState(() => {
     const storedCode = localStorage.getItem('tableCode');
+    const storedSettings = localStorage.getItem('settings');
+    const parsedSettings = storedSettings ? JSON.parse(storedSettings) : settings;
+    
     return {
-      ...settings,
-      cloudSync: false,
+      ...parsedSettings,
       tableCode: storedCode || '',
       isNewTable: !storedCode
     };

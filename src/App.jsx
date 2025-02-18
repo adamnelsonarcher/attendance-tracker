@@ -24,7 +24,8 @@ function App() {
     colorCodeAttendance: true,
     hideTitle: true,
     showHoverHighlight: true,
-    enableStickyColumns: true
+    enableStickyColumns: true,
+    cloudSync: false
   });
   const [contextMenu, setContextMenu] = useState(null);
   
@@ -50,6 +51,17 @@ function App() {
   useEffect(() => {
     localStorage.setItem('groups', JSON.stringify(groups));
   }, [groups]);
+
+  useEffect(() => {
+    const stored = localStorage.getItem('settings');
+    if (stored) {
+      setSettings(JSON.parse(stored));
+    }
+  }, []);
+
+  useEffect(() => {
+    localStorage.setItem('settings', JSON.stringify(settings));
+  }, [settings]);
 
   const handleEventHeaderClick = (eventId, type = 'event', scoreType = null) => {
     if (type === 'score') {
@@ -132,7 +144,8 @@ function App() {
                 colorCodeAttendance: true,
                 hideTitle: true,
                 showHoverHighlight: true,
-                enableStickyColumns: true
+                enableStickyColumns: true,
+                cloudSync: false
               });
               setShowSettings(false);
             }
