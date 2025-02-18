@@ -4,7 +4,7 @@
   border-radius: 4px;
   box-shadow: 0 2px 5px rgba(0,0,0,0.2);
   padding: 4px 0;
-  min-width: 150px;
+  width: 150px;
   user-select: none;
 }
 
@@ -27,7 +27,7 @@
 
 .context-menu-item {
   display: block;
-  width: 100%;
+  width: 150px;
   padding: 8px 16px;
   border: none;
   background-color: white;
@@ -36,6 +36,7 @@
   cursor: pointer;
   margin: 0;
   position: relative;
+  box-sizing: border-box;
 }
 
 .context-menu-item.has-submenu {
@@ -58,7 +59,14 @@
   border: 1px solid #ddd;
   border-radius: 4px;
   box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-  min-width: 150px;
+  width: 150px;
+  padding: 4px 0;
+}
+
+.submenu .context-menu-item {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .context-menu-item:hover {
