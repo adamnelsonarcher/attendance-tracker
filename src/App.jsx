@@ -80,19 +80,6 @@ function App() {
     localStorage.setItem('settings', JSON.stringify(settings));
   }, [settings]);
 
-  useEffect(() => {
-    if (settings.cloudSync && localStorage.getItem('tableCode')) {
-      syncTable(localStorage.getItem('tableCode'), {
-        people,
-        events,
-        attendance,
-        groups,
-        settings,
-        lastUpdated: new Date().toISOString()
-      });
-    }
-  }, [settings.cloudSync]);
-
   const handleEventHeaderClick = (eventId, type = 'event', scoreType = null) => {
     if (type === 'score') {
       handleSort('score', null, null, scoreType);

@@ -16,6 +16,35 @@ export function useCloudSync(tableCode, cloudSync, {
 }) {
   const lastSyncedData = useRef(null);
   const syncTimeoutRef = useRef(null);
+  const initialLoadDone = useRef(false);
+
+  // Initial load of data
+  useEffect(() => {
+    if (!cloudSync || !tableCode || initialLoadDone.current) return;
+
+    const loadInitialData = async () => {
+      const data = await getTableData(tableCode);
+      if (data) {
+        setPeople(data.people);
+        setEvents(data.events);
+        setAttendance(data.attendance);
+        setGroups(data.groups);
+        setSettings(data.settings);
+        
+        // Add 3 second delay before setting lastSyncedData
+        setTimeout(() => {
+          lastSyncedData.current = {
+            ...data,
+            lastUpdated: new Date().toISOString()
+          };
+          onSyncStatusChange('saved');
+        }, 200);
+      }
+      initialLoadDone.current = true;
+    };
+
+    loadInitialData();
+  }, [cloudSync, tableCode]);
 
   // Subscribe to remote changes
   useEffect(() => {
