@@ -35,6 +35,30 @@
   font: inherit;
   cursor: pointer;
   margin: 0;
+  position: relative;
+}
+
+.context-menu-item.has-submenu {
+  padding-right: 24px;
+}
+
+.context-menu-item.has-submenu::after {
+  content: '▸';
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.submenu {
+  position: absolute;
+  left: 100%;
+  top: 0;
+  background-color: white;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+  min-width: 150px;
 }
 
 .context-menu-item:hover {

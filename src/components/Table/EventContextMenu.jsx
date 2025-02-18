@@ -1,7 +1,9 @@
-import React from 'react';
+import React, { useState } from 'react';
 import './EventContextMenu.css';
 
 function EventContextMenu({ x, y, onMove, onRemove, onClose, folders }) {
+  const [showFolders, setShowFolders] = useState(false);
+
   const menuStyle = {
     position: 'fixed',
     top: `${y}px`,
@@ -13,29 +15,37 @@ function EventContextMenu({ x, y, onMove, onRemove, onClose, folders }) {
     <>
       <div className="context-menu-overlay" onClick={onClose}></div>
       <div className="context-menu" style={menuStyle}>
-        <div className="context-menu-group">
-          <div className="context-menu-header">Move to folder:</div>
-          {folders.map(folder => (
-            <button 
-              key={folder.id}
-              className="context-menu-item"
-              onClick={() => {
-                onMove(folder.id);
-                onClose();
-              }}
-            >
-              {folder.name}
-            </button>
-          ))}
-          <button 
-            className="context-menu-item"
-            onClick={() => {
-              onMove('no-folder');
-              onClose();
-            }}
-          >
-            No Folder
-          </button>
+        <div 
+          className="context-menu-item has-submenu"
+          onMouseEnter={() => setShowFolders(true)}
+          onMouseLeave={() => setShowFolders(false)}
+        >
+          <span>Move to folder</span>
+          {showFolders && (
+            <div className="submenu">
+              {folders.map(folder => (
+                <button 
+                  key={folder.id}
+                  className="context-menu-item"
+                  onClick={() => {
+                    onMove(folder.id);
+                    onClose();
+                  }}
+                >
+                  {folder.name}
+                </button>
+              ))}
+              <button 
+                className="context-menu-item"
+                onClick={() => {
+                  onMove('no-folder');
+                  onClose();
+                }}
+              >
+                No Folder
+              </button>
+            </div>
+          )}
         </div>
         <div className="context-menu-divider"></div>
         <button 
