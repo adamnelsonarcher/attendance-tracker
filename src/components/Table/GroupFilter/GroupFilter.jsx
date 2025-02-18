@@ -115,6 +115,31 @@ function GroupFilter({
           </div>
         </div>
       )}
+
+      <div className="filter-section">
+        <h3>Folders</h3>
+        {folders.map(folder => (
+          <div key={folder.id} className="filter-item">
+            <span>{folder.name}</span>
+            <select
+              value={activeFolderFilters.get(folder.id) || 'none'}
+              onChange={(e) => {
+                const newFilters = new Map(activeFolderFilters);
+                if (e.target.value === 'none') {
+                  newFilters.delete(folder.id);
+                } else {
+                  newFilters.set(folder.id, e.target.value);
+                }
+                onFolderFilterChange(newFilters);
+              }}
+            >
+              <option value="none">None</option>
+              <option value="show">Show</option>
+              <option value="hide">Hide</option>
+            </select>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }

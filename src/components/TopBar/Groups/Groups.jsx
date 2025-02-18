@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import Modal from '../../Modal/Modal';
 import './Groups.css';
 
-function Groups({ groups, onSave, onClose, people, events }) {
+function Groups({ groups, onSave, onClose, people, events, folders, setEvents }) {
   const [activeTab, setActiveTab] = useState('people');
   const [formData, setFormData] = useState([...groups]);
   const [newGroupName, setNewGroupName] = useState('');
@@ -15,19 +15,10 @@ function Groups({ groups, onSave, onClose, people, events }) {
       setFormData([...groups]);
       setSelectedGroup(groups[0]?.id || null);
     } else {
-      const folders = events
-        .filter(e => e.isFolder)
-        .map(folder => ({
-          id: folder.id,
-          name: folder.name,
-          isFolder: true,
-          isOpen: folder.isOpen,
-          events: folder.events.map(e => e.id)
-        }));
-      setFormData(folders);
+      setFormData([...folders]);
       setSelectedGroup(folders[0]?.id || null);
     }
-  }, [activeTab, groups, events]);
+  }, [activeTab, groups, folders]);
 
   const addGroup = () => {
     if (newGroupName.trim()) {
@@ -58,10 +49,18 @@ function Groups({ groups, onSave, onClose, people, events }) {
     return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
   };
 
-  const deleteGroup = (groupId) => {
-    setFormData(formData.filter(g => g.id !== groupId));
-    if (selectedGroup === groupId) {
-      setSelectedGroup(formData[0]?.id || null);
+  const deleteGroup = (folderId) => {
+    // Remove folder from formData
+    setFormData(prev => prev.filter(f => f.id !== folderId));
+    
+    // Remove folder assignment from events
+    setEvents(prev => prev.map(event => 
+      event.folder === folderId ? { ...event, folder: null } : event
+    ));
+    
+    // Update selected group if needed
+    if (selectedGroup === folderId) {
+      setSelectedGroup(formData.find(f => f.id !== folderId)?.id || null);
     }
   };
 
@@ -265,7 +264,9 @@ function Groups({ groups, onSave, onClose, people, events }) {
                       )}
                       
                       <span className="member-count">
-                        {folder.events?.length || 0} events
+                        {folder.id === null ? 
+                          events.filter(event => !event.folder).length :
+                          events.filter(event => event.folder === folder.id).length} events
                       </span>
                       
                       <button 
@@ -293,53 +294,49 @@ function Groups({ groups, onSave, onClose, people, events }) {
                 </div>
                 
                 <div className="members-list custom-scrollbar">
-                  {events.flatMap(folder => 
-                    folder.isFolder 
-                      ? folder.events.map(event => ({...event, currentFolder: folder.id}))
-                      : folder.events.map(event => ({...event, currentFolder: 'no-folder'}))
-                  ).filter(event => !searchTerm || 
-                    (event.name && event.name.toLowerCase().includes(searchTerm.toLowerCase()))
-                  ).map(event => {
-                    const selectedFolder = formData.find(f => f.id === selectedGroup);
-                    const isSelected = selectedFolder?.events?.includes(event.id);
-                    const isInOtherFolder = event.currentFolder !== 'no-folder' && 
-                                           event.currentFolder !== selectedFolder?.id;
-                    
-                    return (
-                      <div 
-                        key={event.id} 
-                        className={`member-item ${isSelected ? 'selected' : ''} ${isInOtherFolder ? 'disabled' : ''}`}
-                        onClick={() => {
-                          if (selectedGroup && !isInOtherFolder) {
-                            setFormData(formData.map(folder => {
-                              if (folder.id === selectedGroup) {
-                                const events = folder.events || [];
-                                const newEvents = events.includes(event.id)
-                                  ? events.filter(id => id !== event.id)
-                                  : [...events, event.id];
-                                return { ...folder, events: newEvents };
-                              }
-                              return folder;
-                            }));
-                          }
-                        }}
-                      >
-                        <div className="member-checkbox">
-                          <input
-                            type="checkbox"
-                            checked={isSelected}
-                            disabled={isInOtherFolder}
-                            onChange={() => {}} // Handled by parent div click
-                            onClick={(e) => e.stopPropagation()}
-                          />
+                  {events
+                    .filter(event => !searchTerm || 
+                      event.name.toLowerCase().includes(searchTerm.toLowerCase())
+                    )
+                    .map(event => {
+                      const isSelected = selectedGroup ? event.folder === selectedGroup : !event.folder;
+                      const isInOtherFolder = event.folder && event.folder !== selectedGroup;
+                      
+                      return (
+                        <div 
+                          key={event.id} 
+                          className={`member-item ${isSelected ? 'selected' : ''} ${isInOtherFolder ? 'disabled' : ''}`}
+                          onClick={() => {
+                            if (!isInOtherFolder) {
+                              setEvents(prev => prev.map(e => {
+                                if (e.id === event.id) {
+                                  return { ...e, folder: isSelected ? null : selectedGroup };
+                                }
+                                return e;
+                              }));
+                            }
+                          }}
+                        >
+                          <div className="member-checkbox">
+                            <input
+                              type="checkbox"
+                              checked={isSelected}
+                              disabled={isInOtherFolder}
+                              onChange={() => {}}
+                              onClick={(e) => e.stopPropagation()}
+                            />
+                          </div>
+                          <span className="member-name">
+                            {event.name} (weight: {event.weight})
+                            {isInOtherFolder && (
+                              <span className="folder-info">
+                                (in {folders.find(f => f.id === event.folder)?.name})
+                              </span>
+                            )}
+                          </span>
                         </div>
-                        <span className="member-name">
-                          {event.name}
-                          {isInOtherFolder && <span className="folder-info"> (in {formData.find(f => f.id === event.currentFolder)?.name})</span>}
-                        </span>
-                      </div>
-                    );
-                  })}
+                      );
+                    })}
                 </div>
               </div>
             </>

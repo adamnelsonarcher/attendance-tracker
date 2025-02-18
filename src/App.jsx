@@ -29,7 +29,7 @@ function App() {
   const [contextMenu, setContextMenu] = useState(null);
   
   const [people, handleAddPerson, updatePeopleGroups] = usePeople();
-  const [events, handleAddEvent, toggleFolder] = useEvents();
+  const [events, folders, handleAddEvent, toggleFolder, setFolders] = useEvents();
   const [attendance, handleAttendanceChange] = useAttendance();
   const [sorting, handleSort, getStatusPriority] = useSort();
   const calculateScores = useCalculateScores(events, attendance, settings);
@@ -82,7 +82,7 @@ function App() {
         {showGroupFilter && (
           <GroupFilter
             groups={groups}
-            folders={events.filter(e => e.isFolder)}
+            folders={folders}
             activeGroupFilters={activeGroupFilters}
             activeFolderFilters={activeFolderFilters}
             onGroupFilterChange={setActiveGroupFilters}
@@ -108,6 +108,7 @@ function App() {
         groups={groups}
         activeGroupFilters={activeGroupFilters}
         activeFolderFilters={activeFolderFilters}
+        folders={folders}
       />
 
       {contextMenu && (
@@ -138,7 +139,7 @@ function App() {
         <AddEventForm
           onAdd={handleAddEvent}
           onClose={() => setShowAddEvent(false)}
-          folders={events.filter(e => e.isFolder)}
+          folders={folders}
         />
       )}
 
@@ -147,23 +148,24 @@ function App() {
           groups={groups}
           people={people}
           events={events}
+          folders={folders}
+          setEvents={setFolders}
           onSave={(newGroups) => {
             if (activeTab === 'people') {
               setGroups(newGroups);
               updatePeopleGroups(newGroups);
             } else {
               const updatedEvents = events.map(event => {
-                if (!event.isFolder) return event;
-                const updatedFolder = newGroups.find(g => g.id === event.id);
-                if (!updatedFolder) return null;
+                const updatedFolder = newGroups.find(g => g.id === event.folder);
+                if (!updatedFolder) return event;
                 return {
                   ...event,
-                  name: updatedFolder.name,
-                  color: updatedFolder.color,
-                  events: updatedFolder.events
+                  folder: updatedFolder.id,
+                  name: event.name,
+                  color: updatedFolder.color
                 };
-              }).filter(Boolean);
-              handleAddEvent({ events: updatedEvents });
+              });
+              setFolders(updatedEvents);
             }
           }}
           onClose={() => setShowGroups(false)}

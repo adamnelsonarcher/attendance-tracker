@@ -18,7 +18,8 @@ function Table({
   settings,
   groups,
   activeGroupFilters,
-  activeFolderFilters
+  activeFolderFilters,
+  folders
 }) {
   const attendanceStatus = ['Present', 'Absent', 'Late', 'DNA'];
 
@@ -145,10 +146,10 @@ function Table({
                 </small>
               )}
             </th>
-            {filteredEvents.filter(folder => folder.isFolder).map(folder => (
+            {folders.map(folder => (
               <th 
                 key={folder.id} 
-                colSpan={folder.isOpen ? folder.events.length : 1} 
+                colSpan={folder.isOpen ? events.filter(e => e.folder === folder.id).length : 1} 
                 className="event-folder"
               >
                 <div 
@@ -162,24 +163,6 @@ function Table({
                 </div>
               </th>
             ))}
-            {/* Non-folder events */}
-            {filteredEvents.filter(folder => !folder.isFolder).flatMap(folder => 
-              folder.events.map(event => (
-                <th 
-                  key={event.id} 
-                  rowSpan="2" 
-                  className="event-column sortable-header"
-                  onClick={() => onEventHeaderClick(event.id)}
-                >
-                  {event.name}
-                  <br />
-                  <small>
-                    (Weight: {event.weight})
-                    {sorting.type === 'event' && sorting.eventId === event.id && ' ↓'}
-                  </small>
-                </th>
-              ))
-            )}
             <th 
               rowSpan="2" 
               className="score-column sortable-header"
@@ -203,21 +186,20 @@ function Table({
           </tr>
           {/* Second header row for folder events */}
           <tr>
-            {filteredEvents.filter(folder => folder.isFolder).flatMap(folder => 
-              folder.isOpen ? folder.events.map(event => (
-                <th 
-                  key={event.id} 
-                  className="event-column sortable-header"
-                  onClick={() => onEventHeaderClick(event.id)}
-                >
-                  {event.name}
-                  <br />
-                  <small>
-                    (Weight: {event.weight})
-                    {sorting.type === 'event' && sorting.eventId === event.id && ' ↓'}
-                  </small>
-                </th>
-              )) : [<th key={folder.id} className="collapsed-folder"></th>]
+            {folders.map(folder => 
+              folder.isOpen ? 
+                events
+                  .filter(event => event.folder === folder.id)
+                  .map(event => (
+                    <th 
+                      key={event.id}
+                      onClick={() => onEventHeaderClick(event.id)}
+                      className={`event-header ${sorting.eventId === event.id ? 'sorted' : ''}`}
+                    >
+                      {event.name}
+                    </th>
+                  ))
+                : <td key={folder.id} className="collapsed-folder"></td>
             )}
           </tr>
         </thead>
@@ -234,10 +216,11 @@ function Table({
                 {person.name}
               </td>
               {/* Render cells for each event */}
-              {filteredEvents.map(folder => 
-                folder.isFolder ? (
-                  folder.isOpen ? 
-                    folder.events.map(event => (
+              {folders.map(folder => 
+                folder.isOpen ? 
+                  events
+                    .filter(event => event.folder === folder.id)
+                    .map(event => (
                       <td key={event.id}>
                         <select
                           value={attendance[`${person.id}-${event.id}`] || 'Select'}
@@ -252,24 +235,7 @@ function Table({
                         </select>
                       </td>
                     ))
-                    : <td key={folder.id} className="collapsed-folder"></td>
-                ) : (
-                  folder.events.map(event => (
-                    <td key={event.id}>
-                      <select
-                        value={attendance[`${person.id}-${event.id}`] || 'Select'}
-                        onChange={(e) => onAttendanceChange(person.id, event.id, e.target.value)}
-                        data-status={attendance[`${person.id}-${event.id}`] || 'Select'}
-                      >
-                        <option value="Select"></option>
-                        <option value="Present">Present</option>
-                        <option value="Absent">Absent</option>
-                        <option value="Late">Late</option>
-                        <option value="DNA">DNA</option>
-                      </select>
-                    </td>
-                  ))
-                )
+                  : <td key={folder.id} className="collapsed-folder"></td>
               )}
               <td className="score-column">{calculateScores(person.id).raw}%</td>
               <td className="score-column">{calculateScores(person.id).weighted}%</td>
@@ -312,7 +278,8 @@ Table.propTypes = {
   settings: PropTypes.object.isRequired,
   groups: PropTypes.array.isRequired,
   activeGroupFilters: PropTypes.instanceOf(Map).isRequired,
-  activeFolderFilters: PropTypes.instanceOf(Map).isRequired
+  activeFolderFilters: PropTypes.instanceOf(Map).isRequired,
+  folders: PropTypes.array.isRequired
 };
 
 export default Table; 

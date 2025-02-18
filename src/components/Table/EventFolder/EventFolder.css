@@ -1,0 +1,33 @@
+.event-folder {
+  background-color: #f5f5f5;
+  border: 1px solid #ddd;
+  padding: 8px;
+}
+
+.folder-header {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  user-select: none;
+}
+
+.folder-icon {
+  margin-right: 8px;
+  font-size: 12px;
+}
+
+.event-header {
+  background-color: #fff;
+  border: 1px solid #ddd;
+  padding: 8px;
+  cursor: pointer;
+}
+
+.event-header.sorted {
+  background-color: #e6f3ff;
+}
+
+.collapsed-folder {
+  background-color: #f5f5f5;
+  border: 1px solid #ddd;
+} 

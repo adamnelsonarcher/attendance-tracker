@@ -2,60 +2,45 @@ import { useState } from 'react';
 
 export function useEvents() {
   const [events, setEvents] = useState([
-    {
-      id: 'weekly',
-      name: 'Weekly Events',
-      isFolder: true,
-      isOpen: true,
-      events: [
-        { id: 'e1', name: 'Meeting 1', weight: 1 },
-        { id: 'e2', name: 'Meeting 2', weight: 2 },
-        { id: 'e3', name: 'Workshop', weight: 3 },
-        { id: 'e8', name: 'Code Review', weight: 2 },
-        { id: 'e9', name: 'Team Sync', weight: 1 }
-      ]
-    },
-    {
-      id: 'special',
-      name: 'Special Events',
-      isFolder: true,
-      isOpen: true,
-      events: [
-        { id: 'e4', name: 'Conference', weight: 4 },
-        { id: 'e5', name: 'Training', weight: 2 },
-        { id: 'e10', name: 'Hackathon', weight: 3 },
-        { id: 'e11', name: 'Workshop', weight: 2 }
-      ]
-    },
-    {
-      id: 'no-folder',
-      events: [
-        { id: 'e6', name: 'Team Building', weight: 1 },
-        { id: 'e7', name: 'Project Review', weight: 2 }
-      ]
-    }
+    { id: 'e1', name: 'Meeting 1', weight: 1, folder: 'weekly' },
+    { id: 'e2', name: 'Meeting 2', weight: 2, folder: 'weekly' },
+    { id: 'e3', name: 'Workshop', weight: 3, folder: 'weekly' },
+    { id: 'e4', name: 'Conference', weight: 4, folder: 'special' },
+    { id: 'e5', name: 'Training', weight: 2, folder: 'special' },
+    { id: 'e6', name: 'Team Building', weight: 1, folder: null },
+    { id: 'e7', name: 'Project Review', weight: 2, folder: null },
+    { id: 'e8', name: 'Code Review', weight: 2, folder: 'weekly' },
+    { id: 'e9', name: 'Team Sync', weight: 1, folder: 'weekly' },
+    { id: 'e10', name: 'Hackathon', weight: 3, folder: 'special' },
+    { id: 'e11', name: 'Workshop', weight: 2, folder: 'special' }
   ]);
 
-  const handleAddEvent = ({ folderId = 'no-folder', event, newFolder }) => {
+  const [folders, setFolders] = useState([
+    { id: 'weekly', name: 'Weekly Events', isOpen: true },
+    { id: 'special', name: 'Special Events', isOpen: true }
+  ]);
+
+  const handleAddEvent = ({ folderId = null, event, newFolder }) => {
     if (newFolder) {
-      setEvents(prev => [...prev, newFolder]);
+      setFolders(prev => [...prev, { 
+        id: newFolder.id, 
+        name: newFolder.name, 
+        isOpen: true 
+      }]);
+      setEvents(prev => [...prev, { ...event, folder: newFolder.id }]);
       return;
     }
     
-    setEvents(prev => prev.map(folder => 
-      folder.id === folderId
-        ? { ...folder, events: [...folder.events, event] }
-        : folder
-    ));
+    setEvents(prev => [...prev, { ...event, folder: folderId }]);
   };
 
   const toggleFolder = (folderId) => {
-    setEvents(prev => prev.map(folder => 
+    setFolders(prev => prev.map(folder => 
       folder.id === folderId
         ? { ...folder, isOpen: !folder.isOpen }
         : folder
     ));
   };
 
-  return [events, handleAddEvent, toggleFolder];
-} 
+  return [events, folders, handleAddEvent, toggleFolder, setFolders];
+}
