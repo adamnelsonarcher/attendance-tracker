@@ -12,12 +12,15 @@ import { useSort } from './hooks/useSort';
 import { useCalculateScores } from './hooks/useCalculateScores';
 import SortContextMenu from './components/Table/SortContextMenu';
 import Groups from './components/TopBar/Groups/Groups';
+import GroupFilter from './components/Table/GroupFilter/GroupFilter';
+import filterIcon from './assets/icons/filter.png';
 
 function App() {
   const [showSettings, setShowSettings] = useState(false);
   const [showAddEvent, setShowAddEvent] = useState(false);
   const [showAddPerson, setShowAddPerson] = useState(false);
   const [showGroups, setShowGroups] = useState(false);
+  const [showGroupFilter, setShowGroupFilter] = useState(false);
   const [settings, setSettings] = useState({
     lateCredit: 0.5,
     onlyCountAbsent: true,
@@ -31,6 +34,7 @@ function App() {
   const [sorting, handleSort, getStatusPriority] = useSort();
   const calculateScores = useCalculateScores(events, attendance, settings);
   const [groups, setGroups] = useState([]);
+  const [activeGroupFilters, setActiveGroupFilters] = useState(new Set());
 
   const handleEventHeaderClick = (eventId, type = 'event', scoreType = null) => {
     if (type === 'score') {
@@ -65,7 +69,23 @@ function App() {
         onGroupsClick={() => setShowGroups(true)}
       />
 
-      <h1>Attendance Tracker</h1>
+      <div className="title-row">
+        <h1>Attendance Tracker</h1>
+        <button 
+          className="filter-button"
+          onClick={() => setShowGroupFilter(!showGroupFilter)}
+        >
+          <img src={filterIcon} alt="Filter" /> Filter
+        </button>
+        {showGroupFilter && (
+          <GroupFilter
+            groups={groups}
+            activeFilters={activeGroupFilters}
+            onFilterChange={setActiveGroupFilters}
+            onClose={() => setShowGroupFilter(false)}
+          />
+        )}
+      </div>
 
       <Table 
         people={people}
@@ -81,6 +101,7 @@ function App() {
         onNameHeaderContextMenu={handleNameHeaderContextMenu}
         settings={settings}
         groups={groups}
+        activeGroupFilters={activeGroupFilters}
       />
 
       {contextMenu && (

@@ -6,3 +6,79 @@
 h1 {
   margin-bottom: 20px;
 }
+
+.header-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.header-row h1 {
+  margin: 0;
+}
+
+.group-filter-button {
+  background: #f4f4f4;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  padding: 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.2s;
+}
+
+.group-filter-button:hover {
+  background-color: #e4e4e4;
+}
+
+.group-filter-button img {
+  width: 16px;
+  height: 16px;
+}
+
+.title-row {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 20px;
+}
+
+.title-row h1 {
+  margin: 0;
+  text-align: center;
+}
+
+.filter-button {
+  position: absolute;
+  left: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background: #f4f4f4;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.filter-button:hover {
+  background-color: #e4e4e4;
+}
+
+.filter-button img {
+  width: 16px;
+  height: 16px;
+}
+
+/* Update GroupFilter positioning */
+.group-filter-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  margin-top: 4px;
+}

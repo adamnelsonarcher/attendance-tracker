@@ -98,23 +98,6 @@ function Table({
             >
               <div className="name-header">
                 <span>Name</span>
-                <button 
-                  className="group-filter-button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setShowGroupFilter(!showGroupFilter);
-                  }}
-                >
-                  <img src={filterIcon} alt="Filter groups" />
-                </button>
-                {showGroupFilter && (
-                  <GroupFilter
-                    groups={groups}
-                    activeFilters={activeGroupFilters}
-                    onFilterChange={setActiveGroupFilters}
-                    onClose={() => setShowGroupFilter(false)}
-                  />
-                )}
               </div>
               {(sorting.type === 'firstName' || sorting.type === 'lastName' || sorting.type === 'group') && (
                 <small>
