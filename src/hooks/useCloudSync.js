@@ -26,19 +26,48 @@ export function useCloudSync(tableCode, cloudSync, {
       const data = await getTableData(tableCode);
       if (data) {
         console.log('Initial load of data:', data);
-        setPeople(data.people || []);
-        setEvents(data.events || []);
-        setAttendance(data.attendance || {});
-        setGroups(data.groups || []);
-        setSettings({
-          ...settings,
-          ...data.settings,
-          cloudSync: true
-        });
         
-        // Set lastSyncedData immediately to prevent unwanted sync
+        // Force localStorage updates by using the state setters
+        if (data.events) {
+          localStorage.setItem('events', JSON.stringify(data.events));
+          setEvents(data.events);
+        }
+        
+        if (data.people) {
+          localStorage.setItem('people', JSON.stringify(data.people));
+          setPeople(data.people);
+        }
+        
+        if (data.attendance) {
+          localStorage.setItem('attendance', JSON.stringify(data.attendance));
+          setAttendance(data.attendance);
+        }
+        
+        if (data.groups) {
+          localStorage.setItem('groups', JSON.stringify(data.groups));
+          setGroups(data.groups);
+        }
+        
+        if (data.settings) {
+          const newSettings = {
+            ...settings,
+            ...data.settings,
+            cloudSync: true
+          };
+          localStorage.setItem('settings', JSON.stringify(newSettings));
+          setSettings(newSettings);
+        }
+        
         lastSyncedData.current = {
-          ...data,
+          people: data.people || [],
+          events: data.events || [],
+          attendance: data.attendance || {},
+          groups: data.groups || [],
+          settings: {
+            ...settings,
+            ...data.settings,
+            cloudSync: true
+          },
           lastUpdated: new Date().toISOString()
         };
         onSyncStatusChange('saved');
@@ -47,7 +76,7 @@ export function useCloudSync(tableCode, cloudSync, {
     };
 
     loadInitialData();
-  }, [cloudSync, tableCode]);
+  }, [cloudSync, tableCode, setEvents, setPeople, setAttendance, setGroups, setSettings, settings]);
 
   // Only sync TO cloud, don't subscribe to changes
   useEffect(() => {
@@ -90,12 +119,39 @@ export function useCloudSync(tableCode, cloudSync, {
     const data = await getTableData(code);
     if (!data) return false;
 
-    setPeople(data.people);
-    setEvents(data.events);
-    setAttendance(data.attendance);
-    setGroups(data.groups);
-    setSettings(data.settings);
-    lastSyncedData.current = data;
+    // Force localStorage updates before setting state
+    if (data.events) localStorage.setItem('events', JSON.stringify(data.events));
+    if (data.people) localStorage.setItem('people', JSON.stringify(data.people));
+    if (data.attendance) localStorage.setItem('attendance', JSON.stringify(data.attendance));
+    if (data.groups) localStorage.setItem('groups', JSON.stringify(data.groups));
+    if (data.settings) localStorage.setItem('settings', JSON.stringify({
+      ...settings,
+      ...data.settings,
+      cloudSync: true
+    }));
+
+    setPeople(data.people || []);
+    setEvents(data.events || []);
+    setAttendance(data.attendance || {});
+    setGroups(data.groups || []);
+    setSettings({
+      ...settings,
+      ...data.settings,
+      cloudSync: true
+    });
+
+    lastSyncedData.current = {
+      people: data.people || [],
+      events: data.events || [],
+      attendance: data.attendance || {},
+      groups: data.groups || [],
+      settings: {
+        ...settings,
+        ...data.settings,
+        cloudSync: true
+      },
+      lastUpdated: new Date().toISOString()
+    };
     return true;
   };
 
