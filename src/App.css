@@ -35,8 +35,8 @@ h1 {
 }
 
 .group-filter-button img {
-  width: 16px;
-  height: 16px;
+  width: 5px;
+  height: 5px;
 }
 
 .title-row {
@@ -71,8 +71,8 @@ h1 {
 }
 
 .filter-button img {
-  width: 16px;
-  height: 16px;
+  width: 13px;
+  height: 13px;
 }
 
 /* Update GroupFilter positioning */

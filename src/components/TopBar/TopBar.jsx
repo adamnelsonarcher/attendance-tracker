@@ -15,7 +15,7 @@ function TopBar({ onSettingsClick, onAddPersonClick, onAddEventClick, onGroupsCl
       <div className="action-buttons">
         <button onClick={onAddPersonClick}>Add Person</button>
         <button onClick={onAddEventClick}>Add Event</button>
-        <button onClick={onGroupsClick}>👥 Groups</button>
+        <button onClick={onGroupsClick}>Edit Groups</button>
       </div>
     </div>
   );
