@@ -36,10 +36,14 @@ export function useAttendance(initialAttendance = showcaseAttendance) {
   }, [attendance]);
 
   const handleAttendanceChange = (personId, eventId, status) => {
-    setAttendance(prev => ({
-      ...prev,
-      [`${personId}-${eventId}`]: status,
-    }));
+    setAttendance(prev => {
+      const newAttendance = {
+        ...prev,
+        [`${personId}-${eventId}`]: status,
+      };
+      localStorage.setItem('attendance', JSON.stringify(newAttendance));
+      return newAttendance;
+    });
   };
 
   const resetAttendance = () => {
@@ -47,5 +51,5 @@ export function useAttendance(initialAttendance = showcaseAttendance) {
     setAttendance({});
   };
 
-  return [attendance, handleAttendanceChange, resetAttendance];
+  return [attendance, handleAttendanceChange, resetAttendance, setAttendance];
 } 

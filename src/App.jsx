@@ -12,26 +12,31 @@ import { useSort } from './hooks/useSort';
 import { useCalculateScores } from './hooks/useCalculateScores';
 import SortContextMenu from './components/Table/SortContextMenu';
 import Groups from './components/TopBar/Groups/Groups';
+import { useCloudSync } from './hooks/useCloudSync';
+import { syncTable } from './services/firebase';
 
 function App() {
   const [showSettings, setShowSettings] = useState(false);
   const [showAddEvent, setShowAddEvent] = useState(false);
   const [showAddPerson, setShowAddPerson] = useState(false);
   const [showGroups, setShowGroups] = useState(false);
-  const [settings, setSettings] = useState({
-    lateCredit: 0.5,
-    onlyCountAbsent: true,
-    colorCodeAttendance: true,
-    hideTitle: true,
-    showHoverHighlight: true,
-    enableStickyColumns: true,
-    cloudSync: false
+  const [settings, setSettings] = useState(() => {
+    const storedSettings = localStorage.getItem('settings');
+    return storedSettings ? JSON.parse(storedSettings) : {
+      lateCredit: 0.5,
+      onlyCountAbsent: true,
+      colorCodeAttendance: true,
+      hideTitle: true,
+      showHoverHighlight: true,
+      enableStickyColumns: true,
+      cloudSync: false
+    };
   });
   const [contextMenu, setContextMenu] = useState(null);
   
-  const [people, handleAddPerson, updatePeopleGroups, resetPeople] = usePeople();
-  const [events, handleAddEvent, handleRemoveEvent, handleMoveEvent, toggleFolder, handleRenameEvent, resetEvents] = useEvents();
-  const [attendance, handleAttendanceChange, resetAttendance] = useAttendance();
+  const [people, handleAddPerson, updatePeopleGroups, resetPeople, setPeople] = usePeople();
+  const [events, handleAddEvent, handleRemoveEvent, handleMoveEvent, toggleFolder, handleRenameEvent, resetEvents, setEvents] = useEvents();
+  const [attendance, handleAttendanceChange, resetAttendance, setAttendance] = useAttendance();
   const [sorting, handleSort, getStatusPriority] = useSort();
   const calculateScores = useCalculateScores(events, attendance, settings);
   const [groups, setGroups] = useState(() => {
@@ -48,20 +53,43 @@ function App() {
     return initialGroups;
   });
 
+  const { loadTableData } = useCloudSync(
+    localStorage.getItem('tableCode'),
+    settings.cloudSync,
+    {
+      people,
+      events,
+      attendance,
+      groups,
+      settings,
+      setPeople: setPeople || (() => {}),
+      setEvents: setEvents || (() => {}),
+      setAttendance: setAttendance || (() => {}),
+      setGroups: setGroups || (() => {}),
+      setSettings: setSettings || (() => {})
+    }
+  );
+
   useEffect(() => {
     localStorage.setItem('groups', JSON.stringify(groups));
   }, [groups]);
 
   useEffect(() => {
-    const stored = localStorage.getItem('settings');
-    if (stored) {
-      setSettings(JSON.parse(stored));
-    }
-  }, []);
-
-  useEffect(() => {
     localStorage.setItem('settings', JSON.stringify(settings));
   }, [settings]);
+
+  useEffect(() => {
+    if (settings.cloudSync && localStorage.getItem('tableCode')) {
+      syncTable(localStorage.getItem('tableCode'), {
+        people,
+        events,
+        attendance,
+        groups,
+        settings,
+        lastUpdated: new Date().toISOString()
+      });
+    }
+  }, [settings.cloudSync]);
 
   const handleEventHeaderClick = (eventId, type = 'event', scoreType = null) => {
     if (type === 'score') {
@@ -138,18 +166,21 @@ function App() {
               resetAttendance();
               setGroups([]);
               updatePeopleGroups([]);
-              setSettings({
-                lateCredit: 0.5,
-                onlyCountAbsent: true,
-                colorCodeAttendance: true,
-                hideTitle: true,
-                showHoverHighlight: true,
-                enableStickyColumns: true,
-                cloudSync: false
-              });
-              setShowSettings(false);
+              if (settings.cloudSync) {
+                syncTable(localStorage.getItem('tableCode'), {
+                  people: [],
+                  events: [],
+                  attendance: {},
+                  groups: [],
+                  settings: {
+                    ...settings,
+                    cloudSync: true
+                  }
+                });
+              }
             }
           }}
+          loadTableData={loadTableData}
         />
       )}
 

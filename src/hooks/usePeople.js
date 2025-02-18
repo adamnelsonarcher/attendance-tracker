@@ -88,7 +88,7 @@ export function usePeople(initialPeople = showcasePeople) {
     setPeople([]);
   };
 
-  return [people, handleAddPerson, updatePeopleGroups, resetPeople];
+  return [people, handleAddPerson, updatePeopleGroups, resetPeople, setPeople];
 }
 
 export { showcasePeople }; 

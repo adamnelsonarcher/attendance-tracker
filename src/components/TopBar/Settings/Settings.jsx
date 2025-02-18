@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import './Settings.css';
 import Modal from '../../Modal/Modal';
+import { syncTable } from '../../../services/firebase';
 
-function Settings({ settings, onSave, onClose, onResetData }) {
+function Settings({ settings, onSave, onClose, onResetData, loadTableData }) {
   const [formData, setFormData] = useState(() => {
     const storedCode = localStorage.getItem('tableCode');
     const storedSettings = localStorage.getItem('settings');
@@ -26,18 +27,7 @@ function Settings({ settings, onSave, onClose, onResetData }) {
     ).join('');
   };
 
-  useEffect(() => {
-    if (formData.cloudSync && !formData.tableCode) {
-      const newCode = generateTableCode();
-      setFormData(prev => ({
-        ...prev,
-        tableCode: newCode
-      }));
-      localStorage.setItem('tableCode', newCode);
-    }
-  }, [formData.cloudSync]);
-
-  const handleJoinTable = () => {
+  const handleJoinTable = async () => {
     if (joinCode.length !== 6) {
       setError('Table code must be 6 characters');
       return;
@@ -46,6 +36,14 @@ function Settings({ settings, onSave, onClose, onResetData }) {
     if (formData.tableCode && 
         !window.confirm('Joining a new table will remove all locally stored data. To get back to your existing table, you will need your existing code: ' + formData.tableCode + '. Continue?')) {
       return;
+    }
+
+    if (formData.cloudSync) {
+      const success = await loadTableData(joinCode.toUpperCase());
+      if (!success) {
+        setError('Could not find table with that code');
+        return;
+      }
     }
 
     // Clear all localStorage data
@@ -65,7 +63,6 @@ function Settings({ settings, onSave, onClose, onResetData }) {
       isNewTable: false
     }));
     
-    // Call parent reset functions
     onResetData();
     setShowJoinInput(false);
     setError('');
@@ -107,21 +104,31 @@ function Settings({ settings, onSave, onClose, onResetData }) {
     return `(${(credit * 100).toFixed(0)}%)`;
   };
 
-  const handleChange = (nameOrEvent, value) => {
-    if (typeof nameOrEvent === 'string') {
-      // Direct value change
-      setFormData(prev => ({
-        ...prev,
-        [nameOrEvent]: value
-      }));
-    } else {
-      // Event object
-      const { name, value: eventValue, type, checked } = nameOrEvent.target;
-      setFormData(prev => ({
-        ...prev,
-        [name]: type === 'checkbox' ? checked : eventValue
-      }));
+  const handleChange = async (name, value) => {
+    const newFormData = {
+      ...formData,
+      [name]: value
+    };
+    
+    // Only generate new code if enabling cloud sync AND we don't have a code yet
+    if (name === 'cloudSync' && value && !localStorage.getItem('tableCode')) {
+      const newCode = generateTableCode();
+      newFormData.tableCode = newCode;
+      localStorage.setItem('tableCode', newCode);
+      
+      // Initial sync to Firebase
+      await syncTable(newCode, {
+        people: JSON.parse(localStorage.getItem('people') || '[]'),
+        events: JSON.parse(localStorage.getItem('events') || '[]'),
+        attendance: JSON.parse(localStorage.getItem('attendance') || '{}'),
+        groups: JSON.parse(localStorage.getItem('groups') || '[]'),
+        settings: newFormData,
+        lastUpdated: new Date().toISOString()
+      });
     }
+    
+    setFormData(newFormData);
+    onSave(newFormData);
   };
 
   return (
@@ -194,15 +201,16 @@ function Settings({ settings, onSave, onClose, onResetData }) {
           </label>
         </div>
 
-        <label className="setting-row">
-          <input
-            type="checkbox"
-            name="cloudSync"
-            checked={formData.cloudSync}
-            onChange={(e) => handleChange(e.target.name, e.target.checked)}
-          />
-          <span>Enable Cloud Sync</span>
-        </label>
+        <div className="setting-row">
+          <label>
+            <input
+              type="checkbox"
+              checked={formData.cloudSync}
+              onChange={(e) => handleChange('cloudSync', e.target.checked)}
+            />
+            <span>Enable Cloud Sync</span>
+          </label>
+        </div>
 
         {formData.cloudSync && (
           <div className="setting-section cloud-sync-section">
