@@ -33,6 +33,7 @@ function App() {
     };
   });
   const [contextMenu, setContextMenu] = useState(null);
+  const [syncStatus, setSyncStatus] = useState('saved');
   
   const [people, handleAddPerson, updatePeopleGroups, resetPeople, setPeople] = usePeople();
   const [events, handleAddEvent, handleRemoveEvent, handleMoveEvent, toggleFolder, handleRenameEvent, resetEvents, setEvents] = useEvents();
@@ -53,7 +54,7 @@ function App() {
     return initialGroups;
   });
 
-  const { loadTableData } = useCloudSync(
+  const { loadTableData, syncTimeoutRef } = useCloudSync(
     localStorage.getItem('tableCode'),
     settings.cloudSync,
     {
@@ -66,7 +67,8 @@ function App() {
       setEvents: setEvents || (() => {}),
       setAttendance: setAttendance || (() => {}),
       setGroups: setGroups || (() => {}),
-      setSettings: setSettings || (() => {})
+      setSettings: setSettings || (() => {}),
+      onSyncStatusChange: setSyncStatus
     }
   );
 
@@ -122,6 +124,24 @@ function App() {
         onAddPersonClick={() => setShowAddPerson(true)}
         onAddEventClick={() => setShowAddEvent(true)}
         onGroupsClick={() => setShowGroups(true)}
+        settings={settings}
+        syncStatus={syncStatus}
+        onSyncClick={() => {
+          if (syncTimeoutRef.current) {
+            clearTimeout(syncTimeoutRef.current);
+          }
+          setSyncStatus('saving');
+          syncTable(localStorage.getItem('tableCode'), {
+            people,
+            events,
+            attendance,
+            groups,
+            settings,
+            lastUpdated: new Date().toISOString()
+          }).then(() => {
+            setSyncStatus('saved');
+          });
+        }}
       />
 
       {!settings.hideTitle && <h1>Attendance Tracker</h1>}

@@ -22,4 +22,29 @@
 .action-buttons button:hover,
 .settings-button:hover {
   background-color: #e4e4e4;
+}
+
+.right-buttons {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.sync-status {
+  font-size: 0.8em;
+  color: #4CAF50;
+}
+
+.sync-button {
+  font-size: 0.8em;
+  padding: 4px 8px;
+  background: #666;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.sync-button:hover {
+  background: #555;
 } 

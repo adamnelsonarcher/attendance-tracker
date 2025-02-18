@@ -11,7 +11,8 @@ export function useCloudSync(tableCode, cloudSync, {
   setEvents,
   setAttendance,
   setGroups,
-  setSettings 
+  setSettings,
+  onSyncStatusChange 
 }) {
   const lastSyncedData = useRef(null);
   const syncTimeoutRef = useRef(null);
@@ -46,20 +47,21 @@ export function useCloudSync(tableCode, cloudSync, {
       lastUpdated: new Date().toISOString()
     };
 
-    // Check if data has changed
     const hasChanged = JSON.stringify(currentData) !== JSON.stringify(lastSyncedData.current);
 
     if (hasChanged) {
-      // Clear existing timeout
+      onSyncStatusChange('unsaved');
+      
       if (syncTimeoutRef.current) {
         clearTimeout(syncTimeoutRef.current);
       }
 
-      // Set new timeout
-      syncTimeoutRef.current = setTimeout(() => {
-        syncTable(tableCode, currentData);
+      syncTimeoutRef.current = setTimeout(async () => {
+        onSyncStatusChange('saving');
+        await syncTable(tableCode, currentData);
         lastSyncedData.current = currentData;
-      }, 30000); // 30 seconds delay
+        onSyncStatusChange('saved');
+      }, 30000);
     }
 
     return () => {
@@ -82,5 +84,5 @@ export function useCloudSync(tableCode, cloudSync, {
     return true;
   };
 
-  return { loadTableData };
+  return { loadTableData, syncTimeoutRef };
 } 
