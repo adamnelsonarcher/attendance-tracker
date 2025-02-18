@@ -131,4 +131,19 @@
   background-color: #ffe6e6;
   border-color: #FFB6C1;
   color: #DC143C;
+}
+
+.filter-section-header {
+  padding: 12px;
+  background-color: #f4f4f4;
+  font-weight: 500;
+  font-size: 0.9em;
+  color: #666;
+  border-bottom: 1px solid #eee;
+  border-top: 1px solid #eee;
+}
+
+.folder-name {
+  flex: 1;
+  color: #444;
 } 
