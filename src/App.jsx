@@ -38,10 +38,10 @@ function App() {
     if (stored) return JSON.parse(stored);
     
     const initialGroups = [
-      { id: 'dev', name: 'Developers', color: '#FF6B6B', memberIds: ['p1', 'p2', 'p3', 'p9', 'p11', 'p14', 'p17', 'p20'] },
-      { id: 'design', name: 'Designers', color: '#4ECDC4', memberIds: ['p4', 'p5', 'p10', 'p12', 'p15', 'p18'] },
-      { id: 'qa', name: 'QA Team', color: '#45B7D1', memberIds: ['p6', 'p7', 'p8', 'p13', 'p16', 'p19'] },
-      { id: 'leads', name: 'Team Leads', color: '#96CEB4', memberIds: ['p1', 'p4', 'p6'] }
+      { id: 'dev', name: 'Developers', color: '#FF6B6B', memberIds: ['p1', 'p2', 'p9', 'p14', 'p17'] },
+      { id: 'design', name: 'Designers', color: '#4ECDC4', memberIds: ['p4', 'p10', 'p12', 'p18'] },
+      { id: 'qa', name: 'QA Team', color: '#45B7D1', memberIds: ['p7', 'p13', 'p16', 'p19'] },
+      { id: 'leads', name: 'Team Leads', color: '#96CEB4', memberIds: ['p1', 'p6'] }
     ];
     localStorage.setItem('groups', JSON.stringify(initialGroups));
     return initialGroups;
