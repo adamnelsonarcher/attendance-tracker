@@ -34,7 +34,8 @@ function App() {
   const [sorting, handleSort, getStatusPriority] = useSort();
   const calculateScores = useCalculateScores(events, attendance, settings);
   const [groups, setGroups] = useState([]);
-  const [activeGroupFilters, setActiveGroupFilters] = useState(new Set());
+  const [activeGroupFilters, setActiveGroupFilters] = useState(new Map());
+  const [activeFolderFilters, setActiveFolderFilters] = useState(new Map());
 
   const handleEventHeaderClick = (eventId, type = 'event', scoreType = null) => {
     if (type === 'score') {
@@ -80,8 +81,11 @@ function App() {
         {showGroupFilter && (
           <GroupFilter
             groups={groups}
-            activeFilters={activeGroupFilters}
-            onFilterChange={setActiveGroupFilters}
+            folders={events.filter(e => e.isFolder)}
+            activeGroupFilters={activeGroupFilters}
+            activeFolderFilters={activeFolderFilters}
+            onGroupFilterChange={setActiveGroupFilters}
+            onFolderFilterChange={setActiveFolderFilters}
             onClose={() => setShowGroupFilter(false)}
           />
         )}
@@ -102,6 +106,7 @@ function App() {
         settings={settings}
         groups={groups}
         activeGroupFilters={activeGroupFilters}
+        activeFolderFilters={activeFolderFilters}
       />
 
       {contextMenu && (

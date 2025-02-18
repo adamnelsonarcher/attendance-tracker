@@ -17,16 +17,55 @@ function Table({
   onNameHeaderContextMenu,
   settings,
   groups,
-  activeGroupFilters
+  activeGroupFilters,
+  activeFolderFilters
 }) {
   const attendanceStatus = ['Present', 'Absent', 'Late', 'DNA'];
 
   // Filter people based on active group filters
-  const filteredPeople = activeGroupFilters.size > 0
-    ? people.filter(person => 
-        person.groups.some(group => activeGroupFilters.has(group.id))
-      )
+  const filteredPeople = Array.from(activeGroupFilters.entries()).length > 0
+    ? people.filter(person => {
+        // Check if any of person's groups are explicitly hidden
+        const isHidden = person.groups.some(group => 
+          activeGroupFilters.get(group.id) === 'hide'
+        );
+        if (isHidden) return false;
+
+        // If any groups are set to show, person must be in one of them
+        const hasShowFilters = Array.from(activeGroupFilters.values()).includes('show');
+        if (hasShowFilters) {
+          return person.groups.some(group => activeGroupFilters.get(group.id) === 'show');
+        }
+
+        // If no show filters, show all non-hidden people
+        return true;
+      })
     : people;
+
+  // Filter events based on active folder filters
+  const filteredEvents = events.filter(folder => {
+    if (folder.isFolder) {
+      const filterState = activeFolderFilters.get(folder.id);
+      if (filterState === 'hide') return false; // Hide explicitly hidden folders
+      
+      // If any folders are set to "show", only show those folders
+      const hasShowFilters = Array.from(activeFolderFilters.values()).includes('show');
+      if (hasShowFilters) {
+        return filterState === 'show';
+      }
+      
+      // Otherwise show all non-hidden folders
+      return true;
+    }
+    
+    // For non-folder events:
+    // If any folder is set to "show", hide non-folder events
+    const hasShowFilters = Array.from(activeFolderFilters.values()).includes('show');
+    if (hasShowFilters) return false;
+    
+    // Otherwise show all non-folder events
+    return true;
+  });
 
   // Sort people if needed
   const sortedPeople = [...filteredPeople].sort((a, b) => {
@@ -106,7 +145,7 @@ function Table({
                 </small>
               )}
             </th>
-            {events.filter(folder => folder.isFolder).map(folder => (
+            {filteredEvents.filter(folder => folder.isFolder).map(folder => (
               <th 
                 key={folder.id} 
                 colSpan={folder.isOpen ? folder.events.length : 1} 
@@ -124,7 +163,7 @@ function Table({
               </th>
             ))}
             {/* Non-folder events */}
-            {events.filter(folder => !folder.isFolder).flatMap(folder => 
+            {filteredEvents.filter(folder => !folder.isFolder).flatMap(folder => 
               folder.events.map(event => (
                 <th 
                   key={event.id} 
@@ -164,7 +203,7 @@ function Table({
           </tr>
           {/* Second header row for folder events */}
           <tr>
-            {events.filter(folder => folder.isFolder).flatMap(folder => 
+            {filteredEvents.filter(folder => folder.isFolder).flatMap(folder => 
               folder.isOpen ? folder.events.map(event => (
                 <th 
                   key={event.id} 
@@ -195,7 +234,7 @@ function Table({
                 {person.name}
               </td>
               {/* Render cells for each event */}
-              {events.map(folder => 
+              {filteredEvents.map(folder => 
                 folder.isFolder ? (
                   folder.isOpen ? 
                     folder.events.map(event => (
@@ -272,7 +311,8 @@ Table.propTypes = {
   onNameHeaderContextMenu: PropTypes.func.isRequired,
   settings: PropTypes.object.isRequired,
   groups: PropTypes.array.isRequired,
-  activeGroupFilters: PropTypes.instanceOf(Set).isRequired
+  activeGroupFilters: PropTypes.instanceOf(Map).isRequired,
+  activeFolderFilters: PropTypes.instanceOf(Map).isRequired
 };
 
 export default Table; 

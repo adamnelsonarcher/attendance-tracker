@@ -1,53 +1,120 @@
-import React from 'react';
+import React, { useState } from 'react';
 import './GroupFilter.css';
 
-function GroupFilter({ groups, activeFilters, onFilterChange, onClose }) {
-  const toggleGroup = (groupId) => {
-    const newFilters = new Set(activeFilters);
-    if (newFilters.has(groupId)) {
-      newFilters.delete(groupId);
+function GroupFilter({ 
+  groups, 
+  folders, 
+  activeGroupFilters, 
+  activeFolderFilters,
+  onGroupFilterChange, 
+  onFolderFilterChange,
+  onClose 
+}) {
+  const [activeTab, setActiveTab] = useState('people'); // 'people' or 'events'
+
+  const toggleFilter = (id, currentFilters, onFilterChange) => {
+    const newFilters = new Map(currentFilters);
+    const currentState = currentFilters.get(id);
+    
+    if (!currentState) {
+      newFilters.set(id, 'show'); // First click: show
+    } else if (currentState === 'show') {
+      newFilters.set(id, 'hide'); // Second click: hide
     } else {
-      newFilters.add(groupId);
+      newFilters.delete(id); // Third click: default behavior
     }
+    
     onFilterChange(newFilters);
   };
 
-  const selectAll = () => {
-    onFilterChange(new Set(groups.map(group => group.id)));
+  const getFilterIcon = (id, filters) => {
+    const state = filters.get(id);
+    if (state === 'show') return <span className="filter-icon show">+</span>;
+    if (state === 'hide') return <span className="filter-icon hide">−</span>;
+    return <span className="filter-icon neutral"></span>;
   };
 
-  const clearAll = () => {
-    onFilterChange(new Set());
+  const selectAll = (items, onFilterChange) => {
+    const newFilters = new Map();
+    items.forEach(item => newFilters.set(item.id, 'show'));
+    onFilterChange(newFilters);
+  };
+
+  const clearAll = (onFilterChange) => {
+    onFilterChange(new Map());
   };
 
   return (
     <div className="group-filter-dropdown">
       <div className="group-filter-header">
-        <span>Filter by Groups</span>
+        <span>Filters</span>
         <button className="close-button" onClick={onClose}>×</button>
       </div>
-      
-      <div className="group-filter-actions">
-        <button onClick={selectAll}>Select All</button>
-        <button onClick={clearAll}>Clear All</button>
+
+      <div className="filter-tabs">
+        <button 
+          className={`tab-button ${activeTab === 'people' ? 'active' : ''}`}
+          onClick={() => setActiveTab('people')}
+        >
+          People
+        </button>
+        <button 
+          className={`tab-button ${activeTab === 'events' ? 'active' : ''}`}
+          onClick={() => setActiveTab('events')}
+        >
+          Events
+        </button>
       </div>
       
-      <div className="group-filter-list">
-        {groups.map(group => (
-          <label key={group.id} className="group-filter-item">
-            <input
-              type="checkbox"
-              checked={activeFilters.has(group.id)}
-              onChange={() => toggleGroup(group.id)}
-            />
-            <span 
-              className="group-color-dot"
-              style={{ backgroundColor: group.color }}
-            ></span>
-            <span className="group-name">{group.name}</span>
-          </label>
-        ))}
-      </div>
+      {activeTab === 'people' && (
+        <div className="filter-section">
+          <div className="group-filter-actions">
+            <button onClick={() => selectAll(groups, onGroupFilterChange)}>
+              Select All
+            </button>
+            <button onClick={() => clearAll(onGroupFilterChange)}>
+              Clear All
+            </button>
+          </div>
+          <div className="group-filter-list">
+            {groups.map(group => (
+              <div key={group.id} className="group-filter-item" onClick={() => toggleFilter(group.id, activeGroupFilters, onGroupFilterChange)}>
+                <span className="filter-state-icon">
+                  {getFilterIcon(group.id, activeGroupFilters)}
+                </span>
+                <span 
+                  className="group-color-dot"
+                  style={{ backgroundColor: group.color }}
+                ></span>
+                <span className="group-name">{group.name}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {activeTab === 'events' && (
+        <div className="filter-section">
+          <div className="group-filter-actions">
+            <button onClick={() => selectAll(folders, onFolderFilterChange)}>
+              Select All
+            </button>
+            <button onClick={() => clearAll(onFolderFilterChange)}>
+              Clear All
+            </button>
+          </div>
+          <div className="group-filter-list">
+            {folders.map(folder => (
+              <div key={folder.id} className="group-filter-item" onClick={() => toggleFilter(folder.id, activeFolderFilters, onFolderFilterChange)}>
+                <span className="filter-state-icon">
+                  {getFilterIcon(folder.id, activeFolderFilters)}
+                </span>
+                <span className="folder-name">{folder.name}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
