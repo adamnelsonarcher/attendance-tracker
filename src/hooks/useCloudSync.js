@@ -25,20 +25,23 @@ export function useCloudSync(tableCode, cloudSync, {
     const loadInitialData = async () => {
       const data = await getTableData(tableCode);
       if (data) {
-        setPeople(data.people);
-        setEvents(data.events);
-        setAttendance(data.attendance);
-        setGroups(data.groups);
-        setSettings(data.settings);
+        console.log('Initial load of data:', data);
+        setPeople(data.people || []);
+        setEvents(data.events || []);
+        setAttendance(data.attendance || {});
+        setGroups(data.groups || []);
+        setSettings({
+          ...settings,
+          ...data.settings,
+          cloudSync: true
+        });
         
-        // Add 3 second delay before setting lastSyncedData
-        setTimeout(() => {
-          lastSyncedData.current = {
-            ...data,
-            lastUpdated: new Date().toISOString()
-          };
-          onSyncStatusChange('saved');
-        }, 200);
+        // Set lastSyncedData immediately to prevent unwanted sync
+        lastSyncedData.current = {
+          ...data,
+          lastUpdated: new Date().toISOString()
+        };
+        onSyncStatusChange('saved');
       }
       initialLoadDone.current = true;
     };
@@ -46,24 +49,7 @@ export function useCloudSync(tableCode, cloudSync, {
     loadInitialData();
   }, [cloudSync, tableCode]);
 
-  // Subscribe to remote changes
-  useEffect(() => {
-    if (!cloudSync || !tableCode) return;
-
-    const unsubscribe = subscribeToTable(tableCode, (data) => {
-      if (!data) return;
-      
-      setPeople(data.people);
-      setEvents(data.events);
-      setAttendance(data.attendance);
-      setGroups(data.groups);
-      setSettings(data.settings);
-    });
-
-    return () => unsubscribe();
-  }, [cloudSync, tableCode]);
-
-  // Debounced sync to cloud
+  // Only sync TO cloud, don't subscribe to changes
   useEffect(() => {
     if (!cloudSync || !tableCode) return;
 
