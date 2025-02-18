@@ -26,12 +26,21 @@ export function usePeople() {
   };
 
   const updatePeopleGroups = (groups) => {
-    setPeople(prev => prev.map(person => ({
-      ...person,
-      groups: groups
+    setPeople(prev => prev.map(person => {
+      // Find all groups this person belongs to
+      const personGroups = groups
         .filter(group => group.memberIds.includes(person.id))
-        .map(group => ({ id: group.id, color: group.color }))
-    })));
+        .map(group => ({
+          id: group.id,
+          color: group.color,
+          name: group.name // Adding name for sorting purposes
+        }));
+
+      return {
+        ...person,
+        groups: personGroups
+      };
+    }));
   };
 
   return [people, handleAddPerson, updatePeopleGroups];

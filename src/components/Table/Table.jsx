@@ -17,11 +17,9 @@ function Table({
   getStatusPriority,
   onNameHeaderContextMenu,
   settings,
-  groups
+  groups,
+  activeGroupFilters
 }) {
-  const [activeGroupFilters, setActiveGroupFilters] = useState(new Set());
-  const [showGroupFilter, setShowGroupFilter] = useState(false);
-
   const attendanceStatus = ['Present', 'Absent', 'Late', 'DNA'];
 
   // Filter people based on active group filters
@@ -192,8 +190,8 @@ function Table({
               <td 
                 className="name-column"
                 style={{
-                  '--group-color': person.groups?.length > 0 ? person.groups[0].color : 'transparent',
-                  paddingLeft: person.groups?.length > 0 ? '12px' : '5px'
+                  borderLeft: person.groups?.length > 0 ? `4px solid ${person.groups[0].color}` : 'none',
+                  paddingLeft: person.groups?.length > 0 ? '8px' : '12px'
                 }}
               >
                 {person.name}
