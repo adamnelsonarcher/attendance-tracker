@@ -1,11 +1,50 @@
 import { useState } from 'react';
 
-const defaultEvents = [{
-  id: 'no-folder',
-  events: []
-}];
+const showcaseEvents = [
+  {
+    id: 'weekly',
+    name: 'Weekly Events',
+    isFolder: true,
+    isOpen: true,
+    events: [
+      { id: 'e1', name: 'Team Meeting', weight: 1, startDate: '2024-01-01' },
+      { id: 'e2', name: 'Code Review', weight: 1, startDate: '2024-01-08' },
+      { id: 'e3', name: 'Sprint Planning', weight: 2, startDate: '2024-01-15' },
+      { id: 'e4', name: 'Retrospective', weight: 1, startDate: '2024-01-22' },
+      { id: 'e5', name: 'Tech Talk', weight: 1, startDate: '2024-01-29' }
+    ]
+  },
+  {
+    id: 'monthly',
+    name: 'Monthly Events',
+    isFolder: true,
+    isOpen: true,
+    events: [
+      { id: 'e6', name: 'All Hands', weight: 2, startDate: '2024-01-05' },
+      { id: 'e7', name: 'Department Sync', weight: 1, startDate: '2024-02-05' },
+      { id: 'e8', name: 'Training Day', weight: 3, startDate: '2024-03-05' },
+      { id: 'e9', name: 'Strategy Meeting', weight: 2, startDate: '2024-04-05' },
+      { id: 'e10', name: 'Quarterly Review', weight: 3, startDate: '2024-05-05' }
+    ]
+  },
+  {
+    id: 'special',
+    name: 'Special Events',
+    isFolder: true,
+    isOpen: true,
+    events: [
+      { id: 'e11', name: 'Conference', weight: 3, startDate: '2024-02-15' },
+      { id: 'e12', name: 'Hackathon', weight: 2, startDate: '2024-03-20' },
+      { id: 'e13', name: 'Team Building', weight: 1, startDate: '2024-04-10' },
+      { id: 'e14', name: 'Workshop', weight: 2, startDate: '2024-05-15' },
+      { id: 'e15', name: 'Year End Party', weight: 1, startDate: '2024-12-20' }
+    ]
+  }
+];
 
-export function useEvents(initialEvents = defaultEvents) {
+const emptyEvents = [];
+
+export function useEvents(initialEvents = showcaseEvents) {
   const [events, setEvents] = useState(initialEvents);
 
   const sortEventsByDate = (events) => {
@@ -97,8 +136,10 @@ export function useEvents(initialEvents = defaultEvents) {
   };
 
   const resetEvents = () => {
-    setEvents(defaultEvents);
+    setEvents(emptyEvents);
   };
 
   return [events, handleAddEvent, handleRemoveEvent, handleMoveEvent, toggleFolder, handleRenameEvent, resetEvents];
-} 
+}
+
+export { showcaseEvents }; 

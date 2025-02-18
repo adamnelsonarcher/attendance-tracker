@@ -33,7 +33,12 @@ function App() {
   const [attendance, handleAttendanceChange, resetAttendance] = useAttendance();
   const [sorting, handleSort, getStatusPriority] = useSort();
   const calculateScores = useCalculateScores(events, attendance, settings);
-  const [groups, setGroups] = useState([]);
+  const [groups, setGroups] = useState([
+    { id: 'dev', name: 'Developers', color: '#FF6B6B', memberIds: ['p1', 'p2', 'p3', 'p9', 'p11', 'p14', 'p17', 'p20'] },
+    { id: 'design', name: 'Designers', color: '#4ECDC4', memberIds: ['p4', 'p5', 'p10', 'p12', 'p15', 'p18'] },
+    { id: 'qa', name: 'QA Team', color: '#45B7D1', memberIds: ['p6', 'p7', 'p8', 'p13', 'p16', 'p19'] },
+    { id: 'leads', name: 'Team Leads', color: '#96CEB4', memberIds: ['p1', 'p4', 'p6'] }
+  ]);
 
   const handleEventHeaderClick = (eventId, type = 'event', scoreType = null) => {
     if (type === 'score') {
