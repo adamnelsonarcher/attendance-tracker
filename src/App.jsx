@@ -21,7 +21,8 @@ function App() {
   const [settings, setSettings] = useState({
     lateCredit: 0.5,
     onlyCountAbsent: true,
-    colorCodeAttendance: true
+    colorCodeAttendance: true,
+    hideTitle: true
   });
   const [contextMenu, setContextMenu] = useState(null);
   
@@ -65,7 +66,7 @@ function App() {
         onGroupsClick={() => setShowGroups(true)}
       />
 
-      <h1>Attendance Tracker</h1>
+      {!settings.hideTitle && <h1>Attendance Tracker</h1>}
 
       <Table 
         people={people}

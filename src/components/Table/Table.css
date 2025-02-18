@@ -19,7 +19,7 @@ body {
   position: relative;
   overflow: auto;
   max-width: 100%;
-  max-height: calc(100vh - 200px); /* Adjust based on your header/controls height */
+  max-height: calc(100vh - 140px); /* Adjust based on your header/controls height */
   border: 1px solid #ddd;
 }
 

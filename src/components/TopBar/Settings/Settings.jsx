@@ -2,10 +2,21 @@ import React, { useState } from 'react';
 import './Settings.css';
 
 function Settings({ settings, onSave, onClose }) {
-  const [formData, setFormData] = useState({ ...settings });
+  const [localSettings, setLocalSettings] = useState({
+    ...settings,
+    hideTitle: settings.hideTitle || false
+  });
 
   const calculateLateExample = (credit) => {
     return `(${(credit * 100).toFixed(0)}%)`;
+  };
+
+  const handleChange = (e) => {
+    const { name, value, type, checked } = e.target;
+    setLocalSettings(prev => ({
+      ...prev,
+      [name]: type === 'checkbox' ? checked : value
+    }));
   };
 
   return (
@@ -14,61 +25,59 @@ function Settings({ settings, onSave, onClose }) {
         <h2>Settings</h2>
         <form onSubmit={(e) => {
           e.preventDefault();
-          onSave(formData);
+          onSave(localSettings);
           onClose();
         }}>
-          <div className="form-group">
-            <div className="setting-row">
-              <label>Late Credit:</label>
-              <div className="setting-input">
+          <div className="settings-list">
+            <label className="setting-row">
+              <input
+                type="checkbox"
+                name="hideTitle"
+                checked={localSettings.hideTitle}
+                onChange={handleChange}
+              />
+              <span>Hide Title</span>
+            </label>
+
+            <label className="setting-row">
+              <input
+                type="checkbox"
+                name="onlyCountAbsent"
+                checked={localSettings.onlyCountAbsent}
+                onChange={handleChange}
+              />
+              <span>Treat 'not selected' events as N/A</span>
+            </label>
+
+            <label className="setting-row">
+              <input
+                type="checkbox"
+                name="colorCodeAttendance"
+                checked={localSettings.colorCodeAttendance}
+                onChange={handleChange}
+              />
+              <span>Color-code attendance status</span>
+            </label>
+
+            <div className="setting-row late-credit">
+              <label>Late Credit:
                 <input
                   type="number"
+                  name="lateCredit"
+                  value={localSettings.lateCredit}
+                  onChange={handleChange}
+                  step="0.1"
                   min="0"
                   max="1"
-                  step="0.1"
-                  value={formData.lateCredit}
-                  onChange={(e) => setFormData({
-                    ...formData,
-                    lateCredit: Number(e.target.value)
-                  })}
                 />
-                <span className="setting-example">
-                  {calculateLateExample(formData.lateCredit)}
+                <span className="late-example">
+                  {calculateLateExample(localSettings.lateCredit)}
                 </span>
-              </div>
+              </label>
             </div>
           </div>
-          <div className="form-group">
-            <div className="setting-row">
-              <label>Treat 'not selected' events as N/A</label>
-              <div className="setting-input">
-                <input
-                  type="checkbox"
-                  checked={formData.onlyCountAbsent}
-                  onChange={(e) => setFormData({
-                    ...formData,
-                    onlyCountAbsent: e.target.checked
-                  })}
-                />
-              </div>
-            </div>
-          </div>
-          <div className="form-group">
-            <div className="setting-row">
-              <label>Color-code attendance status</label>
-              <div className="setting-input">
-                <input
-                  type="checkbox"
-                  checked={formData.colorCodeAttendance}
-                  onChange={(e) => setFormData({
-                    ...formData,
-                    colorCodeAttendance: e.target.checked
-                  })}
-                />
-              </div>
-            </div>
-          </div>
-          <div className="button-group">
+
+          <div className="modal-actions">
             <button type="submit">Save</button>
             <button type="button" onClick={onClose}>Cancel</button>
           </div>
