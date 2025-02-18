@@ -38,34 +38,16 @@ function Settings({ settings, onSave, onClose, onResetData, loadTableData }) {
       return;
     }
 
-    if (formData.cloudSync) {
-      const success = await loadTableData(joinCode.toUpperCase());
-      if (!success) {
-        setError('Could not find table with that code');
-        return;
-      }
+    // Verify the table exists first
+    const success = await loadTableData(joinCode.toUpperCase());
+    if (!success) {
+      setError('Could not find table with that code');
+      return;
     }
 
-    // Clear all localStorage data
-    localStorage.clear();
-    
-    // Set the new table code
+    // Set the new table code and refresh the page
     localStorage.setItem('tableCode', joinCode.toUpperCase());
-    setFormData(prev => ({
-      lateCredit: 0.5,
-      onlyCountAbsent: true,
-      colorCodeAttendance: true,
-      hideTitle: true,
-      showHoverHighlight: true,
-      enableStickyColumns: true,
-      cloudSync: prev.cloudSync,
-      tableCode: joinCode.toUpperCase(),
-      isNewTable: false
-    }));
-    
-    onResetData();
-    setShowJoinInput(false);
-    setError('');
+    window.location.reload();
   };
 
   const handleCreateNewTable = () => {
