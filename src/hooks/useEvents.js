@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 const showcaseEvents = [
   {
@@ -45,7 +45,17 @@ const showcaseEvents = [
 const emptyEvents = [];
 
 export function useEvents(initialEvents = showcaseEvents) {
-  const [events, setEvents] = useState(initialEvents);
+  const [events, setEvents] = useState(() => {
+    const stored = localStorage.getItem('events');
+    if (stored) return JSON.parse(stored);
+    
+    localStorage.setItem('events', JSON.stringify(initialEvents));
+    return initialEvents;
+  });
+
+  useEffect(() => {
+    localStorage.setItem('events', JSON.stringify(events));
+  }, [events]);
 
   const sortEventsByDate = (events) => {
     return [...events].sort((a, b) => {
@@ -156,7 +166,8 @@ export function useEvents(initialEvents = showcaseEvents) {
   };
 
   const resetEvents = () => {
-    setEvents(emptyEvents);
+    localStorage.removeItem('events');
+    setEvents([]);
   };
 
   return [events, handleAddEvent, handleRemoveEvent, handleMoveEvent, toggleFolder, handleRenameEvent, resetEvents];

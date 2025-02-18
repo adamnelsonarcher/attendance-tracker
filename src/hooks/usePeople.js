@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 const showcasePeople = [
   { id: 'p1', name: 'John Smith', groups: [
@@ -31,7 +31,17 @@ const showcasePeople = [
 const emptyPeople = [];
 
 export function usePeople(initialPeople = showcasePeople) {
-  const [people, setPeople] = useState(initialPeople);
+  const [people, setPeople] = useState(() => {
+    const stored = localStorage.getItem('people');
+    if (stored) return JSON.parse(stored);
+    
+    localStorage.setItem('people', JSON.stringify(initialPeople));
+    return initialPeople;
+  });
+
+  useEffect(() => {
+    localStorage.setItem('people', JSON.stringify(people));
+  }, [people]);
 
   const handleAddPerson = (newPeople) => {
     setPeople(prev => [...prev, ...newPeople.map(p => ({ ...p, groups: [] }))]);
@@ -47,7 +57,8 @@ export function usePeople(initialPeople = showcasePeople) {
   };
 
   const resetPeople = () => {
-    setPeople(emptyPeople);
+    localStorage.removeItem('people');
+    setPeople([]);
   };
 
   return [people, handleAddPerson, updatePeopleGroups, resetPeople];

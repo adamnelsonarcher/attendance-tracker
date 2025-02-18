@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 const showcaseAttendance = {
   // Team Meeting attendance
@@ -23,7 +23,17 @@ const showcaseAttendance = {
 };
 
 export function useAttendance(initialAttendance = showcaseAttendance) {
-  const [attendance, setAttendance] = useState(initialAttendance);
+  const [attendance, setAttendance] = useState(() => {
+    const stored = localStorage.getItem('attendance');
+    if (stored) return JSON.parse(stored);
+    
+    localStorage.setItem('attendance', JSON.stringify(initialAttendance));
+    return initialAttendance;
+  });
+
+  useEffect(() => {
+    localStorage.setItem('attendance', JSON.stringify(attendance));
+  }, [attendance]);
 
   const handleAttendanceChange = (personId, eventId, status) => {
     setAttendance(prev => ({
@@ -33,6 +43,7 @@ export function useAttendance(initialAttendance = showcaseAttendance) {
   };
 
   const resetAttendance = () => {
+    localStorage.removeItem('attendance');
     setAttendance({});
   };
 
