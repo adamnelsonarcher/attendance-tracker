@@ -284,4 +284,34 @@ thead th.score-column::before {
 
 .score-column.sortable-header:hover {
   background-color: #e4e4e4;
+}
+
+.table-controls {
+  margin-bottom: 8px;
+}
+
+.filter-container {
+  position: relative;
+}
+
+.group-filter-button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  border: 1px solid #ddd;
+  background-color: white;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background-color 0.2s;
+}
+
+.group-filter-button:hover {
+  background-color: #f8f8f8;
+}
+
+.group-filter-button img {
+  width: 16px;
+  height: 16px;
 } 
