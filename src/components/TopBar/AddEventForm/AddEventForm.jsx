@@ -34,6 +34,11 @@ function AddEventForm({ onAdd, onClose, folders = [] }) {
           events: [eventData]
         }
       });
+    } else if (folderId === 'no-folder') {
+      onAdd({
+        folderId: 'no-folder',
+        event: eventData
+      });
     } else {
       onAdd({
         folderId,

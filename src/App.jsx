@@ -28,9 +28,9 @@ function App() {
   });
   const [contextMenu, setContextMenu] = useState(null);
   
-  const [people, handleAddPerson, updatePeopleGroups] = usePeople();
-  const [events, handleAddEvent, handleRemoveEvent, handleMoveEvent, toggleFolder, handleRenameEvent] = useEvents();
-  const [attendance, handleAttendanceChange] = useAttendance();
+  const [people, handleAddPerson, updatePeopleGroups, resetPeople] = usePeople();
+  const [events, handleAddEvent, handleRemoveEvent, handleMoveEvent, toggleFolder, handleRenameEvent, resetEvents] = useEvents();
+  const [attendance, handleAttendanceChange, resetAttendance] = useAttendance();
   const [sorting, handleSort, getStatusPriority] = useSort();
   const calculateScores = useCalculateScores(events, attendance, settings);
   const [groups, setGroups] = useState([]);
@@ -104,20 +104,22 @@ function App() {
           onSave={setSettings}
           onClose={() => setShowSettings(false)}
           onResetData={() => {
-            handleAddPerson([]);
-            handleAddEvent([]);
-            handleAttendanceChange({});
-            setGroups([]);
-            updatePeopleGroups([]);
-            setSettings({
-              ...settings,
-              lateCredit: 0.5,
-              onlyCountAbsent: true,
-              colorCodeAttendance: true,
-              hideTitle: true,
-              showHoverHighlight: true,
-              enableStickyColumns: true
-            });
+            if (window.confirm('Are you sure? This will delete ALL data!')) {
+              resetPeople();
+              resetEvents();
+              resetAttendance();
+              setGroups([]);
+              updatePeopleGroups([]);
+              setSettings({
+                lateCredit: 0.5,
+                onlyCountAbsent: true,
+                colorCodeAttendance: true,
+                hideTitle: true,
+                showHoverHighlight: true,
+                enableStickyColumns: true
+              });
+              setShowSettings(false);
+            }
           }}
         />
       )}
