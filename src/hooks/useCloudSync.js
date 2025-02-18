@@ -17,10 +17,25 @@ export function useCloudSync(tableCode, cloudSync, {
   const lastSyncedData = useRef(null);
   const syncTimeoutRef = useRef(null);
   const initialLoadDone = useRef(false);
+  const isInitialLoad = useRef(true);
+  const isFirstRender = useRef(true);
 
   // Initial load of data
   useEffect(() => {
     if (!cloudSync || !tableCode || initialLoadDone.current) return;
+
+    // Skip the first render since App.jsx already loaded from localStorage
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      lastSyncedData.current = {
+        people,
+        events,
+        attendance,
+        groups,
+        settings
+      };
+      return;
+    }
 
     const loadInitialData = async () => {
       const data = await getTableData(tableCode);
@@ -57,7 +72,7 @@ export function useCloudSync(tableCode, cloudSync, {
           localStorage.setItem('settings', JSON.stringify(newSettings));
           setSettings(newSettings);
         }
-        
+
         lastSyncedData.current = {
           people: data.people || [],
           events: data.events || [],
@@ -67,33 +82,54 @@ export function useCloudSync(tableCode, cloudSync, {
             ...settings,
             ...data.settings,
             cloudSync: true
-          },
-          lastUpdated: new Date().toISOString()
+          }
         };
         onSyncStatusChange('saved');
       }
       initialLoadDone.current = true;
+      // Set a timeout to allow the initial load to complete before enabling change detection
+      setTimeout(() => {
+        isInitialLoad.current = false;
+      }, 1000);
     };
 
     loadInitialData();
-  }, [cloudSync, tableCode, setEvents, setPeople, setAttendance, setGroups, setSettings, settings]);
+  }, [cloudSync, tableCode]);
 
   // Only sync TO cloud, don't subscribe to changes
   useEffect(() => {
-    if (!cloudSync || !tableCode) return;
+    if (!cloudSync || !tableCode || isInitialLoad.current) return;
 
     const currentData = {
       people,
       events,
       attendance,
       groups,
-      settings,
-      lastUpdated: new Date().toISOString()
+      settings
     };
 
-    const hasChanged = JSON.stringify(currentData) !== JSON.stringify(lastSyncedData.current);
+    // Deep compare objects without timestamps
+    const compareData = (a, b) => {
+      if (!a || !b) return true;
+      return JSON.stringify({
+        people: a.people,
+        events: a.events,
+        attendance: a.attendance,
+        groups: a.groups,
+        settings: a.settings
+      }) !== JSON.stringify({
+        people: b.people,
+        events: b.events,
+        attendance: b.attendance,
+        groups: b.groups,
+        settings: b.settings
+      });
+    };
+
+    const hasChanged = compareData(currentData, lastSyncedData.current);
 
     if (hasChanged) {
+      console.log('🔄 Data changed, scheduling sync');
       onSyncStatusChange('unsaved');
       
       if (syncTimeoutRef.current) {
@@ -101,9 +137,14 @@ export function useCloudSync(tableCode, cloudSync, {
       }
 
       syncTimeoutRef.current = setTimeout(async () => {
+        console.log('⏰ Sync timeout triggered');
         onSyncStatusChange('saving');
-        await syncTable(tableCode, currentData);
-        lastSyncedData.current = currentData;
+        const dataToSync = {
+          ...currentData,
+          lastUpdated: new Date().toISOString()
+        };
+        await syncTable(tableCode, dataToSync);
+        lastSyncedData.current = dataToSync;
         onSyncStatusChange('saved');
       }, 30000);
     }
