@@ -87,6 +87,8 @@ button:hover,
 
 .modal-actions {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
+  justify-content: flex-start;
+  align-items: center;
   gap: 10px;
 } 

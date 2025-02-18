@@ -53,8 +53,10 @@ th small {
 }
 
 .name-column {
-  position: relative;
-  white-space: nowrap;
+  position: var(--sticky-position, sticky);
+  left: 0;
+  z-index: 10;
+  background-color: #fff;
 }
 
 .name-column::before {

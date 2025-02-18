@@ -64,6 +64,9 @@
   flex-direction: column;
   gap: 16px;
   margin-bottom: 24px;
+  max-height: 70vh;
+  overflow-y: auto;
+  padding-right: 16px;
 }
 
 .setting-row {
@@ -113,8 +116,13 @@
 
 .modal-actions {
   display: flex;
-  justify-content: flex-end;
+  justify-content: flex-start;
+  align-items: center;
   gap: 12px;
+  margin-top: 24px;
+  border-top: 1px solid #eee;
+  padding-top: 16px;
+  flex-wrap: nowrap;
 }
 
 .modal-actions button {
@@ -123,6 +131,7 @@
   border-radius: 4px;
   cursor: pointer;
   font-size: 14px;
+  min-width: 100px;
 }
 
 .modal-actions button[type="submit"] {
@@ -137,4 +146,84 @@
 
 .modal-actions button:hover {
   opacity: 0.9;
-} 
+}
+
+.cloud-sync-options {
+  margin-top: 10px;
+  padding: 10px;
+  background: #f5f5f5;
+  border-radius: 4px;
+}
+
+.cloud-sync-options input[type="text"] {
+  width: 120px;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  font-family: monospace;
+  text-align: center;
+}
+
+.setting-item {
+  margin: 8px 0;
+  display: flex;
+  gap: 16px;
+}
+
+.danger-zone {
+  margin: 16px 0;
+  text-align: left;
+}
+
+.reset-button {
+  background-color: #ff4444;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.cloud-sync-section {
+  margin: 16px 0;
+}
+
+.cloud-sync-section input[type="checkbox"] {
+  margin-right: 8px;
+}
+
+.code-display {
+  margin-top: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.code-input {
+  width: 120px;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  font-family: monospace;
+  text-align: center;
+  padding: 4px 8px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  background: white;
+}
+
+.use-existing-code {
+  padding: 4px 12px;
+  background: #007bff;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.use-existing-code:hover {
+  background: #0056b3;
+}
+
+.button-group {
+  display: flex;
+  gap: 12px;
+}

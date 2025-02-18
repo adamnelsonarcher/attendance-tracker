@@ -1,11 +1,32 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import './Settings.css';
+import Modal from '../../Modal/Modal';
 
 function Settings({ settings, onSave, onClose, onResetData }) {
-  const [localSettings, setLocalSettings] = useState({
+  const [formData, setFormData] = useState({
     ...settings,
-    hideTitle: settings.hideTitle || false
+    cloudSync: false,
+    tableCode: '',
+    isNewTable: true
   });
+
+  const generateTableCode = () => {
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // Removed similar-looking characters
+    let code = '';
+    for (let i = 0; i < 6; i++) {
+      code += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return code;
+  };
+
+  useEffect(() => {
+    if (formData.cloudSync && !formData.tableCode) {
+      setFormData(prev => ({
+        ...prev,
+        tableCode: generateTableCode()
+      }));
+    }
+  }, [formData.cloudSync]);
 
   const calculateLateExample = (credit) => {
     return `(${(credit * 100).toFixed(0)}%)`;
@@ -14,14 +35,14 @@ function Settings({ settings, onSave, onClose, onResetData }) {
   const handleChange = (nameOrEvent, value) => {
     if (typeof nameOrEvent === 'string') {
       // Direct value change
-      setLocalSettings(prev => ({
+      setFormData(prev => ({
         ...prev,
         [nameOrEvent]: value
       }));
     } else {
       // Event object
       const { name, value: eventValue, type, checked } = nameOrEvent.target;
-      setLocalSettings(prev => ({
+      setFormData(prev => ({
         ...prev,
         [name]: type === 'checkbox' ? checked : eventValue
       }));
@@ -29,106 +50,131 @@ function Settings({ settings, onSave, onClose, onResetData }) {
   };
 
   return (
-    <div className="modal-overlay">
-      <div className="modal-content">
-        <h2>Settings</h2>
-        <form onSubmit={(e) => {
-          e.preventDefault();
-          onSave(localSettings);
-          onClose();
-        }}>
-          <div className="settings-list">
-            <label className="setting-row">
+    <Modal title="Settings" onClose={onClose}>
+      <div className="settings-list">
+        <label className="setting-row">
+          <input
+            type="checkbox"
+            name="hideTitle"
+            checked={formData.hideTitle}
+            onChange={(e) => handleChange(e.target.name, e.target.checked)}
+          />
+          <span>Hide Title</span>
+        </label>
+
+        <label className="setting-row">
+          <input
+            type="checkbox"
+            name="onlyCountAbsent"
+            checked={formData.onlyCountAbsent}
+            onChange={(e) => handleChange(e.target.name, e.target.checked)}
+          />
+          <span>Treat 'not selected' events as N/A</span>
+        </label>
+
+        <label className="setting-row">
+          <input
+            type="checkbox"
+            name="colorCodeAttendance"
+            checked={formData.colorCodeAttendance}
+            onChange={(e) => handleChange(e.target.name, e.target.checked)}
+          />
+          <span>Color-code attendance status</span>
+        </label>
+
+        <label className="setting-row">
+          <input
+            type="checkbox"
+            name="showHoverHighlight"
+            checked={formData.showHoverHighlight}
+            onChange={(e) => handleChange(e.target.name, e.target.checked)}
+          />
+          <span>Highlight rows with mouse hover</span>
+        </label>
+
+        <label className="setting-row">
+          <input
+            type="checkbox"
+            name="enableStickyColumns"
+            checked={formData.enableStickyColumns}
+            onChange={(e) => handleChange(e.target.name, e.target.checked)}
+          />
+          <span>Sticky headers and names</span>
+        </label>
+
+        <div className="setting-row late-credit">
+          <label>Late Credit:
+            <input
+              type="number"
+              name="lateCredit"
+              value={formData.lateCredit}
+              onChange={(e) => handleChange(e.target.name, e.target.value)}
+              step="0.1"
+              min="0"
+              max="1"
+            />
+            <span className="late-example">
+              {calculateLateExample(formData.lateCredit)}
+            </span>
+          </label>
+        </div>
+
+        <div className="cloud-sync-section">
+          <div className="setting-row">
+            <label>
               <input
                 type="checkbox"
-                name="hideTitle"
-                checked={localSettings.hideTitle}
-                onChange={(e) => handleChange(e.target.name, e.target.checked)}
+                checked={formData.cloudSync}
+                onChange={(e) => setFormData({ ...formData, cloudSync: e.target.checked })}
               />
-              <span>Hide Title</span>
+              <span>Enable Cloud Sync</span>
             </label>
+          </div>
 
-            <label className="setting-row">
-              <input
-                type="checkbox"
-                name="onlyCountAbsent"
-                checked={localSettings.onlyCountAbsent}
-                onChange={(e) => handleChange(e.target.name, e.target.checked)}
-              />
-              <span>Treat 'not selected' events as N/A</span>
-            </label>
-
-            <label className="setting-row">
-              <input
-                type="checkbox"
-                name="colorCodeAttendance"
-                checked={localSettings.colorCodeAttendance}
-                onChange={(e) => handleChange(e.target.name, e.target.checked)}
-              />
-              <span>Color-code attendance status</span>
-            </label>
-
-            <label className="setting-row">
-              <input
-                type="checkbox"
-                name="showHoverHighlight"
-                checked={localSettings.showHoverHighlight}
-                onChange={(e) => handleChange(e.target.name, e.target.checked)}
-              />
-              <span>Highlight rows with mouse hover</span>
-            </label>
-
-            <label className="setting-row">
-              <input
-                type="checkbox"
-                name="enableStickyColumns"
-                checked={localSettings.enableStickyColumns}
-                onChange={(e) => handleChange(e.target.name, e.target.checked)}
-              />
-              <span>Sticky headers and names</span>
-            </label>
-
-            <div className="setting-row late-credit">
-              <label>Late Credit:
+          {formData.cloudSync && (
+            <div className="cloud-sync-options">
+              <div className="code-display">
+                <span>Table Code: </span>
                 <input
-                  type="number"
-                  name="lateCredit"
-                  value={localSettings.lateCredit}
-                  onChange={(e) => handleChange(e.target.name, e.target.value)}
-                  step="0.1"
-                  min="0"
-                  max="1"
+                  type="text"
+                  value={formData.tableCode}
+                  readOnly
+                  className="code-input"
                 />
-                <span className="late-example">
-                  {calculateLateExample(localSettings.lateCredit)}
-                </span>
-              </label>
+                <button 
+                  className="use-existing-code"
+                  onClick={() => {
+                    const code = prompt('Enter existing table code:');
+                    if (code) {
+                      setFormData(prev => ({
+                        ...prev,
+                        tableCode: code.toUpperCase()
+                      }));
+                    }
+                  }}
+                >
+                  Use Existing Code
+                </button>
+              </div>
             </div>
-          </div>
+          )}
+        </div>
 
-          <div className="modal-actions">
-            <div className="reset-section">
-              <button 
-                type="button" 
-                className="danger" 
-                onClick={() => {
-                  if (window.confirm('Are you sure? This will delete ALL data!')) {
-                    onResetData();
-                    onClose();
-                  }
-                }}
-              >
-                Reset All Data
-              </button>
-            </div>
-            <div className="button-group">
-              <button type="submit">Save</button>
-              <button type="button" onClick={onClose}>Cancel</button>
-            </div>
-          </div>
-        </form>
+        <div className="danger-zone">
+          <button onClick={onResetData} className="reset-button">
+            Reset Table Data
+          </button>
+        </div>
       </div>
-    </div>
+
+      <div className="modal-actions">
+        <button type="submit" onClick={() => {
+          onSave(formData);
+          onClose();
+        }}>Save Changes</button>
+        <button type="button" onClick={onClose}>Cancel</button>
+      </div>
+    </Modal>
   );
 }
 
