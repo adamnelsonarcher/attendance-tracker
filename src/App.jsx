@@ -36,6 +36,7 @@ function App() {
   const [groups, setGroups] = useState([]);
   const [activeGroupFilters, setActiveGroupFilters] = useState(new Map());
   const [activeFolderFilters, setActiveFolderFilters] = useState(new Map());
+  const [activeTab, setActiveTab] = useState('people');
 
   const handleEventHeaderClick = (eventId, type = 'event', scoreType = null) => {
     if (type === 'score') {
@@ -145,9 +146,25 @@ function App() {
         <Groups
           groups={groups}
           people={people}
+          events={events}
           onSave={(newGroups) => {
-            setGroups(newGroups);
-            updatePeopleGroups(newGroups);
+            if (activeTab === 'people') {
+              setGroups(newGroups);
+              updatePeopleGroups(newGroups);
+            } else {
+              const updatedEvents = events.map(event => {
+                if (!event.isFolder) return event;
+                const updatedFolder = newGroups.find(g => g.id === event.id);
+                if (!updatedFolder) return null;
+                return {
+                  ...event,
+                  name: updatedFolder.name,
+                  color: updatedFolder.color,
+                  events: updatedFolder.events
+                };
+              }).filter(Boolean);
+              handleAddEvent({ events: updatedEvents });
+            }
           }}
           onClose={() => setShowGroups(false)}
         />

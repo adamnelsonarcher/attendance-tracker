@@ -165,6 +165,11 @@
   background-color: #e3f2fd;
 }
 
+.member-item.disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 .member-checkbox {
   margin-right: 12px;
 }
@@ -178,6 +183,12 @@
 .member-name {
   flex: 1;
   font-size: 1em;
+}
+
+.folder-info {
+  font-size: 0.8em;
+  color: #666;
+  font-style: italic;
 }
 
 .checkbox-label {
