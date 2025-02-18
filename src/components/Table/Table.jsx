@@ -224,7 +224,7 @@ function Table({
           )}
         </div>
       </div>
-      <div className={`table-container ${settings.colorCodeAttendance ? 'color-coded' : ''} ${settings.onlyCountAbsent ? 'treat-select-as-dna' : ''}`}>
+      <div className={`table-container ${!settings.enableStickyColumns ? 'sticky-disabled' : ''} ${settings.colorCodeAttendance ? 'color-coded' : ''} ${settings.onlyCountAbsent ? 'treat-select-as-dna' : ''}`}>
         <table>
           <thead>
             <tr>

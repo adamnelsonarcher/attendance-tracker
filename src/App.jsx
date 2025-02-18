@@ -23,7 +23,8 @@ function App() {
     onlyCountAbsent: true,
     colorCodeAttendance: true,
     hideTitle: true,
-    showHoverHighlight: true
+    showHoverHighlight: true,
+    enableStickyColumns: true
   });
   const [contextMenu, setContextMenu] = useState(null);
   

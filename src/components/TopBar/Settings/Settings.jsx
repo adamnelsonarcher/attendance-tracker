@@ -78,6 +78,16 @@ function Settings({ settings, onSave, onClose }) {
               <span>Highlight rows with mouse hover</span>
             </label>
 
+            <label className="setting-row">
+              <input
+                type="checkbox"
+                name="enableStickyColumns"
+                checked={localSettings.enableStickyColumns}
+                onChange={(e) => handleChange(e.target.name, e.target.checked)}
+              />
+              <span>Sticky headers and names</span>
+            </label>
+
             <div className="setting-row late-credit">
               <label>Late Credit:
                 <input

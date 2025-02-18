@@ -53,7 +53,7 @@ th small {
 }
 
 .name-column {
-  position: sticky;
+  position: var(--sticky-position, sticky);
   left: 0;
   background-color: #fff;
   z-index: 10;
@@ -74,7 +74,7 @@ th small {
 }
 
 .score-column {
-  position: sticky;
+  position: var(--sticky-position, sticky);
   right: 0;
   background-color: #f8f8f8;
   z-index: 5;
@@ -117,7 +117,7 @@ th small {
 
 /* Sticky header styles */
 thead {
-  position: sticky;
+  position: var(--sticky-header-position, sticky);
   top: 0;
   z-index: 4;
   background-color: white;
@@ -175,7 +175,7 @@ tr:nth-child(odd) td:nth-last-child(2) {
 thead th.name-column {
   z-index: 11;
   background-color: white;
-  position: sticky;
+  position: var(--sticky-position, sticky);
   left: 0;
 }
 
@@ -321,4 +321,21 @@ thead th.score-column::before {
 
 .highlight-row {
   background-color: rgba(255, 255, 150, 0.2) !important;
+}
+
+/* Sticky column toggle */
+:root {
+  --sticky-position: sticky;
+  --sticky-header-position: sticky;
+}
+
+.sticky-disabled {
+  --sticky-position: static;
+  --sticky-header-position: static;
+}
+
+.sticky-disabled .name-column::after,
+.sticky-disabled .score-column::before,
+.sticky-disabled .name-column::before {
+  content: none;
 }
