@@ -11,12 +11,21 @@ function Settings({ settings, onSave, onClose }) {
     return `(${(credit * 100).toFixed(0)}%)`;
   };
 
-  const handleChange = (e) => {
-    const { name, value, type, checked } = e.target;
-    setLocalSettings(prev => ({
-      ...prev,
-      [name]: type === 'checkbox' ? checked : value
-    }));
+  const handleChange = (nameOrEvent, value) => {
+    if (typeof nameOrEvent === 'string') {
+      // Direct value change
+      setLocalSettings(prev => ({
+        ...prev,
+        [nameOrEvent]: value
+      }));
+    } else {
+      // Event object
+      const { name, value: eventValue, type, checked } = nameOrEvent.target;
+      setLocalSettings(prev => ({
+        ...prev,
+        [name]: type === 'checkbox' ? checked : eventValue
+      }));
+    }
   };
 
   return (
@@ -34,7 +43,7 @@ function Settings({ settings, onSave, onClose }) {
                 type="checkbox"
                 name="hideTitle"
                 checked={localSettings.hideTitle}
-                onChange={handleChange}
+                onChange={(e) => handleChange(e.target.name, e.target.checked)}
               />
               <span>Hide Title</span>
             </label>
@@ -44,7 +53,7 @@ function Settings({ settings, onSave, onClose }) {
                 type="checkbox"
                 name="onlyCountAbsent"
                 checked={localSettings.onlyCountAbsent}
-                onChange={handleChange}
+                onChange={(e) => handleChange(e.target.name, e.target.checked)}
               />
               <span>Treat 'not selected' events as N/A</span>
             </label>
@@ -54,9 +63,19 @@ function Settings({ settings, onSave, onClose }) {
                 type="checkbox"
                 name="colorCodeAttendance"
                 checked={localSettings.colorCodeAttendance}
-                onChange={handleChange}
+                onChange={(e) => handleChange(e.target.name, e.target.checked)}
               />
               <span>Color-code attendance status</span>
+            </label>
+
+            <label className="setting-row">
+              <input
+                type="checkbox"
+                name="showHoverHighlight"
+                checked={localSettings.showHoverHighlight}
+                onChange={(e) => handleChange(e.target.name, e.target.checked)}
+              />
+              <span>Highlight rows with mouse hover</span>
             </label>
 
             <div className="setting-row late-credit">
@@ -65,7 +84,7 @@ function Settings({ settings, onSave, onClose }) {
                   type="number"
                   name="lateCredit"
                   value={localSettings.lateCredit}
-                  onChange={handleChange}
+                  onChange={(e) => handleChange(e.target.name, e.target.value)}
                   step="0.1"
                   min="0"
                   max="1"

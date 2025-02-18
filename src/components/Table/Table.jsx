@@ -25,6 +25,7 @@ function Table({
   const [activeGroupFilters, setActiveGroupFilters] = useState({});
   const [showGroupFilter, setShowGroupFilter] = useState(false);
   const [eventContextMenu, setEventContextMenu] = useState(null);
+  const [hoveredCell, setHoveredCell] = useState({ row: null, col: null });
 
   const attendanceStatus = ['Present', 'Absent', 'Late', 'DNA'];
 
@@ -141,6 +142,10 @@ function Table({
       eventId,
       currentFolderId
     });
+  };
+
+  const handleCellHover = (rowIndex, colIndex) => {
+    setHoveredCell({ row: rowIndex, col: colIndex });
   };
 
   return (
@@ -295,11 +300,20 @@ function Table({
                 {/* Render cells for each event */}
                 {filteredEvents
                   .filter(folder => !folder.hidden)
-                  .map(folder => 
+                  .map((folder, folderIndex) => 
                     folder.isFolder ? (
                       folder.isOpen ? 
-                        folder.events.map(event => (
-                          <td key={event.id}>
+                        folder.events.map((event, eventIndex) => (
+                          <td 
+                            key={event.id}
+                            className={`attendance-cell ${
+                              settings.showHoverHighlight && hoveredCell.row === person.id ? 'highlight-row' : ''
+                            } ${
+                              settings.showHoverHighlight && hoveredCell.col === `${folderIndex}-${eventIndex}` ? 'highlight-column' : ''
+                            }`}
+                            onMouseEnter={() => settings.showHoverHighlight && setHoveredCell({ row: person.id, col: `${folderIndex}-${eventIndex}` })}
+                            onMouseLeave={() => settings.showHoverHighlight && setHoveredCell({ row: null, col: null })}
+                          >
                             <select
                               value={attendance[`${person.id}-${event.id}`] || 'Select'}
                               onChange={(e) => onAttendanceChange(person.id, event.id, e.target.value)}
@@ -315,8 +329,17 @@ function Table({
                         ))
                         : <td key={folder.id} className="collapsed-folder"></td>
                     ) : (
-                      folder.events.map(event => (
-                        <td key={event.id}>
+                      folder.events.map((event, eventIndex) => (
+                        <td 
+                          key={event.id}
+                          className={`attendance-cell ${
+                            settings.showHoverHighlight && hoveredCell.row === person.id ? 'highlight-row' : ''
+                          } ${
+                            settings.showHoverHighlight && hoveredCell.col === `${folderIndex}-${eventIndex}` ? 'highlight-column' : ''
+                          }`}
+                          onMouseEnter={() => settings.showHoverHighlight && setHoveredCell({ row: person.id, col: `${folderIndex}-${eventIndex}` })}
+                          onMouseLeave={() => settings.showHoverHighlight && setHoveredCell({ row: null, col: null })}
+                        >
                           <select
                             value={attendance[`${person.id}-${event.id}`] || 'Select'}
                             onChange={(e) => onAttendanceChange(person.id, event.id, e.target.value)}

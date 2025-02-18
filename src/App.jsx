@@ -22,7 +22,8 @@ function App() {
     lateCredit: 0.5,
     onlyCountAbsent: true,
     colorCodeAttendance: true,
-    hideTitle: true
+    hideTitle: true,
+    showHoverHighlight: true
   });
   const [contextMenu, setContextMenu] = useState(null);
   
