@@ -163,7 +163,28 @@ function Table({
 
   const handleSetAll = (status) => {
     const eventId = eventContextMenu.eventId;
-    people.forEach(person => {
+    // Use filteredPeople instead of all people
+    const visiblePeople = Object.keys(activeGroupFilters).length > 0
+      ? people.filter(person => {
+          const activeFilters = Object.entries(activeGroupFilters);
+          
+          if (activeFilters.length > 0) {
+            const hasAnyPositiveFilter = activeFilters.some(([_, state]) => state === 1);
+            
+            if (hasAnyPositiveFilter) {
+              const hasPositiveMatch = person.groups.some(g => activeGroupFilters[g.id] === 1);
+              if (!hasPositiveMatch) return false;
+            }
+            
+            const hasNegativeMatch = person.groups.some(g => activeGroupFilters[g.id] === -1);
+            if (hasNegativeMatch) return false;
+          }
+          
+          return true;
+        })
+      : people;
+
+    visiblePeople.forEach(person => {
       const key = `${person.id}-${eventId}`;
       if (status === 'reset') {
         onAttendanceChange(person.id, eventId, 'Select');
