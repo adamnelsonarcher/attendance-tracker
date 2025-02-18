@@ -20,7 +20,8 @@ function Table({
   settings,
   groups,
   onMoveEvent,
-  onRemoveEvent
+  onRemoveEvent,
+  onRenameEvent
 }) {
   const [activeGroupFilters, setActiveGroupFilters] = useState({});
   const [activeFolderFilters, setActiveFolderFilters] = useState({});
@@ -430,7 +431,7 @@ function Table({
           <EventContextMenu
             x={eventContextMenu.x}
             y={eventContextMenu.y}
-            folders={events.filter(f => f.isFolder)}
+            folders={events.filter(e => e.isFolder)}
             onMove={(toFolderId) => {
               onMoveEvent(eventContextMenu.eventId, eventContextMenu.currentFolderId, toFolderId);
               setEventContextMenu(null);
@@ -439,7 +440,14 @@ function Table({
               onRemoveEvent(eventContextMenu.currentFolderId, eventContextMenu.eventId);
               setEventContextMenu(null);
             }}
-            onSetAll={handleSetAll}
+            onRename={(newName) => {
+              onRenameEvent(eventContextMenu.currentFolderId, eventContextMenu.eventId, newName);
+              setEventContextMenu(null);
+            }}
+            onSetAll={(status) => {
+              handleSetAll(status);
+              setEventContextMenu(null);
+            }}
             onClose={() => setEventContextMenu(null)}
           />
         )}

@@ -89,4 +89,31 @@
   right: 0;
   bottom: 0;
   z-index: 999;
+}
+
+.rename-container {
+  display: flex;
+  padding: 5px;
+  gap: 5px;
+}
+
+.rename-container input {
+  flex: 1;
+  min-width: 100px;
+  padding: 2px 5px;
+  border: 1px solid #ccc;
+  border-radius: 3px;
+}
+
+.rename-container button {
+  padding: 2px 8px;
+  cursor: pointer;
+  background: #4CAF50;
+  color: white;
+  border: none;
+  border-radius: 3px;
+}
+
+.rename-container button:hover {
+  background: #45a049;
 } 

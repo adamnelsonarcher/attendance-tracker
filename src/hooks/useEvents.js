@@ -110,5 +110,19 @@ export function useEvents() {
     ));
   };
 
-  return [events, handleAddEvent, handleRemoveEvent, handleMoveEvent, toggleFolder];
+  const handleRenameEvent = (folderId, eventId, newName) => {
+    setEvents(prev => prev.map(folder => {
+      if (folder.id === folderId) {
+        return {
+          ...folder,
+          events: folder.events.map(event => 
+            event.id === eventId ? { ...event, name: newName } : event
+          )
+        };
+      }
+      return folder;
+    }));
+  };
+
+  return [events, handleAddEvent, handleRemoveEvent, handleMoveEvent, toggleFolder, handleRenameEvent];
 } 

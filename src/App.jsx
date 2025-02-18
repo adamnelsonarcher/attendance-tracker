@@ -28,7 +28,7 @@ function App() {
   const [contextMenu, setContextMenu] = useState(null);
   
   const [people, handleAddPerson, updatePeopleGroups] = usePeople();
-  const [events, handleAddEvent, handleRemoveEvent, handleMoveEvent, toggleFolder] = useEvents();
+  const [events, handleAddEvent, handleRemoveEvent, handleMoveEvent, toggleFolder, handleRenameEvent] = useEvents();
   const [attendance, handleAttendanceChange] = useAttendance();
   const [sorting, handleSort, getStatusPriority] = useSort();
   const calculateScores = useCalculateScores(events, attendance, settings);
@@ -85,6 +85,7 @@ function App() {
         groups={groups}
         onMoveEvent={handleMoveEvent}
         onRemoveEvent={handleRemoveEvent}
+        onRenameEvent={handleRenameEvent}
       />
 
       {contextMenu && (

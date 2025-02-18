@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
 import './EventContextMenu.css';
 
-function EventContextMenu({ x, y, onMove, onRemove, onClose, folders, onSetAll }) {
+function EventContextMenu({ x, y, onMove, onRemove, onClose, folders, onSetAll, onRename }) {
   const [showFolders, setShowFolders] = useState(false);
   const [showSetAll, setShowSetAll] = useState(false);
+  const [isRenaming, setIsRenaming] = useState(false);
+  const [newName, setNewName] = useState('');
 
   const menuStyle = {
     position: 'fixed',
@@ -16,6 +18,43 @@ function EventContextMenu({ x, y, onMove, onRemove, onClose, folders, onSetAll }
     <>
       <div className="context-menu-overlay" onClick={onClose}></div>
       <div className="context-menu" style={menuStyle}>
+        {isRenaming ? (
+          <div className="context-menu-item rename-container">
+            <input
+              type="text"
+              value={newName}
+              onChange={(e) => setNewName(e.target.value)}
+              autoFocus
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && newName.trim()) {
+                  onRename(newName.trim());
+                  onClose();
+                }
+                if (e.key === 'Escape') {
+                  setIsRenaming(false);
+                }
+              }}
+              onClick={(e) => e.stopPropagation()}
+            />
+            <button 
+              onClick={() => {
+                if (newName.trim()) {
+                  onRename(newName.trim());
+                  onClose();
+                }
+              }}
+            >
+              ✓
+            </button>
+          </div>
+        ) : (
+          <button 
+            className="context-menu-item"
+            onClick={() => setIsRenaming(true)}
+          >
+            Rename
+          </button>
+        )}
         <div 
           className="context-menu-item has-submenu"
           onMouseEnter={() => {
