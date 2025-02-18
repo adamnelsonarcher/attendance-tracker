@@ -53,24 +53,37 @@ th small {
 }
 
 .name-column {
-  position: var(--sticky-position, sticky);
-  left: 0;
-  background-color: #fff;
-  z-index: 10;
-  width: 200px;
-  min-width: 200px;
-  max-width: 200px;
+  position: relative;
+  white-space: nowrap;
 }
 
-/* Update the pseudo-element to use the CSS variable */
 .name-column::before {
   content: '';
   position: absolute;
   left: 0;
   top: 0;
   bottom: 0;
-  width: 5px;
-  background-color: var(--group-color);
+  width: 100%;
+  background: var(--group-bars);
+}
+
+/* Container for multiple group bars */
+.name-column::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  display: flex;
+  gap: 1px;  /* Space between bars */
+}
+
+/* Individual group bars */
+.name-column[style*="--group-colors"]::before {
+  width: calc(4px * var(--group-count));  /* Total width based on number of groups */
+  background-image: var(--group-colors);
+  background-size: 4px 100%;  /* Each bar width */
+  background-repeat: repeat-x;
 }
 
 .score-column {

@@ -354,10 +354,16 @@ function Table({
                 <td 
                   className="name-column"
                   style={{
-                    '--group-color': person.groups?.length > 0 ? person.groups[0].color : 'transparent',
-                    paddingLeft: person.groups?.length > 0 ? '12px' : '5px'
+                    '--group-bars': person.groups?.length > 0 
+                      ? person.groups.map((g, i) => 
+                          `linear-gradient(${g.color}, ${g.color}) ${i * 5}px 0 / 4px 100% no-repeat`
+                        ).join(', ')
+                      : 'none',
+                    paddingLeft: person.groups?.length > 0 ? (5 * person.groups.length + 8) + 'px' : '5px'
                   }}
-                  title={person.groups?.length > 0 ? `Group: ${groups.find(g => g.id === person.groups[0].id)?.name}` : ''}
+                  title={person.groups?.length > 0 
+                    ? `Groups: ${person.groups.map(g => groups.find(group => group.id === g.id)?.name).join(', ')}` 
+                    : ''}
                 >
                   {person.name}
                 </td>
