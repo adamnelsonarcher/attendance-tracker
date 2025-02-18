@@ -3,30 +3,103 @@ import './Settings.css';
 import Modal from '../../Modal/Modal';
 
 function Settings({ settings, onSave, onClose, onResetData }) {
-  const [formData, setFormData] = useState({
-    ...settings,
-    cloudSync: false,
-    tableCode: '',
-    isNewTable: true
+  const [formData, setFormData] = useState(() => {
+    const storedCode = localStorage.getItem('tableCode');
+    return {
+      ...settings,
+      cloudSync: false,
+      tableCode: storedCode || '',
+      isNewTable: !storedCode
+    };
   });
 
+  const [joinCode, setJoinCode] = useState('');
+  const [showJoinInput, setShowJoinInput] = useState(false);
+  const [error, setError] = useState('');
+
   const generateTableCode = () => {
-    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // Removed similar-looking characters
-    let code = '';
-    for (let i = 0; i < 6; i++) {
-      code += chars.charAt(Math.floor(Math.random() * chars.length));
-    }
-    return code;
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+    return Array.from({ length: 6 }, 
+      () => chars.charAt(Math.floor(Math.random() * chars.length))
+    ).join('');
   };
 
   useEffect(() => {
     if (formData.cloudSync && !formData.tableCode) {
+      const newCode = generateTableCode();
       setFormData(prev => ({
         ...prev,
-        tableCode: generateTableCode()
+        tableCode: newCode
       }));
+      localStorage.setItem('tableCode', newCode);
     }
   }, [formData.cloudSync]);
+
+  const handleJoinTable = () => {
+    if (joinCode.length !== 6) {
+      setError('Table code must be 6 characters');
+      return;
+    }
+
+    if (formData.tableCode && 
+        !window.confirm('Joining a new table will remove all locally stored data. To get back to your existing table, you will need your existing code: ' + formData.tableCode + '. Continue?')) {
+      return;
+    }
+
+    // Clear all localStorage data
+    localStorage.clear();
+    
+    // Set the new table code
+    localStorage.setItem('tableCode', joinCode.toUpperCase());
+    setFormData(prev => ({
+      lateCredit: 0.5,
+      onlyCountAbsent: true,
+      colorCodeAttendance: true,
+      hideTitle: true,
+      showHoverHighlight: true,
+      enableStickyColumns: true,
+      cloudSync: prev.cloudSync,
+      tableCode: joinCode.toUpperCase(),
+      isNewTable: false
+    }));
+    
+    // Call parent reset functions
+    onResetData();
+    setShowJoinInput(false);
+    setError('');
+  };
+
+  const handleCreateNewTable = () => {
+    if (formData.tableCode && 
+        !window.confirm('Creating a new table will remove all locally stored data. To get back to your old table, you need your existing code. Continue?')) {
+      return;
+    }
+
+    // Generate new table code
+    const newCode = generateTableCode();
+    
+    // Clear all localStorage data
+    localStorage.clear();
+    
+    // Set only the new table code
+    localStorage.setItem('tableCode', newCode);
+    
+    // Reset form data to defaults
+    setFormData(prev => ({
+      lateCredit: 0.5,
+      onlyCountAbsent: true,
+      colorCodeAttendance: true,
+      hideTitle: true,
+      showHoverHighlight: true,
+      enableStickyColumns: true,
+      cloudSync: prev.cloudSync,
+      tableCode: newCode,
+      isNewTable: true
+    }));
+
+    // Call parent reset functions
+    onResetData();
+  };
 
   const calculateLateExample = (credit) => {
     return `(${(credit * 100).toFixed(0)}%)`;
@@ -119,46 +192,60 @@ function Settings({ settings, onSave, onClose, onResetData }) {
           </label>
         </div>
 
-        <div className="cloud-sync-section">
-          <div className="setting-row">
-            <label>
-              <input
-                type="checkbox"
-                checked={formData.cloudSync}
-                onChange={(e) => setFormData({ ...formData, cloudSync: e.target.checked })}
-              />
-              <span>Enable Cloud Sync</span>
-            </label>
-          </div>
+        <label className="setting-row">
+          <input
+            type="checkbox"
+            name="cloudSync"
+            checked={formData.cloudSync}
+            onChange={(e) => handleChange(e.target.name, e.target.checked)}
+          />
+          <span>Enable Cloud Sync</span>
+        </label>
 
-          {formData.cloudSync && (
-            <div className="cloud-sync-options">
-              <div className="code-display">
-                <span>Table Code: </span>
-                <input
-                  type="text"
-                  value={formData.tableCode}
-                  readOnly
-                  className="code-input"
-                />
-                <button 
-                  className="use-existing-code"
-                  onClick={() => {
-                    const code = prompt('Enter existing table code:');
-                    if (code) {
-                      setFormData(prev => ({
-                        ...prev,
-                        tableCode: code.toUpperCase()
-                      }));
-                    }
-                  }}
-                >
-                  Use Existing Code
+        {formData.cloudSync && (
+          <div className="setting-section cloud-sync-section">
+            <h3>Table Management</h3>
+            <div className="current-table">
+              {formData.tableCode && (
+                <p>Current Table Code: {formData.tableCode}</p>
+              )}
+              <div className="button-group">
+                <button onClick={handleCreateNewTable}>
+                  {formData.tableCode ? 'Create New Table' : 'Generate Table Code'}
+                </button>
+                <button onClick={() => setShowJoinInput(true)}>
+                  Join Existing Table
                 </button>
               </div>
             </div>
-          )}
-        </div>
+
+            {showJoinInput && (
+              <div className="join-table">
+                <input
+                  type="text"
+                  value={joinCode}
+                  onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
+                  placeholder="Enter 6-digit code"
+                  maxLength={6}
+                  className="code-input"
+                />
+                <button onClick={handleJoinTable} className="use-existing-code">
+                  Join
+                </button>
+                <button 
+                  onClick={() => {
+                    setShowJoinInput(false);
+                    setJoinCode('');
+                    setError('');
+                  }}
+                >
+                  Cancel
+                </button>
+              </div>
+            )}
+            {error && <p className="error">{error}</p>}
+          </div>
+        )}
 
         <div className="danger-zone">
           <button onClick={onResetData} className="reset-button">

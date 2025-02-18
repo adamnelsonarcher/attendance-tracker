@@ -120,7 +120,7 @@ function App() {
           onSave={setSettings}
           onClose={() => setShowSettings(false)}
           onResetData={() => {
-            if (window.confirm('Are you sure? This will delete ALL data!')) {
+            if (window.confirm('Are you sure? This will clear ALL local data.')) {
               resetPeople();
               resetEvents();
               resetAttendance();

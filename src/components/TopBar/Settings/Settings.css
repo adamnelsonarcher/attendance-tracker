@@ -184,46 +184,59 @@
 }
 
 .cloud-sync-section {
-  margin: 16px 0;
+  margin-top: 16px;
+  padding: 16px;
+  background: #f8f9fa;
+  border: 1px solid #dee2e6;
+  border-radius: 4px;
+  text-align: left;
 }
 
-.cloud-sync-section input[type="checkbox"] {
-  margin-right: 8px;
+.cloud-sync-section h3 {
+  margin: 0 0 12px 0;
+  font-size: 1rem;
+  color: #495057;
 }
 
-.code-display {
-  margin-top: 12px;
+.current-table {
   display: flex;
-  align-items: center;
+  flex-direction: column;
   gap: 8px;
+  align-items: flex-start;
 }
 
-.code-input {
-  width: 120px;
-  text-transform: uppercase;
-  letter-spacing: 2px;
+.current-table p {
+  margin: 0;
   font-family: monospace;
-  text-align: center;
-  padding: 4px 8px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  background: white;
-}
-
-.use-existing-code {
-  padding: 4px 12px;
-  background: #007bff;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-}
-
-.use-existing-code:hover {
-  background: #0056b3;
+  font-size: 1.1rem;
+  color: #495057;
 }
 
 .button-group {
   display: flex;
-  gap: 12px;
+  gap: 8px;
+}
+
+.join-table {
+  margin-top: 12px;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.code-input {
+  width: 100px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  font-family: monospace;
+  text-align: center;
+  padding: 4px 8px;
+  border: 1px solid #ced4da;
+  border-radius: 4px;
+}
+
+.error {
+  color: #dc3545;
+  margin: 8px 0 0 0;
+  font-size: 0.9rem;
 }
