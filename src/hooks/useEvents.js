@@ -63,16 +63,19 @@ export function useEvents(initialEvents = showcaseEvents) {
       return;
     }
     
-    setEvents(prev => prev.map(folder => {
-      if (folder.id === folderId) {
-        const newEvents = sortEventsByDate([...folder.events, event]);
-        return {
-          ...folder,
-          events: newEvents
-        };
-      }
-      return folder;
-    }));
+    if (folderId === 'no-folder') {
+      setEvents(prev => [...prev, { ...event, isFolder: false }]);
+    } else {
+      setEvents(prev => prev.map(folder => {
+        if (folder.id === folderId) {
+          return {
+            ...folder,
+            events: sortEventsByDate([...folder.events, event])
+          };
+        }
+        return folder;
+      }));
+    }
   };
 
   const handleRemoveEvent = (folderId, eventId) => {
@@ -89,29 +92,46 @@ export function useEvents(initialEvents = showcaseEvents) {
 
   const handleMoveEvent = (eventId, fromFolderId, toFolderId) => {
     setEvents(prev => {
-      // Find the event to move
-      const fromFolder = prev.find(f => f.id === fromFolderId);
-      const eventToMove = fromFolder?.events.find(e => e.id === eventId);
+      let eventToMove;
+      
+      if (fromFolderId) {
+        // Event is in a folder
+        const fromFolder = prev.find(f => f.id === fromFolderId);
+        eventToMove = fromFolder?.events.find(e => e.id === eventId);
+      } else {
+        // Event is not in a folder
+        eventToMove = prev.find(e => !e.isFolder && e.id === eventId);
+      }
       
       if (!eventToMove) return prev;
 
-      return prev.map(folder => {
-        if (folder.id === fromFolderId) {
-          // Remove from old folder
-          return {
-            ...folder,
-            events: folder.events.filter(e => e.id !== eventId)
-          };
-        }
-        if (folder.id === toFolderId) {
-          // Add to new folder
-          return {
-            ...folder,
-            events: [...folder.events, eventToMove]
-          };
-        }
-        return folder;
-      });
+      // Remove the event from its current location
+      const filteredEvents = fromFolderId 
+        ? prev.map(folder => {
+            if (folder.id === fromFolderId) {
+              return {
+                ...folder,
+                events: folder.events.filter(e => e.id !== eventId)
+              };
+            }
+            return folder;
+          })
+        : prev.filter(e => e.isFolder || e.id !== eventId);
+
+      // Add to new location
+      if (toFolderId === 'no-folder') {
+        return [...filteredEvents, { ...eventToMove, isFolder: false }];
+      } else {
+        return filteredEvents.map(folder => {
+          if (folder.id === toFolderId) {
+            return {
+              ...folder,
+              events: sortEventsByDate([...folder.events, eventToMove])
+            };
+          }
+          return folder;
+        });
+      }
     });
   };
 

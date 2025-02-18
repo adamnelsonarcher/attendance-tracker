@@ -270,31 +270,29 @@ function Table({
                   ) : null
                 ))}
               {/* Non-folder events */}
-              {events.filter(folder => !folder.isFolder).flatMap(folder => 
-                folder.events.map(event => (
-                  <th 
-                    key={event.id} 
-                    rowSpan="2" 
-                    className="event-column sortable-header"
-                    onClick={() => onEventHeaderClick(event.id)}
-                    onContextMenu={(e) => handleEventContextMenu(e, event.id, folder.id)}
-                  >
-                    {event.name}
-                    <br />
-                    <small>
-                      {event.startDate && (
-                        <>
-                          {new Date(event.startDate).toLocaleDateString()}
-                          {event.endDate && ` - ${new Date(event.endDate).toLocaleDateString()}`}
-                          <br />
-                        </>
-                      )}
-                      (Weight: {event.weight})
-                      {sorting.type === 'event' && sorting.eventId === event.id && ' ↓'}
-                    </small>
-                  </th>
-                ))
-              )}
+              {events.filter(event => !event.isFolder).map((event, eventIndex) => (
+                <th 
+                  key={event.id} 
+                  rowSpan="2" 
+                  className="event-column sortable-header"
+                  onClick={() => onEventHeaderClick(event.id)}
+                  onContextMenu={(e) => handleEventContextMenu(e, event.id, null)}
+                >
+                  {event.name}
+                  <br />
+                  <small>
+                    {event.startDate && (
+                      <>
+                        {new Date(event.startDate).toLocaleDateString()}
+                        {event.endDate && ` - ${new Date(event.endDate).toLocaleDateString()}`}
+                        <br />
+                      </>
+                    )}
+                    (Weight: {event.weight})
+                    {sorting.type === 'event' && sorting.eventId === event.id && ' ↓'}
+                  </small>
+                </th>
+              ))}
               <th 
                 rowSpan="2" 
                 className="score-column sortable-header"
@@ -320,10 +318,10 @@ function Table({
             <tr>
               {filteredEvents
                 .filter(folder => !folder.hidden)
-                .map(folder => (
+                .map((folder, folderIndex) => 
                   folder.isFolder ? (
                     folder.isOpen ? 
-                      folder.events.map(event => (
+                      folder.events.map((event, eventIndex) => (
                         <th 
                           key={event.id} 
                           className="event-column sortable-header"
@@ -347,7 +345,7 @@ function Table({
                       ))
                       : [<th key={folder.id} className="collapsed-folder"></th>]
                   ) : null
-                ))}
+                )}
             </tr>
           </thead>
           <tbody>
@@ -377,8 +375,8 @@ function Table({
                             } ${
                               settings.showHoverHighlight && hoveredCell.col === `${folderIndex}-${eventIndex}` ? 'highlight-column' : ''
                             }`}
-                            onMouseEnter={() => settings.showHoverHighlight && setHoveredCell({ row: person.id, col: `${folderIndex}-${eventIndex}` })}
-                            onMouseLeave={() => settings.showHoverHighlight && setHoveredCell({ row: null, col: null })}
+                            onMouseEnter={() => settings.showHoverHighlight && handleCellHover(person.id, `${folderIndex}-${eventIndex}`)}
+                            onMouseLeave={() => settings.showHoverHighlight && handleCellHover(null, null)}
                           >
                             <select
                               value={attendance[`${person.id}-${event.id}`] || 'Select'}
@@ -394,33 +392,33 @@ function Table({
                           </td>
                         ))
                         : <td key={folder.id} className="collapsed-folder"></td>
-                    ) : (
-                      folder.events.map((event, eventIndex) => (
-                        <td 
-                          key={event.id}
-                          className={`attendance-cell ${
-                            settings.showHoverHighlight && hoveredCell.row === person.id ? 'highlight-row' : ''
-                          } ${
-                            settings.showHoverHighlight && hoveredCell.col === `${folderIndex}-${eventIndex}` ? 'highlight-column' : ''
-                          }`}
-                          onMouseEnter={() => settings.showHoverHighlight && setHoveredCell({ row: person.id, col: `${folderIndex}-${eventIndex}` })}
-                          onMouseLeave={() => settings.showHoverHighlight && setHoveredCell({ row: null, col: null })}
-                        >
-                          <select
-                            value={attendance[`${person.id}-${event.id}`] || 'Select'}
-                            onChange={(e) => onAttendanceChange(person.id, event.id, e.target.value)}
-                            data-status={attendance[`${person.id}-${event.id}`] || 'Select'}
-                          >
-                            <option value="Select"></option>
-                            <option value="Present">Present</option>
-                            <option value="Absent">Absent</option>
-                            <option value="Late">Late</option>
-                            <option value="DNA">DNA</option>
-                          </select>
-                        </td>
-                      ))
-                    )
+                    ) : null
                   )}
+                {/* Non-folder events */}
+                {events.filter(event => !event.isFolder).map((event, eventIndex) => (
+                  <td 
+                    key={event.id}
+                    className={`attendance-cell ${
+                      settings.showHoverHighlight && hoveredCell.row === person.id ? 'highlight-row' : ''
+                    } ${
+                      settings.showHoverHighlight && hoveredCell.col === `no-folder-${eventIndex}` ? 'highlight-column' : ''
+                    }`}
+                    onMouseEnter={() => settings.showHoverHighlight && handleCellHover(person.id, `no-folder-${eventIndex}`)}
+                    onMouseLeave={() => settings.showHoverHighlight && handleCellHover(null, null)}
+                  >
+                    <select
+                      value={attendance[`${person.id}-${event.id}`] || 'Select'}
+                      onChange={(e) => onAttendanceChange(person.id, event.id, e.target.value)}
+                      data-status={attendance[`${person.id}-${event.id}`] || 'Select'}
+                    >
+                      <option value="Select"></option>
+                      <option value="Present">Present</option>
+                      <option value="Absent">Absent</option>
+                      <option value="Late">Late</option>
+                      <option value="DNA">N/A</option>
+                    </select>
+                  </td>
+                ))}
                 <td className="score-column">{calculateScores(person.id).raw}%</td>
                 <td className="score-column">{calculateScores(person.id).weighted}%</td>
               </tr>

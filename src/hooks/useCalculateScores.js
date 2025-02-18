@@ -8,7 +8,7 @@ export function useCalculateScores(events, attendance, settings) {
     let weightedDenominator = 0;
 
     // Get all events from all folders and non-folders
-    const flatEvents = events.flatMap(group => group.events);
+    const flatEvents = events.flatMap(item => item.isFolder ? item.events : [item]);
 
     flatEvents.forEach(event => {
       const status = attendance[`${personId}-${event.id}`];
