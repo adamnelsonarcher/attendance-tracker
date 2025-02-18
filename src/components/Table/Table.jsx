@@ -161,6 +161,18 @@ function Table({
     });
   };
 
+  const handleSetAll = (status) => {
+    const eventId = eventContextMenu.eventId;
+    people.forEach(person => {
+      const key = `${person.id}-${eventId}`;
+      if (status === 'reset') {
+        onAttendanceChange(person.id, eventId, 'Select');
+      } else if (!attendance[key] || attendance[key] === 'Select') {
+        onAttendanceChange(person.id, eventId, status);
+      }
+    });
+  };
+
   const handleCellHover = (rowIndex, colIndex) => {
     setHoveredCell({ row: rowIndex, col: colIndex });
   };
@@ -405,6 +417,7 @@ function Table({
               onRemoveEvent(eventContextMenu.currentFolderId, eventContextMenu.eventId);
               setEventContextMenu(null);
             }}
+            onSetAll={handleSetAll}
             onClose={() => setEventContextMenu(null)}
           />
         )}

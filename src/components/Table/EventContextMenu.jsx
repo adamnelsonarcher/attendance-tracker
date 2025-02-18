@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import './EventContextMenu.css';
 
-function EventContextMenu({ x, y, onMove, onRemove, onClose, folders }) {
+function EventContextMenu({ x, y, onMove, onRemove, onClose, folders, onSetAll }) {
   const [showFolders, setShowFolders] = useState(false);
+  const [showSetAll, setShowSetAll] = useState(false);
 
   const menuStyle = {
     position: 'fixed',
@@ -17,7 +18,10 @@ function EventContextMenu({ x, y, onMove, onRemove, onClose, folders }) {
       <div className="context-menu" style={menuStyle}>
         <div 
           className="context-menu-item has-submenu"
-          onMouseEnter={() => setShowFolders(true)}
+          onMouseEnter={() => {
+            setShowFolders(true);
+            setShowSetAll(false);
+          }}
           onMouseLeave={() => setShowFolders(false)}
         >
           <span>Move to folder</span>
@@ -43,6 +47,56 @@ function EventContextMenu({ x, y, onMove, onRemove, onClose, folders }) {
                 }}
               >
                 No Folder
+              </button>
+            </div>
+          )}
+        </div>
+        <div 
+          className="context-menu-item has-submenu"
+          onMouseEnter={() => {
+            setShowSetAll(true);
+            setShowFolders(false);
+          }}
+          onMouseLeave={() => setShowSetAll(false)}
+        >
+          <span>Set all</span>
+          {showSetAll && (
+            <div className="submenu">
+              <button 
+                className="context-menu-item"
+                onClick={() => {
+                  onSetAll('Absent');
+                  onClose();
+                }}
+              >
+                unselected to absent
+              </button>
+              <button 
+                className="context-menu-item"
+                onClick={() => {
+                  onSetAll('Present');
+                  onClose();
+                }}
+              >
+                unselected to present
+              </button>
+              <button 
+                className="context-menu-item"
+                onClick={() => {
+                  onSetAll('Late');
+                  onClose();
+                }}
+              >
+                unselected to late
+              </button>
+              <button 
+                className="context-menu-item"
+                onClick={() => {
+                  onSetAll('reset');
+                  onClose();
+                }}
+              >
+                Reset all in this column
               </button>
             </div>
           )}

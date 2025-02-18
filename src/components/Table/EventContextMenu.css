@@ -59,11 +59,12 @@
   border: 1px solid #ddd;
   border-radius: 4px;
   box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-  width: 150px;
+  width: 200px;
   padding: 4px 0;
 }
 
 .submenu .context-menu-item {
+  width: 200px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
