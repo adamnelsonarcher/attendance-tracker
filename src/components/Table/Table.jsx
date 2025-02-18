@@ -358,6 +358,7 @@ function Table({
                     '--group-color': person.groups?.length > 0 ? person.groups[0].color : 'transparent',
                     paddingLeft: person.groups?.length > 0 ? '12px' : '5px'
                   }}
+                  title={person.groups?.length > 0 ? `Group: ${groups.find(g => g.id === person.groups[0].id)?.name}` : ''}
                 >
                   {person.name}
                 </td>
