@@ -1,8 +1,7 @@
-import React, { useState } from 'react';
+import React from 'react';
 import './Table.css';
 import EventFolder from './EventFolder/EventFolder';
-import GroupFilter from './GroupFilter/GroupFilter';
-import filterIcon from '../../assets/icons/filter.png';
+import PropTypes from 'prop-types';
 
 function Table({ 
   people, 
@@ -72,7 +71,6 @@ function Table({
   });
 
   const handleNameHeaderClick = (e) => {
-    // Don't trigger the sort if clicking within the filter dropdown
     if (e.target.closest('.group-filter-dropdown') || e.target.closest('.group-filter-button')) {
       return;
     }
@@ -243,5 +241,38 @@ function Table({
     </div>
   );
 }
+
+Table.propTypes = {
+  people: PropTypes.arrayOf(
+    PropTypes.shape({
+      id: PropTypes.string.isRequired,
+      name: PropTypes.string.isRequired,
+      groups: PropTypes.arrayOf(
+        PropTypes.shape({
+          id: PropTypes.string.isRequired,
+          color: PropTypes.string.isRequired
+        })
+      ).isRequired
+    })
+  ).isRequired,
+  events: PropTypes.array.isRequired,
+  attendance: PropTypes.object.isRequired,
+  onAttendanceChange: PropTypes.func.isRequired,
+  calculateScores: PropTypes.func.isRequired,
+  sorting: PropTypes.shape({
+    type: PropTypes.string.isRequired,
+    direction: PropTypes.string,
+    eventId: PropTypes.string,
+    scoreType: PropTypes.string
+  }).isRequired,
+  onEventHeaderClick: PropTypes.func.isRequired,
+  onNameHeaderClick: PropTypes.func.isRequired,
+  onFolderClick: PropTypes.func.isRequired,
+  getStatusPriority: PropTypes.func.isRequired,
+  onNameHeaderContextMenu: PropTypes.func.isRequired,
+  settings: PropTypes.object.isRequired,
+  groups: PropTypes.array.isRequired,
+  activeGroupFilters: PropTypes.instanceOf(Set).isRequired
+};
 
 export default Table; 
