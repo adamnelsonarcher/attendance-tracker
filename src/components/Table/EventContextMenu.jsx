@@ -92,6 +92,15 @@ function EventContextMenu({ x, y, onMove, onRemove, onClose, folders, onSetAll }
               <button 
                 className="context-menu-item"
                 onClick={() => {
+                  onSetAll('DNA');
+                  onClose();
+                }}
+              >
+                unselected to N/A
+              </button>
+              <button 
+                className="context-menu-item"
+                onClick={() => {
                   onSetAll('reset');
                   onClose();
                 }}
