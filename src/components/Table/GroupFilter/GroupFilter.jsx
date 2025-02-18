@@ -2,13 +2,24 @@ import React from 'react';
 import './GroupFilter.css';
 
 function GroupFilter({ groups, activeFilters, onFilterChange, onClose }) {
+  // Convert activeFilters Set to an object with states: 1 (plus), -1 (minus), 0 (empty)
   const toggleGroup = (groupId) => {
-    const newFilters = new Set(activeFilters);
-    if (newFilters.has(groupId)) {
-      newFilters.delete(groupId);
-    } else {
-      newFilters.add(groupId);
+    const currentState = activeFilters[groupId] || 0;
+    const newFilters = { ...activeFilters };
+    
+    // Cycle through states: 0 -> 1 -> -1 -> 0
+    switch (currentState) {
+      case 0:
+        newFilters[groupId] = 1; // plus
+        break;
+      case 1:
+        newFilters[groupId] = -1; // minus
+        break;
+      case -1:
+        delete newFilters[groupId]; // empty (default)
+        break;
     }
+    
     onFilterChange(newFilters);
   };
 
@@ -17,7 +28,7 @@ function GroupFilter({ groups, activeFilters, onFilterChange, onClose }) {
   };
 
   const clearAll = () => {
-    onFilterChange(new Set());
+    onFilterChange({});
   };
 
   return (
@@ -35,11 +46,12 @@ function GroupFilter({ groups, activeFilters, onFilterChange, onClose }) {
       <div className="group-filter-list">
         {groups.map(group => (
           <label key={group.id} className="group-filter-item">
-            <input
-              type="checkbox"
-              checked={activeFilters.has(group.id)}
-              onChange={() => toggleGroup(group.id)}
-            />
+            <button
+              className={`filter-state-button ${activeFilters[group.id] === 1 ? 'plus' : activeFilters[group.id] === -1 ? 'minus' : ''}`}
+              onClick={() => toggleGroup(group.id)}
+            >
+              {activeFilters[group.id] === 1 ? '+' : activeFilters[group.id] === -1 ? '−' : ''}
+            </button>
             <span 
               className="group-color-dot"
               style={{ backgroundColor: group.color }}

@@ -22,17 +22,31 @@ function Table({
   onMoveEvent,
   onRemoveEvent
 }) {
-  const [activeGroupFilters, setActiveGroupFilters] = useState(new Set());
+  const [activeGroupFilters, setActiveGroupFilters] = useState({});
   const [showGroupFilter, setShowGroupFilter] = useState(false);
   const [eventContextMenu, setEventContextMenu] = useState(null);
 
   const attendanceStatus = ['Present', 'Absent', 'Late', 'DNA'];
 
   // Filter people based on active group filters
-  const filteredPeople = activeGroupFilters.size > 0
-    ? people.filter(person => 
-        person.groups.some(group => activeGroupFilters.has(group.id))
-      )
+  const filteredPeople = Object.keys(activeGroupFilters).length > 0
+    ? people.filter(person => {
+        const hasPositiveFilter = Object.entries(activeGroupFilters).some(
+          ([groupId, state]) => state === 1 && person.groups.some(g => g.id === groupId)
+        );
+        
+        // If there are any positive filters and this person doesn't match them, exclude
+        if (Object.values(activeGroupFilters).includes(1) && !hasPositiveFilter) {
+          return false;
+        }
+        
+        // Check if person has any groups that are explicitly excluded
+        const hasNegativeMatch = person.groups.some(
+          g => activeGroupFilters[g.id] === -1
+        );
+        
+        return !hasNegativeMatch;
+      })
     : people;
 
   // Sort people if needed
