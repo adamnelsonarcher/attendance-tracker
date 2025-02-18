@@ -2,42 +2,37 @@ import { useState, useEffect } from 'react';
 
 const showcaseEvents = [
   {
-    id: 'weekly',
-    name: 'Weekly Events',
+    id: 'f1',
+    name: 'Sprint 1',
     isFolder: true,
     isOpen: true,
     events: [
-      { id: 'e1', name: 'Team Meeting', weight: 1, startDate: '2024-01-01' },
-      { id: 'e2', name: 'Code Review', weight: 1, startDate: '2024-01-08' },
-      { id: 'e3', name: 'Sprint Planning', weight: 2, startDate: '2024-01-15' },
-      { id: 'e4', name: 'Retrospective', weight: 1, startDate: '2024-01-22' },
-      { id: 'e5', name: 'Tech Talk', weight: 1, startDate: '2024-01-29' }
+      { id: 'e1', name: 'Planning', weight: 1, startDate: '2024-01-01', endDate: '2024-01-01' },
+      { id: 'e2', name: 'Review', weight: 2, startDate: '2024-01-05', endDate: '2024-01-05' }
     ]
   },
+  // Non-folder events
+  { id: 'e3', name: 'Team Building', weight: 1, startDate: '2024-01-07', endDate: '2024-01-07', isFolder: false },
+  { id: 'e4', name: 'Training Session', weight: 2, startDate: '2024-01-10', endDate: '2024-01-10', isFolder: false },
   {
-    id: 'monthly',
-    name: 'Monthly Events',
+    id: 'f2',
+    name: 'Sprint 2',
     isFolder: true,
     isOpen: true,
     events: [
-      { id: 'e6', name: 'All Hands', weight: 2, startDate: '2024-01-05' },
-      { id: 'e7', name: 'Department Sync', weight: 1, startDate: '2024-02-05' },
-      { id: 'e8', name: 'Training Day', weight: 3, startDate: '2024-03-05' },
-      { id: 'e9', name: 'Strategy Meeting', weight: 2, startDate: '2024-04-05' },
-      { id: 'e10', name: 'Quarterly Review', weight: 3, startDate: '2024-05-05' }
+      { id: 'e5', name: 'Planning', weight: 1, startDate: '2024-01-15', endDate: '2024-01-15' },
+      { id: 'e6', name: 'Review', weight: 2, startDate: '2024-01-19', endDate: '2024-01-19' }
     ]
   },
+  { id: 'e7', name: 'Company Meeting', weight: 3, startDate: '2024-01-22', endDate: '2024-01-22', isFolder: false },
   {
-    id: 'special',
-    name: 'Special Events',
+    id: 'f3',
+    name: 'Sprint 3',
     isFolder: true,
     isOpen: true,
     events: [
-      { id: 'e11', name: 'Conference', weight: 3, startDate: '2024-02-15' },
-      { id: 'e12', name: 'Hackathon', weight: 2, startDate: '2024-03-20' },
-      { id: 'e13', name: 'Team Building', weight: 1, startDate: '2024-04-10' },
-      { id: 'e14', name: 'Workshop', weight: 2, startDate: '2024-05-15' },
-      { id: 'e15', name: 'Year End Party', weight: 1, startDate: '2024-12-20' }
+      { id: 'e8', name: 'Planning', weight: 1, startDate: '2024-01-29', endDate: '2024-01-29' },
+      { id: 'e9', name: 'Review', weight: 2, startDate: '2024-02-02', endDate: '2024-02-02' }
     ]
   }
 ];
