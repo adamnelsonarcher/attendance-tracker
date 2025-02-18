@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import './Table.css';
 import EventFolder from './EventFolder/EventFolder';
 import GroupFilter from './GroupFilter/GroupFilter';
+import EventContextMenu from './EventContextMenu';
 import filterIcon from '../../assets/icons/filter.png';
 
 function Table({ 
@@ -17,10 +18,13 @@ function Table({
   getStatusPriority,
   onNameHeaderContextMenu,
   settings,
-  groups
+  groups,
+  onMoveEvent,
+  onRemoveEvent
 }) {
   const [activeGroupFilters, setActiveGroupFilters] = useState(new Set());
   const [showGroupFilter, setShowGroupFilter] = useState(false);
+  const [eventContextMenu, setEventContextMenu] = useState(null);
 
   const attendanceStatus = ['Present', 'Absent', 'Late', 'DNA'];
 
@@ -83,6 +87,16 @@ function Table({
 
   const handleScoreHeaderClick = (scoreType) => {
     onEventHeaderClick(null, 'score', scoreType);
+  };
+
+  const handleEventContextMenu = (e, eventId, currentFolderId) => {
+    e.preventDefault();
+    setEventContextMenu({
+      x: e.clientX,
+      y: e.clientY,
+      eventId,
+      currentFolderId
+    });
   };
 
   return (
@@ -152,6 +166,7 @@ function Table({
                   rowSpan="2" 
                   className="event-column sortable-header"
                   onClick={() => onEventHeaderClick(event.id)}
+                  onContextMenu={(e) => handleEventContextMenu(e, event.id, folder.id)}
                 >
                   {event.name}
                   <br />
@@ -191,6 +206,7 @@ function Table({
                   key={event.id} 
                   className="event-column sortable-header"
                   onClick={() => onEventHeaderClick(event.id)}
+                  onContextMenu={(e) => handleEventContextMenu(e, event.id, folder.id)}
                 >
                   {event.name}
                   <br />
@@ -259,6 +275,22 @@ function Table({
           ))}
         </tbody>
       </table>
+      {eventContextMenu && (
+        <EventContextMenu
+          x={eventContextMenu.x}
+          y={eventContextMenu.y}
+          folders={events.filter(f => f.isFolder)}
+          onMove={(toFolderId) => {
+            onMoveEvent(eventContextMenu.eventId, eventContextMenu.currentFolderId, toFolderId);
+            setEventContextMenu(null);
+          }}
+          onRemove={() => {
+            onRemoveEvent(eventContextMenu.currentFolderId, eventContextMenu.eventId);
+            setEventContextMenu(null);
+          }}
+          onClose={() => setEventContextMenu(null)}
+        />
+      )}
     </div>
   );
 }

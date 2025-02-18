@@ -42,20 +42,62 @@ export function useEvents() {
       return;
     }
     
-    setEvents(prev => prev.map(folder => 
-      folder.id === folderId
-        ? { ...folder, events: [...folder.events, event] }
-        : folder
-    ));
+    setEvents(prev => prev.map(folder => {
+      if (folder.id === folderId) {
+        return {
+          ...folder,
+          events: [...folder.events, event]
+        };
+      }
+      return folder;
+    }));
+  };
+
+  const handleRemoveEvent = (folderId, eventId) => {
+    setEvents(prev => prev.map(folder => {
+      if (folder.id === folderId) {
+        return {
+          ...folder,
+          events: folder.events.filter(event => event.id !== eventId)
+        };
+      }
+      return folder;
+    }));
+  };
+
+  const handleMoveEvent = (eventId, fromFolderId, toFolderId) => {
+    setEvents(prev => {
+      // Find the event to move
+      const fromFolder = prev.find(f => f.id === fromFolderId);
+      const eventToMove = fromFolder?.events.find(e => e.id === eventId);
+      
+      if (!eventToMove) return prev;
+
+      return prev.map(folder => {
+        if (folder.id === fromFolderId) {
+          // Remove from old folder
+          return {
+            ...folder,
+            events: folder.events.filter(e => e.id !== eventId)
+          };
+        }
+        if (folder.id === toFolderId) {
+          // Add to new folder
+          return {
+            ...folder,
+            events: [...folder.events, eventToMove]
+          };
+        }
+        return folder;
+      });
+    });
   };
 
   const toggleFolder = (folderId) => {
     setEvents(prev => prev.map(folder => 
-      folder.id === folderId
-        ? { ...folder, isOpen: !folder.isOpen }
-        : folder
+      folder.id === folderId ? { ...folder, isOpen: !folder.isOpen } : folder
     ));
   };
 
-  return [events, handleAddEvent, toggleFolder];
+  return [events, handleAddEvent, handleRemoveEvent, handleMoveEvent, toggleFolder];
 } 
