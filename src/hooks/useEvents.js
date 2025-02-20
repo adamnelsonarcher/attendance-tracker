@@ -57,7 +57,11 @@ export function useEvents(initialEvents = showcaseEvents) {
       if (!a.startDate && !b.startDate) return 0;
       if (!a.startDate) return 1;
       if (!b.startDate) return -1;
-      return new Date(a.startDate) - new Date(b.startDate);
+      
+      // Create dates at noon UTC to avoid timezone issues
+      const dateA = new Date(a.startDate + 'T12:00:00Z');
+      const dateB = new Date(b.startDate + 'T12:00:00Z');
+      return dateA - dateB;
     });
   };
 

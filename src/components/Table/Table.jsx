@@ -283,8 +283,8 @@ function Table({
                   <small>
                     {event.startDate && (
                       <>
-                        {new Date(event.startDate).toLocaleDateString()}
-                        {event.endDate && ` - ${new Date(event.endDate).toLocaleDateString()}`}
+                        {new Date(event.startDate + 'T12:00:00Z').toLocaleDateString()}
+                        {event.endDate && ` - ${new Date(event.endDate + 'T12:00:00Z').toLocaleDateString()}`}
                         <br />
                       </>
                     )}
@@ -333,8 +333,8 @@ function Table({
                           <small>
                             {event.startDate && (
                               <>
-                                {new Date(event.startDate).toLocaleDateString()}
-                                {event.endDate && ` - ${new Date(event.endDate).toLocaleDateString()}`}
+                                {new Date(event.startDate + 'T12:00:00Z').toLocaleDateString()}
+                                {event.endDate && ` - ${new Date(event.endDate + 'T12:00:00Z').toLocaleDateString()}`}
                                 <br />
                               </>
                             )}
