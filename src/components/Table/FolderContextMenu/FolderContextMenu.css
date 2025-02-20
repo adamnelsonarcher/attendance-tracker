@@ -1,0 +1,63 @@
+.context-menu {
+  background-color: white;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+  padding: 4px 0;
+  width: 150px;
+  user-select: none;
+}
+
+.context-menu-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 999;
+}
+
+.context-menu-item {
+  display: block;
+  width: 150px;
+  padding: 8px 16px;
+  border: none;
+  background-color: white;
+  text-align: left;
+  font: inherit;
+  cursor: pointer;
+  margin: 0;
+  position: relative;
+  box-sizing: border-box;
+}
+
+.context-menu-item:hover {
+  background-color: #f4f4f4;
+}
+
+.rename-container {
+  display: flex;
+  padding: 5px;
+  gap: 5px;
+}
+
+.rename-container input {
+  flex: 1;
+  min-width: 100px;
+  padding: 2px 5px;
+  border: 1px solid #ccc;
+  border-radius: 3px;
+}
+
+.rename-container button {
+  padding: 2px 8px;
+  cursor: pointer;
+  background: #4CAF50;
+  color: white;
+  border: none;
+  border-radius: 3px;
+}
+
+.rename-container button:hover {
+  background: #45a049;
+} 

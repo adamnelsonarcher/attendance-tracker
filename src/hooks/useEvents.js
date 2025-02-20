@@ -212,6 +212,14 @@ export function useEvents(initialEvents = showcaseEvents) {
     }));
   };
 
+  const handleRenameFolder = (folderId, newName) => {
+    setEvents(prev => prev.map(folder => 
+      folder.id === folderId 
+        ? { ...folder, name: newName }
+        : folder
+    ));
+  };
+
   const resetEvents = () => {
     localStorage.removeItem('events');
     setEvents([]);
@@ -226,6 +234,7 @@ export function useEvents(initialEvents = showcaseEvents) {
     handleRenameEvent,
     handleEditEventDates,
     handleEditEventWeight,
+    handleRenameFolder,
     resetEvents,
     setEvents
   ];

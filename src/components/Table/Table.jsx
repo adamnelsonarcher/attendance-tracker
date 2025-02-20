@@ -3,6 +3,7 @@ import './Table.css';
 import EventFolder from './EventFolder/EventFolder';
 import GroupFilter from './GroupFilter/GroupFilter';
 import EventContextMenu from './EventContextMenu';
+import FolderContextMenu from './FolderContextMenu/FolderContextMenu';
 import filterIcon from '../../assets/icons/filter.png';
 
 function Table({ 
@@ -23,12 +24,14 @@ function Table({
   onRemoveEvent,
   onRenameEvent,
   onEditEventDates,
-  onEditEventWeight
+  onEditEventWeight,
+  onRenameFolder
 }) {
   const [activeGroupFilters, setActiveGroupFilters] = useState({});
   const [activeFolderFilters, setActiveFolderFilters] = useState({});
   const [showGroupFilter, setShowGroupFilter] = useState(false);
   const [eventContextMenu, setEventContextMenu] = useState(null);
+  const [folderContextMenu, setFolderContextMenu] = useState(null);
   const [hoveredCell, setHoveredCell] = useState({ row: null, col: null });
 
   const attendanceStatus = ['Present', 'Absent', 'Late', 'DNA'];
@@ -209,8 +212,18 @@ function Table({
     setHoveredCell({ row: rowIndex, col: colIndex });
   };
 
+  // Add folder context menu handler
+  const handleFolderContextMenu = (e, folderId) => {
+    e.preventDefault();
+    setFolderContextMenu({
+      x: e.pageX,
+      y: e.pageY,
+      folderId
+    });
+  };
+
   return (
-    <div>
+    <div className="table-wrapper">
       <div className="table-controls">
         <div className="filter-container">
           <button 
@@ -266,6 +279,7 @@ function Table({
                       key={folder.id} 
                       colSpan={folder.isOpen ? folder.events.length : 1} 
                       className="event-folder"
+                      onContextMenu={(e) => handleFolderContextMenu(e, folder.id)}
                     >
                       <div 
                         className="folder-header"
@@ -475,6 +489,17 @@ function Table({
               setEventContextMenu(null);
             }}
             onClose={() => setEventContextMenu(null)}
+          />
+        )}
+        {folderContextMenu && (
+          <FolderContextMenu
+            x={folderContextMenu.x}
+            y={folderContextMenu.y}
+            onRename={(newName) => {
+              onRenameFolder(folderContextMenu.folderId, newName);
+              setFolderContextMenu(null);
+            }}
+            onClose={() => setFolderContextMenu(null)}
           />
         )}
       </div>

@@ -45,6 +45,7 @@ function App() {
     handleRenameEvent,
     handleEditEventDates,
     handleEditEventWeight,
+    handleRenameFolder,
     resetEvents, 
     setEvents
   ] = useEvents();
@@ -163,6 +164,7 @@ function App() {
         onRenameEvent={handleRenameEvent}
         onEditEventDates={handleEditEventDates}
         onEditEventWeight={handleEditEventWeight}
+        onRenameFolder={handleRenameFolder}
       />
 
       {contextMenu && (
