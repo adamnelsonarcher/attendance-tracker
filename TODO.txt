@@ -1,5 +1,5 @@
 TODO:
- 
+
 From Beta v0.8
 Add features:
 0.8-A1. ability to edit event weights
