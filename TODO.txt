@@ -13,3 +13,4 @@ BUGS:
 0.8-B3. when you add an event with a date, it removes one day from the last day
 0.8-B4. name column gets way too wide
 0.8-B5. the plus on folder events should hide events that are not in any folder, it does not
+0.8-B6. Percentage calculation is off, sometimes showing over 100%
