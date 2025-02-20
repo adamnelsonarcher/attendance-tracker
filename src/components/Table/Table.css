@@ -57,6 +57,8 @@ th small {
   left: 0;
   z-index: 10;
   background-color: #fff;
+  width: 200px;
+  min-width: 200px;
 }
 
 .name-column::before {

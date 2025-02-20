@@ -11,5 +11,5 @@ BUGS:
 0.8-B1. events outside of folders cannot be deleted
 0.8-B2. if there is a folder and no events, it messes up the percent display
 0.8-B3. when you add an event with a date, it removes one day from the last day
-0.8-B4. names get way too wide
+0.8-B4. name column gets way too wide
 0.8-B5. the plus on folder events should hide events that are not in any folder, it does not
