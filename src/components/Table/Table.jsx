@@ -77,25 +77,33 @@ function Table({
     : people;
 
   // Filter events based on folder filters only
-  const filteredEvents = events.map(folder => {
-    if (!folder.isFolder) return folder;
+  const filteredEvents = events.map(event => {
+    if (!event.isFolder) {
+      // Handle non-folder events
+      const hasAnyPositiveFolder = Object.values(activeFolderFilters).some(state => state === 1);
+      if (hasAnyPositiveFolder) {
+        return { ...event, hidden: true };
+      }
+      return event;
+    }
     
-    const folderState = activeFolderFilters[folder.id] || 0;
+    // Handle folders
+    const folderState = activeFolderFilters[event.id] || 0;
     
     if (folderState === -1) {
-      return { ...folder, isOpen: false, hidden: true };
+      return { ...event, isOpen: false, hidden: true };
     }
 
     const hasAnyPositiveFolder = Object.values(activeFolderFilters).some(state => state === 1);
     if (hasAnyPositiveFolder) {
       return { 
-        ...folder, 
+        ...event, 
         isOpen: folderState === 1,
         hidden: folderState !== 1
       };
     }
 
-    return folder;
+    return event;
   });
 
   // Sort people if needed
@@ -270,29 +278,31 @@ function Table({
                   ) : null
                 ))}
               {/* Non-folder events */}
-              {events.filter(event => !event.isFolder).map((event, eventIndex) => (
-                <th 
-                  key={event.id} 
-                  rowSpan="2" 
-                  className="event-column sortable-header"
-                  onClick={() => onEventHeaderClick(event.id)}
-                  onContextMenu={(e) => handleEventContextMenu(e, event.id, null)}
-                >
-                  {event.name}
-                  <br />
-                  <small>
-                    {event.startDate && (
-                      <>
-                        {new Date(event.startDate + 'T12:00:00Z').toLocaleDateString()}
-                        {event.endDate && ` - ${new Date(event.endDate + 'T12:00:00Z').toLocaleDateString()}`}
-                        <br />
-                      </>
-                    )}
-                    (Weight: {event.weight})
-                    {sorting.type === 'event' && sorting.eventId === event.id && ' ↓'}
-                  </small>
-                </th>
-              ))}
+              {filteredEvents
+                .filter(event => !event.isFolder && !event.hidden)
+                .map((event, eventIndex) => (
+                  <th 
+                    key={event.id} 
+                    rowSpan="2" 
+                    className="event-column sortable-header"
+                    onClick={() => onEventHeaderClick(event.id)}
+                    onContextMenu={(e) => handleEventContextMenu(e, event.id, null)}
+                  >
+                    {event.name}
+                    <br />
+                    <small>
+                      {event.startDate && (
+                        <>
+                          {new Date(event.startDate + 'T12:00:00Z').toLocaleDateString()}
+                          {event.endDate && ` - ${new Date(event.endDate + 'T12:00:00Z').toLocaleDateString()}`}
+                          <br />
+                        </>
+                      )}
+                      (Weight: {event.weight})
+                      {sorting.type === 'event' && sorting.eventId === event.id && ' ↓'}
+                    </small>
+                  </th>
+                ))}
               <th 
                 rowSpan="2" 
                 className="score-column sortable-header"
@@ -401,30 +411,32 @@ function Table({
                     ) : null
                   )}
                 {/* Non-folder events */}
-                {events.filter(event => !event.isFolder).map((event, eventIndex) => (
-                  <td 
-                    key={event.id}
-                    className={`attendance-cell ${
-                      settings.showHoverHighlight && hoveredCell.row === person.id ? 'highlight-row' : ''
-                    } ${
-                      settings.showHoverHighlight && hoveredCell.col === `no-folder-${eventIndex}` ? 'highlight-column' : ''
-                    }`}
-                    onMouseEnter={() => settings.showHoverHighlight && handleCellHover(person.id, `no-folder-${eventIndex}`)}
-                    onMouseLeave={() => settings.showHoverHighlight && handleCellHover(null, null)}
-                  >
-                    <select
-                      value={attendance[`${person.id}-${event.id}`] || 'Select'}
-                      onChange={(e) => onAttendanceChange(person.id, event.id, e.target.value)}
-                      data-status={attendance[`${person.id}-${event.id}`] || 'Select'}
+                {filteredEvents
+                  .filter(event => !event.isFolder && !event.hidden)
+                  .map((event, eventIndex) => (
+                    <td 
+                      key={event.id}
+                      className={`attendance-cell ${
+                        settings.showHoverHighlight && hoveredCell.row === person.id ? 'highlight-row' : ''
+                      } ${
+                        settings.showHoverHighlight && hoveredCell.col === `no-folder-${eventIndex}` ? 'highlight-column' : ''
+                      }`}
+                      onMouseEnter={() => settings.showHoverHighlight && handleCellHover(person.id, `no-folder-${eventIndex}`)}
+                      onMouseLeave={() => settings.showHoverHighlight && handleCellHover(null, null)}
                     >
-                      <option value="Select"></option>
-                      <option value="Present">Present</option>
-                      <option value="Absent">Absent</option>
-                      <option value="Late">Late</option>
-                      <option value="DNA">N/A</option>
-                    </select>
-                  </td>
-                ))}
+                      <select
+                        value={attendance[`${person.id}-${event.id}`] || 'Select'}
+                        onChange={(e) => onAttendanceChange(person.id, event.id, e.target.value)}
+                        data-status={attendance[`${person.id}-${event.id}`] || 'Select'}
+                      >
+                        <option value="Select"></option>
+                        <option value="Present">Present</option>
+                        <option value="Absent">Absent</option>
+                        <option value="Late">Late</option>
+                        <option value="DNA">N/A</option>
+                      </select>
+                    </td>
+                  ))}
                 <td className="score-column">{calculateScores(person.id).raw}%</td>
                 <td className="score-column">{calculateScores(person.id).weighted}%</td>
               </tr>
