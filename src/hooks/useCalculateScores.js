@@ -9,7 +9,6 @@ export function useCalculateScores(events, attendance, settings) {
 
     const flatEvents = events.flatMap(item => item.isFolder ? item.events : [item]);
 
-    console.group(`Score Calculation for Person ${personId}`);
     
     flatEvents.forEach(event => {
       const status = attendance[`${personId}-${event.id}`];
