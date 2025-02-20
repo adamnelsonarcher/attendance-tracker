@@ -21,7 +21,9 @@ function Table({
   groups,
   onMoveEvent,
   onRemoveEvent,
-  onRenameEvent
+  onRenameEvent,
+  onEditEventDates,
+  onEditEventWeight
 }) {
   const [activeGroupFilters, setActiveGroupFilters] = useState({});
   const [activeFolderFilters, setActiveFolderFilters] = useState({});
@@ -462,6 +464,14 @@ function Table({
             }}
             onSetAll={(status) => {
               handleSetAll(status);
+              setEventContextMenu(null);
+            }}
+            onEditDates={(startDate, endDate) => {
+              onEditEventDates(eventContextMenu.currentFolderId, eventContextMenu.eventId, startDate, endDate);
+              setEventContextMenu(null);
+            }}
+            onEditWeight={(weight) => {
+              onEditEventWeight(eventContextMenu.currentFolderId, eventContextMenu.eventId, weight);
               setEventContextMenu(null);
             }}
             onClose={() => setEventContextMenu(null)}

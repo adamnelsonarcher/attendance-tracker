@@ -6,7 +6,6 @@ Add features:
 0.8-A2. ability to edit event dates
 0.8-A3. Ability to delete folders and rename folders
 
-
 BUGS:
 0.8-B1. events outside of folders cannot be deleted
 0.8-B2. if there is a folder and no events, it messes up the percent display

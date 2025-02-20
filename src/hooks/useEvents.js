@@ -174,12 +174,61 @@ export function useEvents(initialEvents = showcaseEvents) {
     }));
   };
 
+  const handleEditEventDates = (folderId, eventId, startDate, endDate) => {
+    setEvents(events.map(event => {
+      if (event.isFolder) {
+        if (event.id === folderId) {
+          return {
+            ...event,
+            events: event.events.map(e => 
+              e.id === eventId 
+                ? { ...e, startDate, endDate }
+                : e
+            )
+          };
+        }
+        return event;
+      }
+      return event.id === eventId ? { ...event, startDate, endDate } : event;
+    }));
+  };
+
+  const handleEditEventWeight = (folderId, eventId, weight) => {
+    setEvents(events.map(event => {
+      if (event.isFolder) {
+        if (event.id === folderId) {
+          return {
+            ...event,
+            events: event.events.map(e => 
+              e.id === eventId 
+                ? { ...e, weight }
+                : e
+            )
+          };
+        }
+        return event;
+      }
+      return event.id === eventId ? { ...event, weight } : event;
+    }));
+  };
+
   const resetEvents = () => {
     localStorage.removeItem('events');
     setEvents([]);
   };
 
-  return [events, handleAddEvent, handleRemoveEvent, handleMoveEvent, toggleFolder, handleRenameEvent, resetEvents];
+  return [
+    events, 
+    handleAddEvent, 
+    handleRemoveEvent, 
+    handleMoveEvent, 
+    toggleFolder, 
+    handleRenameEvent,
+    handleEditEventDates,
+    handleEditEventWeight,
+    resetEvents,
+    setEvents
+  ];
 }
 
 export { showcaseEvents }; 

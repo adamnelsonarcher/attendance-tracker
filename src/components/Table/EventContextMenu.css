@@ -116,4 +116,35 @@
 
 .rename-container button:hover {
   background: #45a049;
+}
+
+.date-container,
+.weight-container {
+  display: flex;
+  padding: 5px;
+  gap: 5px;
+}
+
+.date-container input,
+.weight-container input {
+  flex: 1;
+  min-width: 100px;
+  padding: 2px 5px;
+  border: 1px solid #ccc;
+  border-radius: 3px;
+}
+
+.date-container button,
+.weight-container button {
+  padding: 2px 8px;
+  cursor: pointer;
+  background: #4CAF50;
+  color: white;
+  border: none;
+  border-radius: 3px;
+}
+
+.date-container button:hover,
+.weight-container button:hover {
+  background: #45a049;
 } 

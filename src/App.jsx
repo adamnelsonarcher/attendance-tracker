@@ -36,7 +36,18 @@ function App() {
   const [syncStatus, setSyncStatus] = useState('saved');
   
   const [people, handleAddPerson, updatePeopleGroups, resetPeople, setPeople] = usePeople();
-  const [events, handleAddEvent, handleRemoveEvent, handleMoveEvent, toggleFolder, handleRenameEvent, resetEvents, setEvents] = useEvents();
+  const [
+    events, 
+    handleAddEvent, 
+    handleRemoveEvent, 
+    handleMoveEvent, 
+    toggleFolder, 
+    handleRenameEvent,
+    handleEditEventDates,
+    handleEditEventWeight,
+    resetEvents, 
+    setEvents
+  ] = useEvents();
   const [attendance, handleAttendanceChange, resetAttendance, setAttendance] = useAttendance();
   const [sorting, handleSort, getStatusPriority] = useSort();
   const calculateScores = useCalculateScores(events, attendance, settings);
@@ -150,6 +161,8 @@ function App() {
         onMoveEvent={handleMoveEvent}
         onRemoveEvent={handleRemoveEvent}
         onRenameEvent={handleRenameEvent}
+        onEditEventDates={handleEditEventDates}
+        onEditEventWeight={handleEditEventWeight}
       />
 
       {contextMenu && (
