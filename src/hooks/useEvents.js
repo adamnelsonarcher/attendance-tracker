@@ -84,15 +84,23 @@ export function useEvents(initialEvents = showcaseEvents) {
   };
 
   const handleRemoveEvent = (folderId, eventId) => {
-    setEvents(prev => prev.map(folder => {
-      if (folder.id === folderId) {
-        return {
-          ...folder,
-          events: folder.events.filter(event => event.id !== eventId)
-        };
+    setEvents(prev => {
+      if (folderId) {
+        // Remove event from within a folder
+        return prev.map(folder => {
+          if (folder.id === folderId) {
+            return {
+              ...folder,
+              events: folder.events.filter(event => event.id !== eventId)
+            };
+          }
+          return folder;
+        });
+      } else {
+        // Remove standalone event
+        return prev.filter(event => event.isFolder || event.id !== eventId);
       }
-      return folder;
-    }));
+    });
   };
 
   const handleMoveEvent = (eventId, fromFolderId, toFolderId) => {

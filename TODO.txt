@@ -4,6 +4,7 @@ From Beta v0.8
 Add features:
 A1. ability to edit event weights
 A2. ability to edit event dates
+A3. Ability to delete folders and rename folders
 
 
 BUGS:
