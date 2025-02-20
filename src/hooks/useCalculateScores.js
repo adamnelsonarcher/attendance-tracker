@@ -7,9 +7,10 @@ export function useCalculateScores(events, attendance, settings) {
     let weightedNumerator = 0;
     let weightedDenominator = 0;
 
-    // Get all events from all folders and non-folders
     const flatEvents = events.flatMap(item => item.isFolder ? item.events : [item]);
 
+    console.group(`Score Calculation for Person ${personId}`);
+    
     flatEvents.forEach(event => {
       const status = attendance[`${personId}-${event.id}`];
       
@@ -18,24 +19,27 @@ export function useCalculateScores(events, attendance, settings) {
       }
 
       totalEvents++;
-      weightedDenominator += event.weight;
+      weightedDenominator += Number(event.weight);
       
       if (status === 'Present') {
-        attendedEvents++;
-        weightedNumerator += event.weight;
+        attendedEvents += 1;
+        weightedNumerator += Number(event.weight);
       } else if (status === 'Late') {
-        attendedEvents += settings.lateCredit;
-        weightedNumerator += event.weight * settings.lateCredit;
+        attendedEvents += Number(settings.lateCredit);
+        weightedNumerator += Number(event.weight) * Number(settings.lateCredit);
       }
+      
     });
 
     const rawScore = totalEvents > 0 ? (attendedEvents / totalEvents) * 100 : 0;
     const weightedScore = weightedDenominator > 0 ? 
       (weightedNumerator / weightedDenominator) * 100 : 0;
 
+    console.groupEnd();
+
     return {
-      raw: rawScore.toFixed(0),
-      weighted: weightedScore.toFixed(0)
+      raw: Math.round(rawScore),
+      weighted: Math.round(weightedScore)
     };
   }, [events, attendance, settings]);
 
