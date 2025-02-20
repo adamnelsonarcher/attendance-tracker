@@ -86,16 +86,18 @@ export function useEvents(initialEvents = showcaseEvents) {
   const handleRemoveEvent = (folderId, eventId) => {
     setEvents(prev => {
       if (folderId) {
-        // Remove event from within a folder
-        return prev.map(folder => {
-          if (folder.id === folderId) {
-            return {
-              ...folder,
-              events: folder.events.filter(event => event.id !== eventId)
-            };
-          }
-          return folder;
-        });
+        // Remove event from within a folder and filter out empty folders
+        return prev
+          .map(folder => {
+            if (folder.id === folderId) {
+              return {
+                ...folder,
+                events: folder.events.filter(event => event.id !== eventId)
+              };
+            }
+            return folder;
+          })
+          .filter(folder => !folder.isFolder || folder.events.length > 0); // Remove empty folders
       } else {
         // Remove standalone event
         return prev.filter(event => event.isFolder || event.id !== eventId);
