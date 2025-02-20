@@ -1,12 +1,15 @@
 TODO:
-ability to edit event weights
-ability to edit event dates
+
+From Beta v0.8
+Add features:
+A1. ability to edit event weights
+A2. ability to edit event dates
 
 
 BUGS:
-events outside of folders cannot be deleted
-if there is a folder and no events, it messes up the percent display
-when you add an event, it removes one day from the last day
-names get way too wide
-
-the plus on folder events should hide events that are not in any folder
+B1. events outside of folders cannot be deleted
+B2. if there is a folder and no events, it messes up the percent display
+B3. when you add an event, it removes one day from the last day
+B4. names get way too wide
+B5. the plus on folder events should hide events that are not in any folder
+B6. the plus on folder events should hide events that are not in any folder, it does not.
