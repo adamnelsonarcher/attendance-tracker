@@ -22,10 +22,6 @@ function StatusManager({ statuses, onChange }) {
   };
 
   const handleDeleteStatus = (id) => {
-    if (statuses.find(s => s.id === id)?.isDefault) {
-      alert("Cannot delete default statuses");
-      return;
-    }
     onChange(statuses.filter(status => status.id !== id));
   };
 
@@ -53,9 +49,7 @@ function StatusManager({ statuses, onChange }) {
               value={status.color}
               onChange={(e) => handleStatusChange(status.id, 'color', e.target.value)}
             />
-            {!status.isDefault && (
-              <button onClick={() => handleDeleteStatus(status.id)}>Delete</button>
-            )}
+            <button onClick={() => handleDeleteStatus(status.id)}>Delete</button>
           </div>
         ))}
       </div>

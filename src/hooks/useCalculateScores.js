@@ -9,25 +9,21 @@ export function useCalculateScores(events, attendance, settings) {
 
     const flatEvents = events.flatMap(item => item.isFolder ? item.events : [item]);
 
-    
     flatEvents.forEach(event => {
       const status = attendance[`${personId}-${event.id}`];
+      const statusConfig = settings.customStatuses.find(s => s.id === status);
       
-      if (status === 'DNA' || (settings.onlyCountAbsent && !['Present', 'Absent', 'Late'].includes(status))) {
+      if (!statusConfig || statusConfig.credit === null || (settings.onlyCountAbsent && !statusConfig)) {
         return;
       }
 
       totalEvents++;
       weightedDenominator += Number(event.weight);
       
-      if (status === 'Present') {
-        attendedEvents += 1;
-        weightedNumerator += Number(event.weight);
-      } else if (status === 'Late') {
-        attendedEvents += Number(settings.lateCredit);
-        weightedNumerator += Number(event.weight) * Number(settings.lateCredit);
+      if (statusConfig) {
+        attendedEvents += Number(statusConfig.credit);
+        weightedNumerator += Number(event.weight) * Number(statusConfig.credit);
       }
-      
     });
 
     const rawScore = totalEvents > 0 ? (attendedEvents / totalEvents) * 100 : 0;
