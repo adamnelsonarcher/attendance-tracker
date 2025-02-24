@@ -1,58 +1,106 @@
 .status-manager {
-  margin: 20px 0;
-  padding: 15px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
 }
 
 .status-list {
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  margin-bottom: 15px;
+  gap: 0.5rem;
 }
 
 .status-item {
   display: flex;
-  gap: 10px;
+  flex-wrap: wrap;
   align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem;
+  border: 1px solid #ddd;
+  border-radius: 4px;
 }
 
-.status-item input[type="text"] {
-  flex: 2;
-  padding: 5px;
+.status-item > span {
+  flex: 1;
 }
 
-.status-item input[type="number"] {
-  width: 70px;
-  padding: 5px;
+.status-item.editing {
+  flex-direction: column;
+  align-items: stretch;
 }
 
-.status-item input[type="color"] {
-  width: 50px;
-  padding: 2px;
+.status-item.editing > div {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.status-item.editing .button-group {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: flex-end;
+  margin-top: 0.5rem;
+}
+
+.status-field {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.status-field label {
+  font-size: 0.9rem;
+  color: #666;
+  min-width: 80px;
+}
+
+.edit-button {
+  margin-left: auto;
+  padding: 0.25rem 0.5rem;
+  background: none;
+  border: none;
+  color: #0066cc;
+  cursor: pointer;
+}
+
+.edit-button:hover {
+  text-decoration: underline;
 }
 
 .add-status {
   display: flex;
-  gap: 10px;
-  align-items: center;
-  padding-top: 10px;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 1rem;
   border-top: 1px solid #ddd;
+  margin-top: 1rem;
 }
 
-.status-item button,
-.add-status button {
-  padding: 5px 10px;
-  background: #f44336;
-  color: white;
-  border: none;
+input[type="text"],
+input[type="number"] {
+  padding: 0.25rem;
+  border: 1px solid #ddd;
   border-radius: 4px;
+}
+
+input[type="color"] {
+  width: 50px;
+  height: 25px;
+  padding: 0;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+button {
+  padding: 0.25rem 0.5rem;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  background: white;
   cursor: pointer;
 }
 
-.add-status button {
-  background: #4CAF50;
+button:hover {
+  background: #f5f5f5;
 }
 
 input:disabled {
