@@ -38,15 +38,9 @@ export function useCloudSync(tableCode, cloudSync, {
       return;
     }
 
-    // Skip the first render since App.jsx already loaded from localStorage
+    // Set initial data on first render
     if (isFirstRender.current) {
-      console.log('First render, setting initial lastSyncedData:', {
-        people,
-        events,
-        attendance,
-        groups,
-        settings
-      });
+      console.log('First render, setting initial lastSyncedData');
       isFirstRender.current = false;
       lastSyncedData.current = {
         people,
@@ -55,7 +49,7 @@ export function useCloudSync(tableCode, cloudSync, {
         groups,
         settings
       };
-      return;
+      // Don't return here, continue to loadInitialData
     }
 
     const loadInitialData = async () => {
