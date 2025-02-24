@@ -38,7 +38,6 @@ function StatusManager({ statuses, onChange }) {
               type="text"
               value={status.name}
               onChange={(e) => handleStatusChange(status.id, 'name', e.target.value)}
-              disabled={status.isDefault}
             />
             <input
               type="number"
@@ -47,7 +46,7 @@ function StatusManager({ statuses, onChange }) {
               step="0.1"
               value={status.credit}
               onChange={(e) => handleStatusChange(status.id, 'credit', parseFloat(e.target.value))}
-              disabled={status.isDefault || status.id === 'DNA'}
+              disabled={status.id === 'DNA'}
             />
             <input
               type="color"

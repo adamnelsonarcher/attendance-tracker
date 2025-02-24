@@ -416,10 +416,9 @@ function Table({
                               data-status={attendance[`${person.id}-${event.id}`] || 'Select'}
                             >
                               <option value="Select"></option>
-                              <option value="Present">Present</option>
-                              <option value="Absent">Absent</option>
-                              <option value="Late">Late</option>
-                              <option value="DNA">N/A</option>
+                              {settings.customStatuses.map(status => (
+                                <option key={status.id} value={status.id}>{status.name}</option>
+                              ))}
                             </select>
                           </td>
                         ))
@@ -446,10 +445,9 @@ function Table({
                         data-status={attendance[`${person.id}-${event.id}`] || 'Select'}
                       >
                         <option value="Select"></option>
-                        <option value="Present">Present</option>
-                        <option value="Absent">Absent</option>
-                        <option value="Late">Late</option>
-                        <option value="DNA">N/A</option>
+                        {settings.customStatuses.map(status => (
+                          <option key={status.id} value={status.id}>{status.name}</option>
+                        ))}
                       </select>
                     </td>
                   ))}

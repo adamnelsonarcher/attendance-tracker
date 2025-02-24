@@ -5,16 +5,14 @@ import { syncTable } from '../../../services/firebase';
 import StatusManager from './StatusManager';
 
 function Settings({ settings, onSave, onClose, onResetData, loadTableData }) {
-  const [formData, setFormData] = useState(() => {
-    const storedCode = localStorage.getItem('tableCode');
-    const storedSettings = localStorage.getItem('settings');
-    const parsedSettings = storedSettings ? JSON.parse(storedSettings) : settings;
-    
-    return {
-      ...parsedSettings,
-      tableCode: storedCode || '',
-      isNewTable: !storedCode
-    };
+  const [formData, setFormData] = useState({
+    ...settings,
+    customStatuses: settings.customStatuses || [
+      { id: 'Present', name: 'Present', credit: 1, color: '#e6ffe6', isDefault: true },
+      { id: 'Absent', name: 'Absent', credit: 0, color: '#ffe6e6', isDefault: true },
+      { id: 'Late', name: 'Late', credit: 0.5, color: '#fff3e6', isDefault: true },
+      { id: 'DNA', name: 'N/A', credit: null, color: '#f2f2f2', isDefault: true }
+    ]
   });
 
   const [joinCode, setJoinCode] = useState('');
@@ -78,7 +76,13 @@ function Settings({ settings, onSave, onClose, onResetData, loadTableData }) {
       enableStickyColumns: true,
       cloudSync: prev.cloudSync,
       tableCode: newCode,
-      isNewTable: true
+      isNewTable: true,
+      customStatuses: [
+        { id: 'Present', name: 'Present', credit: 1, color: '#e6ffe6', isDefault: true },
+        { id: 'Absent', name: 'Absent', credit: 0, color: '#ffe6e6', isDefault: true },
+        { id: 'Late', name: 'Late', credit: 0.5, color: '#fff3e6', isDefault: true },
+        { id: 'DNA', name: 'N/A', credit: null, color: '#f2f2f2', isDefault: true }
+      ]
     }));
 
     // Call parent reset functions

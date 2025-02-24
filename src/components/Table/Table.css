@@ -236,26 +236,15 @@ th.collapsed-folder {
 }
 
 /* Update these styles for attendance status colors */
-.color-coded select[data-status="Present"] {
-  background-color: #e6ffe6;  /* Light green */
-}
-
-.color-coded select[data-status="Late"] {
-  background-color: #fff3e6;  /* Light orange */
-}
-
-.color-coded select[data-status="Absent"] {
-  background-color: #ffe6e6;  /* Light red */
-}
-
-.color-coded select[data-status="DNA"] {
-  background-color: #f2f2f2;  /* Light gray */
-}
-
-.color-coded.treat-select-as-dna select[data-status="Select"],
-.color-coded.treat-select-as-dna select[data-status="Select"] option {
+.color-coded select[data-status] {
   background-color: transparent;
 }
+
+.color-coded select[data-status="Select"] {
+  background-color: transparent;
+}
+
+/* The dynamic colors will be added via JavaScript */
 
 /* Add a transition for smooth color changes */
 select {

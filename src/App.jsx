@@ -14,6 +14,7 @@ import SortContextMenu from './components/Table/SortContextMenu';
 import Groups from './components/TopBar/Groups/Groups';
 import { useCloudSync } from './hooks/useCloudSync';
 import { syncTable } from './services/firebase';
+import DynamicStyles from './components/DynamicStyles';
 
 function App() {
   const [showSettings, setShowSettings] = useState(false);
@@ -29,7 +30,13 @@ function App() {
       hideTitle: true,
       showHoverHighlight: true,
       enableStickyColumns: true,
-      cloudSync: false
+      cloudSync: false,
+      customStatuses: [
+        { id: 'Present', name: 'Present', credit: 1, color: '#e6ffe6', isDefault: true },
+        { id: 'Absent', name: 'Absent', credit: 0, color: '#ffe6e6', isDefault: true },
+        { id: 'Late', name: 'Late', credit: 0.5, color: '#fff3e6', isDefault: true },
+        { id: 'DNA', name: 'N/A', credit: null, color: '#f2f2f2', isDefault: true }
+      ]
     };
   });
   const [contextMenu, setContextMenu] = useState(null);
@@ -118,6 +125,7 @@ function App() {
 
   return (
     <div className="App">
+      <DynamicStyles settings={settings} />
       <TopBar 
         onSettingsClick={() => setShowSettings(true)}
         onAddPersonClick={() => setShowAddPerson(true)}
