@@ -20,6 +20,8 @@ function Settings({ settings, onSave, onClose, onResetData, loadTableData }) {
   const [joinCode, setJoinCode] = useState('');
   const [showJoinInput, setShowJoinInput] = useState(false);
   const [error, setError] = useState('');
+  const [showStatusManager, setShowStatusManager] = useState(false);
+  const [showAttendanceOptions, setShowAttendanceOptions] = useState(false);
 
   const generateTableCode = () => {
     const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
@@ -175,21 +177,22 @@ function Settings({ settings, onSave, onClose, onResetData, loadTableData }) {
           <span>Sticky headers and names</span>
         </label>
 
-        <div className="setting-row late-credit">
-          <label>Late Credit:
-            <input
-              type="number"
-              name="lateCredit"
-              value={formData.lateCredit}
-              onChange={(e) => handleChange(e.target.name, e.target.value)}
-              step="0.1"
-              min="0"
-              max="1"
-            />
-            <span className="late-example">
-              {calculateLateExample(formData.lateCredit)}
-            </span>
-          </label>
+        <div className="setting-section">
+          <button 
+            className={`attendance-options-btn ${showAttendanceOptions ? 'active' : ''}`}
+            onClick={() => setShowAttendanceOptions(!showAttendanceOptions)}
+          >
+            Edit Attendance Options {showAttendanceOptions ? '▼' : '▶'}
+          </button>
+          
+          {showAttendanceOptions && (
+            <div className="attendance-options">
+              <StatusManager 
+                statuses={formData.customStatuses || []}
+                onChange={(newStatuses) => handleChange('customStatuses', newStatuses)}
+              />
+            </div>
+          )}
         </div>
 
         <div className="setting-row">
@@ -248,10 +251,7 @@ function Settings({ settings, onSave, onClose, onResetData, loadTableData }) {
           </div>
         )}
 
-        <StatusManager 
-          statuses={formData.customStatuses || []} 
-          onChange={handleStatusesChange}
-        />
+
 
         <div className="danger-zone">
           <button onClick={onResetData} className="reset-button">

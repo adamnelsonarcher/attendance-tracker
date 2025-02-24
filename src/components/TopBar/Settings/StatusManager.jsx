@@ -31,7 +31,6 @@ function StatusManager({ statuses, onChange }) {
 
   return (
     <div className="status-manager">
-      <h3>Attendance Statuses</h3>
       <div className="status-list">
         {statuses.map(status => (
           <div key={status.id} className="status-item">
