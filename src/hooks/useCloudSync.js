@@ -210,6 +210,23 @@ export function useCloudSync(tableCode, cloudSync, {
     };
   }, [cloudSync, tableCode, people, events, attendance, groups, settings]);
 
+  const migrateAttendanceData = (oldAttendance, oldSettings) => {
+    const statusMap = {
+      'Present': 'Present',
+      'Absent': 'Absent',
+      'Late': 'Late',
+      'DNA': 'DNA'
+    };
+
+    const migratedAttendance = {};
+    
+    Object.entries(oldAttendance).forEach(([key, value]) => {
+      migratedAttendance[key] = statusMap[value] || value;
+    });
+
+    return migratedAttendance;
+  };
+
   const loadTableData = async (code) => {
     const data = await getTableData(code);
     if (!data) return false;
@@ -219,32 +236,20 @@ export function useCloudSync(tableCode, cloudSync, {
     if (data.people) localStorage.setItem('people', JSON.stringify(data.people));
     if (data.attendance) localStorage.setItem('attendance', JSON.stringify(data.attendance));
     if (data.groups) localStorage.setItem('groups', JSON.stringify(data.groups));
-    if (data.settings) localStorage.setItem('settings', JSON.stringify({
-      ...settings,
-      ...data.settings,
-      cloudSync: true
-    }));
+    if (data.settings) localStorage.setItem('settings', JSON.stringify(data.settings));
 
     setPeople(data.people || []);
     setEvents(data.events || []);
-    setAttendance(data.attendance || {});
+    setAttendance(migrateAttendanceData(data.attendance || {}, data.settings));
     setGroups(data.groups || []);
-    setSettings({
-      ...settings,
-      ...data.settings,
-      cloudSync: true
-    });
+    setSettings(data.settings || {});
 
     lastSyncedData.current = {
       people: data.people || [],
       events: data.events || [],
       attendance: data.attendance || {},
       groups: data.groups || [],
-      settings: {
-        ...settings,
-        ...data.settings,
-        cloudSync: true
-      },
+      settings: data.settings || {},
       lastUpdated: new Date().toISOString()
     };
     return true;

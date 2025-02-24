@@ -48,6 +48,10 @@ function Settings({ settings, onSave, onClose, onResetData, loadTableData }) {
 
     // Set the new table code and refresh the page
     localStorage.setItem('tableCode', joinCode.toUpperCase());
+    
+    // Clear any existing settings to ensure we get the new table's settings
+    localStorage.removeItem('settings');
+    
     window.location.reload();
   };
 
