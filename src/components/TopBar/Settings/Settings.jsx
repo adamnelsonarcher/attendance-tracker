@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import './Settings.css';
 import Modal from '../../Modal/Modal';
 import { syncTable } from '../../../services/firebase';
+import StatusManager from './StatusManager';
 
 function Settings({ settings, onSave, onClose, onResetData, loadTableData }) {
   const [formData, setFormData] = useState(() => {
@@ -92,13 +93,11 @@ function Settings({ settings, onSave, onClose, onResetData, loadTableData }) {
       [name]: value
     };
     
-    // Only generate new code if enabling cloud sync AND we don't have a code yet
     if (name === 'cloudSync' && value && !localStorage.getItem('tableCode')) {
       const newCode = generateTableCode();
       newFormData.tableCode = newCode;
       localStorage.setItem('tableCode', newCode);
       
-      // Initial sync to Firebase
       await syncTable(newCode, {
         people: JSON.parse(localStorage.getItem('people') || '[]'),
         events: JSON.parse(localStorage.getItem('events') || '[]'),
@@ -111,6 +110,10 @@ function Settings({ settings, onSave, onClose, onResetData, loadTableData }) {
     
     setFormData(newFormData);
     onSave(newFormData);
+  };
+
+  const handleStatusesChange = (newStatuses) => {
+    handleChange('customStatuses', newStatuses);
   };
 
   return (
@@ -244,6 +247,11 @@ function Settings({ settings, onSave, onClose, onResetData, loadTableData }) {
             {error && <p className="error">{error}</p>}
           </div>
         )}
+
+        <StatusManager 
+          statuses={formData.customStatuses || []} 
+          onChange={handleStatusesChange}
+        />
 
         <div className="danger-zone">
           <button onClick={onResetData} className="reset-button">
