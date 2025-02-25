@@ -20,6 +20,7 @@ function Settings({ settings, onSave, onClose, onResetData, loadTableData }) {
   const [error, setError] = useState('');
   const [showStatusManager, setShowStatusManager] = useState(false);
   const [showAttendanceOptions, setShowAttendanceOptions] = useState(false);
+  const [showAdvancedSettings, setShowAdvancedSettings] = useState(false);
 
   const generateTableCode = () => {
     const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
@@ -134,6 +135,31 @@ function Settings({ settings, onSave, onClose, onResetData, loadTableData }) {
 
   const handleStatusesChange = (newStatuses) => {
     handleChange('customStatuses', newStatuses);
+  };
+
+  const handleForceSync = async () => {
+    if (!formData.tableCode) {
+      alert('No table code found. Enable cloud sync first.');
+      return;
+    }
+
+    if (!window.confirm('This will force overwrite the cloud data with your local data. Continue?')) {
+      return;
+    }
+
+    // Get all data from localStorage
+    const localData = {
+      people: JSON.parse(localStorage.getItem('people') || '[]'),
+      events: JSON.parse(localStorage.getItem('events') || '[]'),
+      attendance: JSON.parse(localStorage.getItem('attendance') || '{}'),
+      groups: JSON.parse(localStorage.getItem('groups') || '[]'),
+      settings: formData,
+      lastUpdated: new Date().toISOString()
+    };
+
+    // Force sync to cloud
+    await syncTable(formData.tableCode, localData);
+    alert('Data synced to cloud!');
   };
 
   return (
@@ -269,7 +295,22 @@ function Settings({ settings, onSave, onClose, onResetData, loadTableData }) {
           </div>
         )}
 
-
+        <div className="setting-section">
+          <button 
+            className={`attendance-options-btn ${showAdvancedSettings ? 'active' : ''}`}
+            onClick={() => setShowAdvancedSettings(!showAdvancedSettings)}
+          >
+            Advanced Settings {showAdvancedSettings ? '▼' : '▶'}
+          </button>
+          
+          {showAdvancedSettings && (
+            <div className="advanced-settings">
+              <button onClick={handleForceSync}>
+                Force Sync Local → Cloud
+              </button>
+            </div>
+          )}
+        </div>
 
         <div className="danger-zone">
           <button onClick={onResetData} className="reset-button">
