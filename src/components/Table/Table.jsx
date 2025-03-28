@@ -36,6 +36,12 @@ function Table({
 
   const attendanceStatus = ['Present', 'Absent', 'Late', 'DNA'];
 
+  // Add this helper function at the top of the component
+  const getStatusColor = (statusId) => {
+    const status = settings.customStatuses.find(s => s.id === statusId);
+    return status ? status.color : '#ffffff';
+  };
+
   // Handle filter changes from GroupFilter component
   const handleFilterChange = (newFilters) => {
     // Separate group and folder filters
@@ -413,14 +419,15 @@ function Table({
                             <select
                               value={attendance[`${person.id}-${event.id}`] || 'Select'}
                               onChange={(e) => onAttendanceChange(person.id, event.id, e.target.value)}
-                              data-status={attendance[`${person.id}-${event.id}`] || 'Select'}
+                              data-status={attendance[`${person.id}-${event.id}`]}
+                              style={settings.colorChangeDropdown ? {backgroundColor: getStatusColor(attendance[`${person.id}-${event.id}`])} : {}}
                             >
                               <option value="Select" disabled></option>
                               {settings.customStatuses.map(status => (
                                 <option 
                                   key={status.id} 
                                   value={status.id}
-                                  style={{backgroundColor: status.color}}
+                                  style={settings.colorChangeDropdown ? {backgroundColor: status.color} : {}}
                                 >
                                   {status.name}
                                 </option>
@@ -448,14 +455,15 @@ function Table({
                       <select
                         value={attendance[`${person.id}-${event.id}`] || 'Select'}
                         onChange={(e) => onAttendanceChange(person.id, event.id, e.target.value)}
-                        data-status={attendance[`${person.id}-${event.id}`] || 'Select'}
+                        data-status={attendance[`${person.id}-${event.id}`]}
+                        style={settings.colorChangeDropdown ? {backgroundColor: getStatusColor(attendance[`${person.id}-${event.id}`])} : {}}
                       >
                         <option value="Select" disabled></option>
                         {settings.customStatuses.map(status => (
                           <option 
                             key={status.id} 
                             value={status.id}
-                            style={{backgroundColor: status.color}}
+                            style={settings.colorChangeDropdown ? {backgroundColor: status.color} : {}}
                           >
                             {status.name}
                           </option>

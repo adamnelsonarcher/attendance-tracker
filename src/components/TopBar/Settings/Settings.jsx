@@ -261,6 +261,16 @@ function Settings({ settings, onSave, onClose, onResetData, loadTableData }) {
           <span>Sticky headers and names</span>
         </label>
 
+        <label className="setting-row">
+          <input
+            type="checkbox"
+            name="colorChangeDropdown"
+            checked={formData.colorChangeDropdown}
+            onChange={(e) => handleChange(e.target.name, e.target.checked)}
+          />
+          <span>Color coded dropdown items</span>
+        </label>
+
         <div className="setting-section">
           <button 
             className={`attendance-options-btn ${showAttendanceOptions ? 'active' : ''}`}
