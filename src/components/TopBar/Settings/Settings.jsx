@@ -208,7 +208,7 @@ function Settings({ settings, onSave, onClose, onResetData, loadTableData }) {
         <div className="settings-credits">
           Appeveloped and built by <a href="https://nelsonarcher.com" target="_blank" rel="noopener noreferrer">Adam Nelson-Archer</a>
           <br />
-          v0.8.2 pre-release, <a href="https://github.com/adamnelsonarcher/attendance-tracker/releases" target="_blank" rel="noopener noreferrer">see changelogs</a>
+          v0.8.5 pre-release, <a href="https://github.com/adamnelsonarcher/attendance-tracker/releases" target="_blank" rel="noopener noreferrer">see changelogs</a>
         </div>
 
         <label className="setting-row">
