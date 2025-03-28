@@ -161,16 +161,22 @@ export function useEvents(initialEvents = showcaseEvents) {
   };
 
   const handleRenameEvent = (folderId, eventId, newName) => {
-    setEvents(prev => prev.map(folder => {
-      if (folder.id === folderId) {
-        return {
-          ...folder,
-          events: folder.events.map(event => 
-            event.id === eventId ? { ...event, name: newName } : event
-          )
-        };
+    setEvents(prev => prev.map(item => {
+      if (folderId) {
+        // Event is in a folder
+        if (item.id === folderId) {
+          return {
+            ...item,
+            events: item.events.map(event => 
+              event.id === eventId ? { ...event, name: newName } : event
+            )
+          };
+        }
+        return item;
+      } else {
+        // Event is not in a folder
+        return item.id === eventId ? { ...item, name: newName } : item;
       }
-      return folder;
     }));
   };
 
