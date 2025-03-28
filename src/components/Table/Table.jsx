@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import './Table.css';
-import EventFolder from './EventFolder/EventFolder';
 import GroupFilter from './GroupFilter/GroupFilter';
 import EventContextMenu from './EventContextMenu';
 import FolderContextMenu from './FolderContextMenu/FolderContextMenu';
@@ -33,8 +32,6 @@ function Table({
   const [eventContextMenu, setEventContextMenu] = useState(null);
   const [folderContextMenu, setFolderContextMenu] = useState(null);
   const [hoveredCell, setHoveredCell] = useState({ row: null, col: null });
-
-  const attendanceStatus = ['Present', 'Absent', 'Late', 'DNA'];
 
   // Add this helper function at the top of the component
   const getStatusColor = (statusId) => {

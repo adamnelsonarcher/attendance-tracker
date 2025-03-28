@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import './Settings.css';
 import Modal from '../../Modal/Modal';
 import { syncTable } from '../../../services/firebase';
@@ -17,9 +17,6 @@ function Settings({ settings, onSave, onClose, onResetData, loadTableData }) {
 
   const [joinTableCode, setJoinTableCode] = useState('');
   const [joinError, setJoinError] = useState('');
-  const [showJoinInput, setShowJoinInput] = useState(false);
-  const [error, setError] = useState('');
-  const [showStatusManager, setShowStatusManager] = useState(false);
   const [showAttendanceOptions, setShowAttendanceOptions] = useState(false);
   const [showAdvancedSettings, setShowAdvancedSettings] = useState(false);
   const [showCloudSync, setShowCloudSync] = useState(false);
@@ -103,58 +100,6 @@ function Settings({ settings, onSave, onClose, onResetData, loadTableData }) {
     }
   };
 
-  const handleCreateNewTable = async () => {
-    if (formData.tableCode && 
-        !window.confirm('Creating a new table will remove all locally stored data. To get back to your old table, you need your existing code. Continue?')) {
-      return;
-    }
-
-    // Generate new table code
-    const newCode = generateTableCode();
-    
-    // Clear all localStorage data
-    localStorage.clear();
-    
-    // Create new settings with the new table code
-    const newSettings = {
-      lateCredit: 0.5,
-      onlyCountAbsent: true,
-      colorCodeAttendance: true,
-      hideTitle: true,
-      showHoverHighlight: true,
-      enableStickyColumns: true,
-      cloudSync: true,
-      tableCode: newCode,
-      customStatuses: [
-        { id: 'Present', name: 'Present', credit: 1, color: '#e6ffe6', isDefault: true },
-        { id: 'Absent', name: 'Absent', credit: 0, color: '#ffe6e6', isDefault: true },
-        { id: 'Late', name: 'Late', credit: 0.5, color: '#fff3e6', isDefault: true },
-        { id: 'DNA', name: 'N/A', credit: null, color: '#f2f2f2', isDefault: true }
-      ]
-    };
-    
-    // Save to cloud first
-    await syncTable(newCode, {
-      people: [],
-      events: [],
-      attendance: {},
-      groups: [],
-      settings: newSettings,
-      lastUpdated: new Date().toISOString()
-    });
-
-    // Set minimal required localStorage data
-    localStorage.setItem('tableCode', newCode);
-    localStorage.setItem('settings', JSON.stringify(newSettings));
-    
-    // Reload the page to start fresh
-    window.location.reload();
-  };
-
-  const calculateLateExample = (credit) => {
-    return `(${(credit * 100).toFixed(0)}%)`;
-  };
-
   const handleChange = async (name, value) => {
     const newFormData = {
       ...formData,
@@ -178,10 +123,6 @@ function Settings({ settings, onSave, onClose, onResetData, loadTableData }) {
     
     setFormData(newFormData);
     onSave(newFormData);
-  };
-
-  const handleStatusesChange = (newStatuses) => {
-    handleChange('customStatuses', newStatuses);
   };
 
   const handleForceSync = async () => {

@@ -37,8 +37,6 @@ const showcaseEvents = [
   }
 ];
 
-const emptyEvents = [];
-
 export function useEvents(initialEvents = showcaseEvents) {
   const [events, setEvents] = useState(() => {
     const stored = localStorage.getItem('events');

@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import { syncTable, getTableData, subscribeToTable } from '../services/firebase';
+import { syncTable, getTableData } from '../services/firebase';
 
 export function useCloudSync(tableCode, cloudSync, { 
   people, 
@@ -109,6 +109,7 @@ export function useCloudSync(tableCode, cloudSync, {
     };
 
     loadInitialData();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cloudSync, tableCode]);
 
   // Only sync TO cloud, don't subscribe to changes
@@ -202,6 +203,7 @@ export function useCloudSync(tableCode, cloudSync, {
         clearTimeout(syncTimeoutRef.current);
       }
     };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cloudSync, tableCode, people, events, attendance, groups, settings]);
 
   const migrateAttendanceData = (oldAttendance, oldSettings) => {
