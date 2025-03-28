@@ -415,9 +415,15 @@ function Table({
                               onChange={(e) => onAttendanceChange(person.id, event.id, e.target.value)}
                               data-status={attendance[`${person.id}-${event.id}`] || 'Select'}
                             >
-                              <option value="Select"></option>
+                              <option value="Select" disabled></option>
                               {settings.customStatuses.map(status => (
-                                <option key={status.id} value={status.id}>{status.name}</option>
+                                <option 
+                                  key={status.id} 
+                                  value={status.id}
+                                  style={{backgroundColor: status.color}}
+                                >
+                                  {status.name}
+                                </option>
                               ))}
                             </select>
                           </td>
@@ -444,9 +450,15 @@ function Table({
                         onChange={(e) => onAttendanceChange(person.id, event.id, e.target.value)}
                         data-status={attendance[`${person.id}-${event.id}`] || 'Select'}
                       >
-                        <option value="Select"></option>
+                        <option value="Select" disabled></option>
                         {settings.customStatuses.map(status => (
-                          <option key={status.id} value={status.id}>{status.name}</option>
+                          <option 
+                            key={status.id} 
+                            value={status.id}
+                            style={{backgroundColor: status.color}}
+                          >
+                            {status.name}
+                          </option>
                         ))}
                       </select>
                     </td>
