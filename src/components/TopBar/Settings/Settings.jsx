@@ -76,19 +76,26 @@ function Settings({ settings, onSave, onClose, onResetData, loadTableData }) {
       const success = await loadTableData(joinTableCode);
       
       if (success) {
-        // Update form data with the new settings that include cloud sync enabled
-        const newSettings = JSON.parse(localStorage.getItem('settings'));
-        newSettings.cloudSync = true;
-        newSettings.tableCode = joinTableCode;
+        // Get the latest settings that were loaded from the cloud
+        const cloudSettings = JSON.parse(localStorage.getItem('settings'));
+        
+        // Ensure the table code and cloud sync are set correctly
+        const newSettings = {
+          ...cloudSettings,
+          cloudSync: true,
+          tableCode: joinTableCode
+        };
+        
+        // Update localStorage and state
         localStorage.setItem('settings', JSON.stringify(newSettings));
         localStorage.setItem('tableCode', joinTableCode);
+        setFormData(newSettings);
         
-        // Update the form data to reflect the new settings
-        setFormData({
-          ...newSettings,
-          customStatuses: newSettings.customStatuses || formData.customStatuses
-        });
+        // Clear the input and error
+        setJoinTableCode('');
+        setJoinError('');
         
+        // Close the settings modal
         onClose();
       } else {
         setJoinError('Invalid table code or network error');

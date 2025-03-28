@@ -230,20 +230,33 @@ export function useCloudSync(tableCode, cloudSync, {
     if (data.people) localStorage.setItem('people', JSON.stringify(data.people));
     if (data.attendance) localStorage.setItem('attendance', JSON.stringify(data.attendance));
     if (data.groups) localStorage.setItem('groups', JSON.stringify(data.groups));
-    if (data.settings) localStorage.setItem('settings', JSON.stringify(data.settings));
+    
+    // Ensure settings has the correct table code
+    if (data.settings) {
+      const newSettings = {
+        ...data.settings,
+        tableCode: code,  // Force the correct table code
+        cloudSync: true   // Ensure cloud sync is enabled
+      };
+      localStorage.setItem('settings', JSON.stringify(newSettings));
+      setSettings(newSettings);
+    }
 
     setPeople(data.people || []);
     setEvents(data.events || []);
     setAttendance(migrateAttendanceData(data.attendance || {}, data.settings));
     setGroups(data.groups || []);
-    setSettings(data.settings || {});
 
     lastSyncedData.current = {
       people: data.people || [],
       events: data.events || [],
       attendance: data.attendance || {},
       groups: data.groups || [],
-      settings: data.settings || {},
+      settings: {
+        ...data.settings,
+        tableCode: code,
+        cloudSync: true
+      },
       lastUpdated: new Date().toISOString()
     };
     return true;
