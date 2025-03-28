@@ -15,12 +15,14 @@ function Settings({ settings, onSave, onClose, onResetData, loadTableData }) {
     ]
   });
 
-  const [joinCode, setJoinCode] = useState('');
+  const [joinTableCode, setJoinTableCode] = useState('');
+  const [joinError, setJoinError] = useState('');
   const [showJoinInput, setShowJoinInput] = useState(false);
   const [error, setError] = useState('');
   const [showStatusManager, setShowStatusManager] = useState(false);
   const [showAttendanceOptions, setShowAttendanceOptions] = useState(false);
   const [showAdvancedSettings, setShowAdvancedSettings] = useState(false);
+  const [showCloudSync, setShowCloudSync] = useState(false);
 
   const generateTableCode = () => {
     const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
@@ -29,31 +31,72 @@ function Settings({ settings, onSave, onClose, onResetData, loadTableData }) {
     ).join('');
   };
 
+  const handleSyncThisTable = async (enabled) => {
+    // Only generate new code if we don't have one yet and we're enabling sync
+    if (enabled && !formData.tableCode) {
+      const newCode = generateTableCode();
+      const newFormData = {
+        ...formData,
+        tableCode: newCode,
+        cloudSync: true
+      };
+      
+      setFormData(newFormData);
+      localStorage.setItem('tableCode', newCode);
+      
+      // Initial sync to Firebase
+      await syncTable(newCode, {
+        people: JSON.parse(localStorage.getItem('people') || '[]'),
+        events: JSON.parse(localStorage.getItem('events') || '[]'),
+        attendance: JSON.parse(localStorage.getItem('attendance') || '{}'),
+        groups: JSON.parse(localStorage.getItem('groups') || '[]'),
+        settings: newFormData,
+        lastUpdated: new Date().toISOString()
+      });
+      
+      onSave(newFormData);
+    } else {
+      // Just update cloud sync setting
+      const newFormData = {
+        ...formData,
+        cloudSync: enabled
+      };
+      setFormData(newFormData);
+      onSave(newFormData);
+    }
+  };
+
   const handleJoinTable = async () => {
-    if (joinCode.length !== 6) {
-      setError('Table code must be 6 characters');
+    if (!joinTableCode.trim()) {
+      setJoinError('Please enter a table code');
       return;
     }
-
-    if (formData.tableCode && 
-        !window.confirm('Joining a new table will remove all locally stored data. To get back to your existing table, you will need your existing code: ' + formData.tableCode + '. Continue?')) {
-      return;
-    }
-
-    // Verify the table exists first
-    const success = await loadTableData(joinCode.toUpperCase());
-    if (!success) {
-      setError('Could not find table with that code');
-      return;
-    }
-
-    // Set the new table code and refresh the page
-    localStorage.setItem('tableCode', joinCode.toUpperCase());
     
-    // Clear any existing settings to ensure we get the new table's settings
-    localStorage.removeItem('settings');
-    
-    window.location.reload();
+    if (window.confirm('Joining a table will replace your current data. Continue?')) {
+      const success = await loadTableData(joinTableCode);
+      
+      if (success) {
+        // Update form data with the new settings that include cloud sync enabled
+        const newSettings = JSON.parse(localStorage.getItem('settings'));
+        newSettings.cloudSync = true;
+        localStorage.setItem('settings', JSON.stringify(newSettings));
+        
+        // Update the form data to reflect the new settings
+        setFormData({
+          ...newSettings,
+          tableCode: joinTableCode
+        });
+        
+        // Clear the input and error
+        setJoinTableCode('');
+        setJoinError('');
+        
+        // Notify the user
+        alert('Successfully joined table. Cloud sync is now enabled.');
+      } else {
+        setJoinError('Could not find a table with that code. Please check and try again.');
+      }
+    }
   };
 
   const handleCreateNewTable = async () => {
@@ -239,61 +282,59 @@ function Settings({ settings, onSave, onClose, onResetData, loadTableData }) {
           )}
         </div>
 
-        <div className="setting-row">
-          <label>
-            <input
-              type="checkbox"
-              checked={formData.cloudSync}
-              onChange={(e) => handleChange('cloudSync', e.target.checked)}
-            />
-            <span>Enable Cloud Sync</span>
-          </label>
-        </div>
-
-        {formData.cloudSync && (
-          <div className="setting-section cloud-sync-section">
-            <h3>Table Management</h3>
-            <div className="current-table">
-              {formData.tableCode && (
-                <p>Current Table Code: {formData.tableCode}</p>
+        <div className="setting-section">
+          <button 
+            className={`attendance-options-btn ${showCloudSync ? 'active' : ''}`}
+            onClick={() => setShowCloudSync(!showCloudSync)}
+          >
+            Cloud Sync {showCloudSync ? '▼' : '▶'}
+          </button>
+          
+          {showCloudSync && (
+            <div className="attendance-options">
+              <div className="checkbox-container">
+                <input
+                  type="checkbox"
+                  id="cloudSync"
+                  checked={formData.cloudSync}
+                  onChange={(e) => handleSyncThisTable(e.target.checked)}
+                />
+                <label htmlFor="cloudSync">Sync This Table</label>
+              </div>
+              
+              {formData.cloudSync && formData.tableCode && (
+                <div className="table-code-display">
+                  <p>Your table code: <strong>{formData.tableCode}</strong></p>
+                  <p><small>Share this code with others to let them join your table</small></p>
+                </div>
               )}
-              <div className="button-group">
-                <button onClick={handleCreateNewTable}>
-                  {formData.tableCode ? 'Create New Table' : 'Generate Table Code'}
-                </button>
-                <button onClick={() => setShowJoinInput(true)}>
-                  Join Existing Table
-                </button>
+              
+              <div className="join-table-container">
+                <span>Join Existing Table:</span>
+                <div className="join-table-input-group">
+                  <input
+                    type="text"
+                    value={joinTableCode}
+                    onChange={(e) => {
+                      setJoinTableCode(e.target.value.toUpperCase());
+                      setJoinError('');
+                    }}
+                    placeholder="Enter table code"
+                    maxLength={6}
+                  />
+                  <button 
+                    className="join-button"
+                    onClick={handleJoinTable}
+                    disabled={!joinTableCode.trim()}
+                  >
+                    Join
+                  </button>
+                </div>
+                {joinError && <p className="join-error">{joinError}</p>}
               </div>
             </div>
-
-            {showJoinInput && (
-              <div className="join-table">
-                <input
-                  type="text"
-                  value={joinCode}
-                  onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
-                  placeholder="Enter 6-digit code"
-                  maxLength={6}
-                  className="code-input"
-                />
-                <button onClick={handleJoinTable} className="use-existing-code">
-                  Join
-                </button>
-                <button 
-                  onClick={() => {
-                    setShowJoinInput(false);
-                    setJoinCode('');
-                    setError('');
-                  }}
-                >
-                  Cancel
-                </button>
-              </div>
-            )}
-            {error && <p className="error">{error}</p>}
-          </div>
-        )}
+          )}
+        </div>
 
         <div className="setting-section">
           <button 
@@ -308,14 +349,13 @@ function Settings({ settings, onSave, onClose, onResetData, loadTableData }) {
               <button onClick={handleForceSync}>
                 Force Sync Local → Cloud
               </button>
+              <div className="danger-zone">
+                <button onClick={onResetData} className="reset-button">
+                  Reset Table Data
+                </button>
+              </div>
             </div>
           )}
-        </div>
-
-        <div className="danger-zone">
-          <button onClick={onResetData} className="reset-button">
-            Reset Table Data
-          </button>
         </div>
       </div>
 
