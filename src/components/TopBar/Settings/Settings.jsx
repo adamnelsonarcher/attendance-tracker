@@ -79,22 +79,19 @@ function Settings({ settings, onSave, onClose, onResetData, loadTableData }) {
         // Update form data with the new settings that include cloud sync enabled
         const newSettings = JSON.parse(localStorage.getItem('settings'));
         newSettings.cloudSync = true;
+        newSettings.tableCode = joinTableCode;
         localStorage.setItem('settings', JSON.stringify(newSettings));
+        localStorage.setItem('tableCode', joinTableCode);
         
         // Update the form data to reflect the new settings
         setFormData({
           ...newSettings,
-          tableCode: joinTableCode
+          customStatuses: newSettings.customStatuses || formData.customStatuses
         });
         
-        // Clear the input and error
-        setJoinTableCode('');
-        setJoinError('');
-        
-        // Notify the user
-        alert('Successfully joined table. Cloud sync is now enabled.');
+        onClose();
       } else {
-        setJoinError('Could not find a table with that code. Please check and try again.');
+        setJoinError('Invalid table code or network error');
       }
     }
   };
@@ -348,6 +345,31 @@ function Settings({ settings, onSave, onClose, onResetData, loadTableData }) {
             <div className="advanced-settings">
               <button onClick={handleForceSync}>
                 Force Sync Local → Cloud
+              </button>
+              <button onClick={() => {
+                if (window.confirm('Create a new table? This will clear all data.')) {
+                  // Clear all data
+                  onResetData();
+                  
+                  // Create new settings without sync and table code
+                  const newSettings = {
+                    ...settings, // Use the default settings as base
+                    cloudSync: false,
+                    tableCode: undefined // Explicitly set to undefined to remove it
+                  };
+                  
+                  // Update form data
+                  setFormData(newSettings);
+                  
+                  // Update localStorage
+                  localStorage.setItem('settings', JSON.stringify(newSettings));
+                  localStorage.removeItem('tableCode');
+                  
+                  // Force a refresh to ensure all state is clean
+                  window.location.reload();
+                }
+              }}>
+                Create New Table
               </button>
               <div className="danger-zone">
                 <button onClick={onResetData} className="reset-button">
