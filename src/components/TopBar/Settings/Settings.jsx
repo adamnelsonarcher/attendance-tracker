@@ -3,8 +3,9 @@ import './Settings.css';
 import Modal from '../../Modal/Modal';
 import { syncTable } from '../../../services/firebase';
 import StatusManager from './StatusManager';
+import { generateTableCode } from '../../../utils/tableCode';
 
-function Settings({ settings, onSave, onClose, onResetData, loadTableData }) {
+function Settings({ settings, onSave, onClose, onResetData, loadTableData, onMigrateAttendance }) {
   const [formData, setFormData] = useState({
     ...settings,
     customStatuses: settings.customStatuses || [
@@ -21,12 +22,7 @@ function Settings({ settings, onSave, onClose, onResetData, loadTableData }) {
   const [showAdvancedSettings, setShowAdvancedSettings] = useState(false);
   const [showCloudSync, setShowCloudSync] = useState(false);
 
-  const generateTableCode = () => {
-    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-    return Array.from({ length: 6 }, 
-      () => chars.charAt(Math.floor(Math.random() * chars.length))
-    ).join('');
-  };
+  // table code utilities centralized in utils/tableCode
 
   const handleSyncThisTable = async (enabled) => {
     // Only generate new code if we don't have one yet and we're enabling sync
@@ -150,6 +146,29 @@ function Settings({ settings, onSave, onClose, onResetData, loadTableData }) {
     alert('Data synced to cloud!');
   };
 
+  const handleSwitchToNewTable = async () => {
+    if (!window.confirm('Switch to a new table? This will clear all local data.')) return;
+    onResetData();
+    const newCode = generateTableCode();
+    const newSettings = {
+      ...formData,
+      tableCode: newCode,
+      cloudSync: true
+    };
+    localStorage.setItem('settings', JSON.stringify(newSettings));
+    localStorage.setItem('tableCode', newCode);
+    setFormData(newSettings);
+    await syncTable(newCode, {
+      people: [],
+      events: [],
+      attendance: {},
+      groups: [],
+      settings: newSettings,
+      lastUpdated: new Date().toISOString()
+    });
+    window.location.assign(`/${newCode}`);
+  };
+
   return (
     <Modal title="Settings" onClose={onClose}>
       <div className="settings-list">
@@ -157,6 +176,14 @@ function Settings({ settings, onSave, onClose, onResetData, loadTableData }) {
           Developed and built by <a href="https://nelsonarcher.com" target="_blank" rel="noopener noreferrer">Adam Nelson-Archer</a>
           <br />
           v0.8.5 pre-release, <a href="https://github.com/adamnelsonarcher/attendance-tracker/releases" target="_blank" rel="noopener noreferrer">see changelogs</a>
+        </div>
+
+        <div className="setting-section">
+          <div className="switch-table-container">
+            <button className="join-button" onClick={handleSwitchToNewTable}>
+              Switch to New Table
+            </button>
+          </div>
         </div>
 
         <label className="setting-row">
@@ -231,7 +258,25 @@ function Settings({ settings, onSave, onClose, onResetData, loadTableData }) {
             <div className="attendance-options">
               <StatusManager 
                 statuses={formData.customStatuses || []}
-                onChange={(newStatuses) => handleChange('customStatuses', newStatuses)}
+                onChange={(newStatuses) => {
+                  const prev = formData.customStatuses || [];
+                  const prevIds = new Set(prev.map(s => s.id));
+                  const newIds = new Set(newStatuses.map(s => s.id));
+                  const deleted = Array.from(prevIds).filter(id => !newIds.has(id));
+                  if (deleted.length > 0) {
+                    const attendance = JSON.parse(localStorage.getItem('attendance') || '{}');
+                    const counts = deleted.map(id => ({ id, count: Object.values(attendance).filter(v => v === id).length }));
+                    const summary = counts.map(c => `${c.id}: ${c.count}`).join('\n');
+                    const proceed = window.confirm(`Deleting statuses will migrate existing selections to 'Select':\n${summary}\n\nContinue?`);
+                    if (!proceed) {
+                      return; // abort status change
+                    }
+                    const migratedAttendance = Object.fromEntries(Object.entries(attendance).map(([k, v]) => [k, deleted.includes(v) ? 'Select' : v]));
+                    localStorage.setItem('attendance', JSON.stringify(migratedAttendance));
+                    if (onMigrateAttendance) onMigrateAttendance(migratedAttendance);
+                  }
+                  handleChange('customStatuses', newStatuses);
+                }}
               />
             </div>
           )}
@@ -260,7 +305,6 @@ function Settings({ settings, onSave, onClose, onResetData, loadTableData }) {
               {formData.cloudSync && formData.tableCode && (
                 <div className="table-code-display">
                   <p>Your table code: <strong>{formData.tableCode}</strong></p>
-                  <p><small>Share this code with others to let them join your table</small></p>
                 </div>
               )}
               
@@ -286,6 +330,11 @@ function Settings({ settings, onSave, onClose, onResetData, loadTableData }) {
                   </button>
                 </div>
                 {joinError && <p className="join-error">{joinError}</p>}
+              </div>
+              <div className="switch-table-container">
+                <button className="join-button" onClick={handleSwitchToNewTable}>
+                  Switch to New Table
+                </button>
               </div>
             </div>
           )}

@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 
-export function useSort() {
+export function useSort(settings) {
   const [sorting, setSorting] = useState({
     type: 'none',
     direction: 'asc',
@@ -8,14 +8,18 @@ export function useSort() {
     scoreType: null
   });
 
+  // Build a priority map based on current customStatuses order
+  const statusPriorityMap = useMemo(() => {
+    const map = new Map();
+    const list = settings?.customStatuses || [];
+    list.forEach((s, idx) => map.set(s.id, idx));
+    return map;
+  }, [settings?.customStatuses]);
+
   const getStatusPriority = (status) => {
-    switch(status) {
-      case 'Present': return 0;
-      case 'Absent': return 1;
-      case 'Late': return 2;
-      case 'DNA': return 3;
-      default: return 4; // For "select" (empty) status
-    }
+    if (!status) return Number.MAX_SAFE_INTEGER;
+    if (statusPriorityMap.has(status)) return statusPriorityMap.get(status);
+    return Number.MAX_SAFE_INTEGER;
   };
 
   const handleSort = (type, direction = null, eventId = null, scoreType = null) => {

@@ -479,6 +479,8 @@ function Table({
             x={eventContextMenu.x}
             y={eventContextMenu.y}
             folders={events.filter(e => e.isFolder)}
+            people={people}
+            statuses={settings.customStatuses}
             onMove={(toFolderId) => {
               onMoveEvent(eventContextMenu.eventId, eventContextMenu.currentFolderId, toFolderId);
               setEventContextMenu(null);
@@ -501,6 +503,22 @@ function Table({
             }}
             onEditWeight={(weight) => {
               onEditEventWeight(eventContextMenu.currentFolderId, eventContextMenu.eventId, weight);
+              setEventContextMenu(null);
+            }}
+            onBulkAssign={(names, status, allPeople) => {
+              const targetEventId = eventContextMenu.eventId;
+              const nameSet = new Set(names.map(n => n.toLowerCase()));
+              let matched = 0;
+              allPeople.forEach(person => {
+                if (nameSet.has(person.name.toLowerCase())) {
+                  onAttendanceChange(person.id, targetEventId, status);
+                  matched += 1;
+                }
+              });
+              const unmatched = names.length - matched;
+              if (unmatched > 0) {
+                alert(`${matched} matched, ${unmatched} not found`);
+              }
               setEventContextMenu(null);
             }}
             onClose={() => setEventContextMenu(null)}

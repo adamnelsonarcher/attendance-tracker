@@ -15,6 +15,7 @@ import Groups from './components/TopBar/Groups/Groups';
 import { useCloudSync } from './hooks/useCloudSync';
 import { syncTable } from './services/firebase';
 import DynamicStyles from './components/DynamicStyles';
+import { isValidTableCode } from './utils/tableCode';
 
 function App() {
   const [showSettings, setShowSettings] = useState(false);
@@ -57,7 +58,7 @@ function App() {
     setEvents
   ] = useEvents();
   const [attendance, handleAttendanceChange, resetAttendance, setAttendance] = useAttendance();
-  const [sorting, handleSort, getStatusPriority] = useSort();
+  const [sorting, handleSort, getStatusPriority] = useSort(settings);
   const calculateScores = useCalculateScores(events, attendance, settings);
   const [groups, setGroups] = useState(() => {
     const stored = localStorage.getItem('groups');
@@ -95,7 +96,7 @@ function App() {
   useEffect(() => {
     const pathSegment = window.location.pathname.replace(/^\/+/, '').split('/')[0] || '';
     const code = pathSegment.toUpperCase();
-    const isValidCode = /^[A-HJ-NP-Z2-9]{6}$/.test(code);
+    const isValidCode = isValidTableCode(code);
     if (!isValidCode) return;
     // If we already have this code loaded, skip
     if (localStorage.getItem('tableCode') === code) return;
@@ -230,6 +231,7 @@ function App() {
             }
           }}
           loadTableData={loadTableData}
+          onMigrateAttendance={(newAttendance) => setAttendance(newAttendance)}
         />
       )}
 
