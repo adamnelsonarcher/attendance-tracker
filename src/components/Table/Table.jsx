@@ -507,17 +507,61 @@ function Table({
             }}
             onBulkAssign={(names, status, allPeople) => {
               const targetEventId = eventContextMenu.eventId;
-              const nameSet = new Set(names.map(n => n.toLowerCase()));
-              let matched = 0;
-              allPeople.forEach(person => {
-                if (nameSet.has(person.name.toLowerCase())) {
-                  onAttendanceChange(person.id, targetEventId, status);
-                  matched += 1;
-                }
+              const normalize = (s) => s
+                .normalize('NFD')
+                .replace(/[\u0300-\u036f]/g, '')
+                .toLowerCase()
+                .trim();
+
+              const dataset = allPeople.map(person => {
+                const normFull = normalize(person.name);
+                const tokens = normFull.split(/\s+/).filter(Boolean);
+                return { person, normFull, tokens };
               });
-              const unmatched = names.length - matched;
-              if (unmatched > 0) {
-                alert(`${matched} matched, ${unmatched} not found`);
+
+              const applied = new Set();
+              const rejected = [];
+
+              const personMatchesQuery = (d, qRaw) => {
+                const q = normalize(qRaw);
+                if (!q) return false;
+                if (d.normFull.includes(q)) return true;
+                const qTokens = q.split(/\s+/).filter(Boolean).filter(t => t.length > 1);
+                if (qTokens.length === 0) return false;
+                // Sequential token prefix match (ignores middle initials)
+                let idx = 0;
+                for (let i = 0; i < qTokens.length; i++) {
+                  let found = false;
+                  while (idx < d.tokens.length) {
+                    if (d.tokens[idx].startsWith(qTokens[i])) { found = true; idx++; break; }
+                    idx++;
+                  }
+                  if (!found) { idx = 0; break; }
+                }
+                if (idx !== 0) return true;
+                // Fallback: token coverage threshold
+                const covered = qTokens.filter(qt => d.tokens.some(t => t.startsWith(qt))).length;
+                return covered / qTokens.length >= 0.7;
+              };
+
+              names.forEach(raw => {
+                const matches = dataset.filter(d => personMatchesQuery(d, raw));
+                if (matches.length === 0) {
+                  rejected.push(raw.trim());
+                  return;
+                }
+                matches.forEach(d => {
+                  if (!applied.has(d.person.id)) {
+                    applied.add(d.person.id);
+                    onAttendanceChange(d.person.id, targetEventId, status);
+                  }
+                });
+              });
+
+              const matched = applied.size;
+              if (rejected.length > 0) {
+                const uniqueRejected = Array.from(new Set(rejected.filter(Boolean)));
+                alert(`${matched} matched. Not found: ${uniqueRejected.join(', ')}`);
               }
               setEventContextMenu(null);
             }}
