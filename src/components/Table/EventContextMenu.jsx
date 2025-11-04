@@ -11,17 +11,23 @@ function EventContextMenu({
   onSetAll,
   onEditDates,
   onEditWeight,
-  onClose 
+  onClose,
+  onBulkAssign,
+  people,
+  statuses
 }) {
   const [showFolders, setShowFolders] = useState(false);
   const [showSetAll, setShowSetAll] = useState(false);
   const [isRenaming, setIsRenaming] = useState(false);
   const [isEditingDates, setIsEditingDates] = useState(false);
   const [isEditingWeight, setIsEditingWeight] = useState(false);
+  const [isBulkAssign, setIsBulkAssign] = useState(false);
   const [newName, setNewName] = useState('');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [weight, setWeight] = useState('');
+  const [bulkNames, setBulkNames] = useState('');
+  const [bulkStatus, setBulkStatus] = useState(statuses?.[0]?.id || 'Present');
 
   const menuStyle = {
     position: 'fixed',
@@ -99,6 +105,39 @@ function EventContextMenu({
               }
             }}>✓</button>
           </div>
+        ) : isBulkAssign ? (
+          <div className="context-menu-item bulk-assign-container">
+            <div className="bulk-assign-fields">
+              <textarea
+                placeholder="Paste names (comma or newline separated)"
+                value={bulkNames}
+                onChange={(e) => setBulkNames(e.target.value)}
+                rows={5}
+                onClick={(e) => e.stopPropagation()}
+              />
+              <select
+                value={bulkStatus}
+                onChange={(e) => setBulkStatus(e.target.value)}
+                onClick={(e) => e.stopPropagation()}
+              >
+                {statuses?.map(s => (
+                  <option key={s.id} value={s.id}>{s.name}</option>
+                ))}
+              </select>
+            </div>
+            <div className="button-row">
+              <button onClick={() => {
+                const names = bulkNames
+                  .split(/[\n,]/)
+                  .map(n => n.trim())
+                  .filter(n => n.length > 0);
+                if (onBulkAssign && names.length > 0) {
+                  onBulkAssign(names, bulkStatus, people || []);
+                }
+                onClose();
+              }}>Apply</button>
+            </div>
+          </div>
         ) : (
           <>
             <button className="context-menu-item" onClick={() => setIsRenaming(true)}>
@@ -109,6 +148,9 @@ function EventContextMenu({
             </button>
             <button className="context-menu-item" onClick={() => setIsEditingWeight(true)}>
               Edit Weight
+            </button>
+            <button className="context-menu-item" onClick={() => setIsBulkAssign(true)}>
+              Bulk Assign
             </button>
             <div className="context-menu-divider"></div>
             <div className="context-menu-item has-submenu"

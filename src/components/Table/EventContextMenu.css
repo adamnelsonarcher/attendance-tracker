@@ -4,7 +4,8 @@
   border-radius: 4px;
   box-shadow: 0 2px 5px rgba(0,0,0,0.2);
   padding: 4px 0;
-  width: 150px;
+  min-width: 150px;
+  max-width: 520px;
   user-select: none;
 }
 
@@ -27,7 +28,8 @@
 
 .context-menu-item {
   display: block;
-  width: 150px;
+  width: auto;
+  min-width: 150px;
   padding: 8px 16px;
   border: none;
   background-color: white;
@@ -70,16 +72,18 @@
   text-overflow: ellipsis;
 }
 
+/* Disable hover background highlight for menu items */
 .context-menu-item:hover {
-  background-color: #f4f4f4;
+  background-color: transparent;
 }
 
 .context-menu-item.delete {
   color: #dc3545;
 }
 
+/* Keep delete text color only; no hover background */
 .context-menu-item.delete:hover {
-  background-color: #ffebee;
+  background-color: transparent;
 }
 
 .context-menu-overlay {
@@ -148,3 +152,52 @@
 .weight-container button:hover {
   background: #45a049;
 } 
+
+/* Bulk assign layout */
+.bulk-assign-container {
+  width: 480px;
+  box-sizing: border-box;
+  background-color: white;
+}
+.bulk-assign-container:hover {
+  background-color: white !important;
+}
+
+.bulk-assign-container .bulk-assign-fields {
+  display: block;
+  padding: 6px 8px;
+}
+
+.bulk-assign-container .bulk-assign-fields textarea {
+  width: 100%;
+  box-sizing: border-box;
+  min-height: 100px;
+  max-height: 240px;
+  resize: vertical;
+  padding: 6px 8px;
+  border: 1px solid #ccc;
+  border-radius: 3px;
+}
+
+.bulk-assign-container .bulk-assign-fields select {
+  display: block;
+  width: 100%;
+  margin-top: 8px;
+  padding: 4px 6px;
+  border: 1px solid #ccc;
+  border-radius: 3px;
+}
+
+.bulk-assign-container .button-row {
+  display: flex;
+  justify-content: flex-end;
+  gap: 6px;
+  padding: 6px 8px 8px 8px;
+}
+
+.bulk-assign-container .button-row button {
+  padding: 4px 10px;
+  border: none;
+  border-radius: 3px;
+  cursor: pointer;
+}
