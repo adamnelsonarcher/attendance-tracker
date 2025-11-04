@@ -278,6 +278,11 @@ export function useCloudSync(tableCode, cloudSync, {
       },
       lastUpdated: new Date().toISOString()
     };
+    // Mark initial load done to avoid duplicate fetch by initial effect
+    initialLoadDone.current = true;
+    setTimeout(() => {
+      isInitialLoad.current = false;
+    }, 1000);
     return true;
   };
 

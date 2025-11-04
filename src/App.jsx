@@ -91,6 +91,23 @@ function App() {
     }
   );
 
+  // Auto-load table when URL path contains a table code: /:code
+  useEffect(() => {
+    const pathSegment = window.location.pathname.replace(/^\/+/, '').split('/')[0] || '';
+    const code = pathSegment.toUpperCase();
+    const isValidCode = /^[A-HJ-NP-Z2-9]{6}$/.test(code);
+    if (!isValidCode) return;
+    // If we already have this code loaded, skip
+    if (localStorage.getItem('tableCode') === code) return;
+    (async () => {
+      const success = await loadTableData(code);
+      if (success) {
+        localStorage.setItem('tableCode', code);
+      }
+    })();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   useEffect(() => {
     localStorage.setItem('groups', JSON.stringify(groups));
   }, [groups]);
