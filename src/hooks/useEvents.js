@@ -179,7 +179,7 @@ export function useEvents(initialEvents = showcaseEvents) {
   };
 
   const handleEditEventDates = (folderId, eventId, startDate, endDate) => {
-    setEvents(events.map(event => {
+    setEvents(prev => prev.map(event => {
       if (event.isFolder) {
         if (event.id === folderId) {
           return {
@@ -198,7 +198,7 @@ export function useEvents(initialEvents = showcaseEvents) {
   };
 
   const handleEditEventWeight = (folderId, eventId, weight) => {
-    setEvents(events.map(event => {
+    setEvents(prev => prev.map(event => {
       if (event.isFolder) {
         if (event.id === folderId) {
           return {

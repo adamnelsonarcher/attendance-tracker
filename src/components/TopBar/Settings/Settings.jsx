@@ -154,7 +154,7 @@ function Settings({ settings, onSave, onClose, onResetData, loadTableData }) {
     <Modal title="Settings" onClose={onClose}>
       <div className="settings-list">
         <div className="settings-credits">
-          Appeveloped and built by <a href="https://nelsonarcher.com" target="_blank" rel="noopener noreferrer">Adam Nelson-Archer</a>
+          Developed and built by <a href="https://nelsonarcher.com" target="_blank" rel="noopener noreferrer">Adam Nelson-Archer</a>
           <br />
           v0.8.5 pre-release, <a href="https://github.com/adamnelsonarcher/attendance-tracker/releases" target="_blank" rel="noopener noreferrer">see changelogs</a>
         </div>

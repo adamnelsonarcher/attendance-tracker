@@ -85,6 +85,7 @@ function EventContextMenu({
             <input
               type="number"
               min="0"
+              max="4"
               step="0.1"
               value={weight}
               onChange={(e) => setWeight(e.target.value)}

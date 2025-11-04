@@ -20,6 +20,22 @@ export function useCloudSync(tableCode, cloudSync, {
   const isInitialLoad = useRef(true);
   const isFirstRender = useRef(true);
 
+  // Create a stable stringifier to avoid key-order diffs on plain objects
+  const stableSerialize = (value) => {
+    const sortValue = (v) => {
+      if (Array.isArray(v)) return v.map(sortValue);
+      if (v && typeof v === 'object') {
+        const sorted = {};
+        Object.keys(v).sort().forEach((k) => {
+          sorted[k] = sortValue(v[k]);
+        });
+        return sorted;
+      }
+      return v;
+    };
+    return JSON.stringify(sortValue(value));
+  };
+
   // Initial load of data
   useEffect(() => {
     console.log('Initial load effect triggered:', {
@@ -69,8 +85,9 @@ export function useCloudSync(tableCode, cloudSync, {
         }
         
         if (data.attendance) {
-          localStorage.setItem('attendance', JSON.stringify(data.attendance));
-          setAttendance(data.attendance);
+          const migratedAttendance = migrateAttendanceData(data.attendance || {}, data.settings);
+          localStorage.setItem('attendance', JSON.stringify(migratedAttendance));
+          setAttendance(migratedAttendance);
         }
         
         if (data.groups) {
@@ -91,7 +108,7 @@ export function useCloudSync(tableCode, cloudSync, {
         lastSyncedData.current = {
           people: data.people || [],
           events: data.events || [],
-          attendance: data.attendance || {},
+          attendance: migrateAttendanceData(data.attendance || {}, data.settings),
           groups: data.groups || [],
           settings: {
             ...settings,
@@ -145,20 +162,20 @@ export function useCloudSync(tableCode, cloudSync, {
       settings
     };
 
-    // Deep compare objects without timestamps
+    // Deep compare objects without timestamps, with stable key ordering for maps
     const compareData = (a, b) => {
       if (!a || !b) {
         console.log('Compare data received null/undefined:', { a, b });
         return false;
       }
-      const stringA = JSON.stringify({
+      const stringA = stableSerialize({
         people: a.people,
         events: a.events,
         attendance: a.attendance,
         groups: a.groups,
         settings: a.settings
       });
-      const stringB = JSON.stringify({
+      const stringB = stableSerialize({
         people: b.people,
         events: b.events,
         attendance: b.attendance,
@@ -252,7 +269,7 @@ export function useCloudSync(tableCode, cloudSync, {
     lastSyncedData.current = {
       people: data.people || [],
       events: data.events || [],
-      attendance: data.attendance || {},
+      attendance: migrateAttendanceData(data.attendance || {}, data.settings),
       groups: data.groups || [],
       settings: {
         ...data.settings,
@@ -264,5 +281,10 @@ export function useCloudSync(tableCode, cloudSync, {
     return true;
   };
 
-  return { loadTableData, syncTimeoutRef };
+  // Allow consumers to set the synced baseline (useful after manual syncs)
+  const setLastSyncedBaseline = (data) => {
+    lastSyncedData.current = data;
+  };
+
+  return { loadTableData, syncTimeoutRef, setLastSyncedBaseline };
 } 

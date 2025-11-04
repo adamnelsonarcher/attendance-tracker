@@ -13,6 +13,8 @@ function TopBar({ onSettingsClick, onAddPersonClick, onAddEventClick, onGroupsCl
         {settings?.cloudSync && (
           syncStatus === 'unsaved' ? (
             <button className="sync-button" onClick={onSyncClick}>Save</button>
+          ) : syncStatus === 'saving' ? (
+            <span className="sync-status">Saving…</span>
           ) : (
             <span className="sync-status">Saved ✓</span>
           )

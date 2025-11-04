@@ -73,7 +73,7 @@ function App() {
     return initialGroups;
   });
 
-  const { loadTableData, syncTimeoutRef } = useCloudSync(
+  const { loadTableData, syncTimeoutRef, setLastSyncedBaseline } = useCloudSync(
     localStorage.getItem('tableCode'),
     settings.cloudSync,
     {
@@ -138,14 +138,16 @@ function App() {
             clearTimeout(syncTimeoutRef.current);
           }
           setSyncStatus('saving');
-          syncTable(localStorage.getItem('tableCode'), {
+          const dataToSync = {
             people,
             events,
             attendance,
             groups,
             settings,
             lastUpdated: new Date().toISOString()
-          }).then(() => {
+          };
+          syncTable(localStorage.getItem('tableCode'), dataToSync).then(() => {
+            setLastSyncedBaseline(dataToSync);
             setSyncStatus('saved');
           });
         }}

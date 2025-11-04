@@ -34,7 +34,7 @@ function SortContextMenu({ x, y, onSort, onClose }) {
           onClose();
         }}>Sort by Groups</div>
         <div onClick={() => {
-          onSort('none');
+          onSort('none', null);
           onClose();
         }}>Original Order</div>
       </div>
