@@ -115,7 +115,10 @@ function SettingsDialog({ table, dispatch, tableId, tableName, code, sync, actio
 
       <section className="settings-section">
         <h3>Display</h3>
-        <p className="hint">These are yours alone — they travel with the table but not with the people you share it with.</p>
+        <p className="hint">
+          These are part of the table, so everyone sharing it sees the same choices —
+          except collapsing a folder, which is yours alone.
+        </p>
         {DISPLAY_OPTIONS.map((option) => (
           <label key={option.key} className="checkbox-row">
             <input
@@ -160,7 +163,7 @@ function SettingsDialog({ table, dispatch, tableId, tableName, code, sync, actio
               type="button"
               className="btn"
               onClick={forceUpload}
-              disabled={!code || uploadState === 'working'}
+              disabled={!code || readOnly || uploadState === 'working'}
             >
               {uploadState === 'working' ? 'Uploading…' : 'Upload'}
             </button>

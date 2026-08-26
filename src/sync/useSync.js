@@ -97,35 +97,45 @@ export function useSync({ code, table, outbox, dispatch }) {
     // again and is picked up by the next flush.
     dispatch({ type: 'sync/drained', slices, cells: cellKeys, attendanceReplace: replaceAttendance });
 
+    const replacedAttendance = replaceAttendance ? { ...tableRef.current.attendance } : null;
+
     try {
       const writes = slices.map((slice) => writeSlice(code, slice, SLICE_PAYLOAD[slice](tableRef.current)));
 
-      if (replaceAttendance) {
+      if (replacedAttendance) {
         // The whole set of marks was replaced (a cleared table), so the document
         // is overwritten. Merging would leave every deleted mark in place.
-        const attendance = tableRef.current.attendance;
-        lastAttendance.current = { ...attendance };
-        writes.push(writeSlice(code, 'attendance', attendance));
+        writes.push(writeSlice(code, 'attendance', replacedAttendance));
       } else if (cellKeys.length > 0) {
-        // Keep our own baseline in step so the next snapshot is not read as a
-        // remote change and echoed back into state.
+        writes.push(writeCells(code, cells));
+      }
+      await Promise.all(writes);
+
+      // The baseline only moves once the write has actually landed. Advancing it
+      // first meant a rejected write left us believing the server held values it
+      // never received, so the next snapshot diffed them as unchanged forever.
+      if (replacedAttendance) {
+        lastAttendance.current = replacedAttendance;
+      } else {
         for (const [key, value] of Object.entries(cells)) {
           if (value === null) delete lastAttendance.current[key];
           else lastAttendance.current[key] = value;
         }
-        writes.push(writeCells(code, cells));
       }
-      await Promise.all(writes);
+
       // Metadata only. If just this is rejected the table itself still saved,
       // so it must not turn a successful save into a reported failure.
       await touchTable(code).catch(() => {});
       setError(null);
       setStatus(online.current ? 'live' : 'offline');
     } catch (err) {
-      // Firestore's offline cache keeps the write queued, so this is reported
-      // rather than retried by hand.
+      // The drain above was optimistic, so hand the changes back before
+      // reporting; otherwise a rejected write throws away the edits it carried.
+      dispatch({ type: 'sync/requeue', slices, cells, attendanceReplace: replaceAttendance });
       setError(err);
-      setStatus('offline');
+      // Offline is a queue that will drain itself; a rejection while online is
+      // not, and saying "offline" would hide a permissions problem.
+      setStatus(online.current ? 'error' : 'offline');
     }
   }, [code, dispatch]);
 

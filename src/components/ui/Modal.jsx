@@ -19,17 +19,30 @@ function Modal({
   const panelRef = useRef(null);
   const openerRef = useRef(null);
 
+  // Held in a ref so a caller passing an inline `onClose` cannot re-run the
+  // effect below on every render — which would keep yanking focus back out of
+  // whatever the user is typing into.
+  const closeRef = useRef(onClose);
+  closeRef.current = onClose;
+
   useEffect(() => {
     openerRef.current = document.activeElement;
-    const focusTarget = panelRef.current?.querySelector(
-      'input, select, textarea, button, [tabindex]:not([tabindex="-1"])'
-    );
+
+    // Search the body, not the whole panel: the header's ✕ comes first in the
+    // DOM, so focusing the panel's first focusable landed on a dismiss control.
+    // Space or Enter then threw away everything the user had entered.
+    const body = panelRef.current?.querySelector('.modal__body');
+    const focusTarget =
+      body?.querySelector('[autofocus]') ||
+      body?.querySelector('input:not([type="hidden"]), select, textarea') ||
+      body?.querySelector('button, [tabindex]:not([tabindex="-1"])') ||
+      panelRef.current;
     focusTarget?.focus();
 
     const onKeyDown = (event) => {
       if (event.key === 'Escape') {
         event.stopPropagation();
-        onClose();
+        closeRef.current();
       }
     };
     document.addEventListener('keydown', onKeyDown);
@@ -38,7 +51,7 @@ function Modal({
       document.removeEventListener('keydown', onKeyDown);
       if (openerRef.current instanceof HTMLElement) openerRef.current.focus();
     };
-  }, [onClose]);
+  }, []);
 
   return (
     <div
@@ -53,6 +66,7 @@ function Modal({
         role="dialog"
         aria-modal="true"
         aria-label={title}
+        tabIndex={-1}
         ref={panelRef}
       >
         <header className="modal__header">

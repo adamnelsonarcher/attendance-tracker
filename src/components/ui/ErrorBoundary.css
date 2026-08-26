@@ -1,0 +1,35 @@
+.crash {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100dvh;
+  padding: var(--space-4);
+  background: var(--surface-sunken);
+}
+
+.crash__panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  max-width: 520px;
+  padding: var(--space-5);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow);
+}
+
+.crash__detail {
+  margin: 0;
+  padding: var(--space-3);
+  overflow-x: auto;
+  background: var(--surface-sunken);
+  border-radius: var(--radius);
+  font-size: var(--text-sm);
+  color: var(--danger);
+}
+
+.crash__actions {
+  display: flex;
+  gap: var(--space-2);
+}

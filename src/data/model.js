@@ -53,6 +53,10 @@ export function cellKey(personId, eventId) {
 /* empty + demo tables                                                        */
 /* -------------------------------------------------------------------------- */
 
+export function defaultSettings() {
+  return { ...DEFAULT_SETTINGS, statuses: DEFAULT_STATUSES.map((s) => ({ ...s })) };
+}
+
 export function emptyTable() {
   return {
     version: SCHEMA_VERSION,
@@ -61,7 +65,7 @@ export function emptyTable() {
     folders: [],
     events: [],
     attendance: {},
-    settings: { ...DEFAULT_SETTINGS, statuses: DEFAULT_STATUSES.map((s) => ({ ...s })) },
+    settings: defaultSettings(),
   };
 }
 
@@ -166,7 +170,7 @@ export function normalizeTable(raw) {
   };
 }
 
-function normalizeSettings(raw, defaults) {
+export function normalizeSettings(raw, defaults) {
   if (!isObject(raw)) return defaults;
 
   const statuses = asArray(raw.statuses)

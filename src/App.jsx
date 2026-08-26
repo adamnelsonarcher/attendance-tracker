@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import './App.css';
 import './components/dialogs/dialogs.css';
 import TopBar from './components/TopBar/TopBar';
@@ -24,7 +24,7 @@ function App() {
   const [sort, setSort] = useState(NO_SORT);
   const [dialog, setDialog] = useState(null);
 
-  const close = () => setDialog(null);
+  const close = useCallback(() => setDialog(null), []);
   const tableName = tables.find((entry) => entry.id === tableId)?.name || 'My table';
 
   return (

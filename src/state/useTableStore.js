@@ -4,7 +4,7 @@
  */
 
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react';
-import { initialState, reconcile, tableReducer } from './tableReducer';
+import { initialState, tableReducer } from './tableReducer';
 import { emptyTable } from '../data/model';
 import {
   LOCAL_TABLE_ID,
@@ -31,12 +31,24 @@ import { createTable, fetchTable, isFirebaseConfigured } from '../sync/firebase'
 import { isLegacyRemote, remoteTableName, tableFromRemote } from '../sync/remoteTable';
 import { useSync } from '../sync/useSync';
 
-/** Opens the table named in the URL, else the last one used, else the local one. */
-function resolveInitialTableId() {
+/**
+ * Which table to open on mount: the one named in the URL, else the last one
+ * used, else the local one.
+ *
+ * A code in the URL is only adopted here if this browser already holds a copy.
+ * Naming a code we have never joined would mean the reducer starts on the local
+ * table while `tableId` says otherwise — and the persist effect then writes the
+ * local table under the shared code, which both hides the real table and arms
+ * sync to push our roster over theirs. Staying local until `fetchTable` has
+ * actually returned keeps those two in step.
+ */
+export function resolveInitialTableId() {
   const fromUrl = codeFromLocation();
-  if (fromUrl) return fromUrl;
+  if (fromUrl) return loadTable(fromUrl) ? fromUrl : LOCAL_TABLE_ID;
+
   const active = getActiveTableId();
-  return active || LOCAL_TABLE_ID;
+  if (active && (active === LOCAL_TABLE_ID || loadTable(active))) return active;
+  return LOCAL_TABLE_ID;
 }
 
 export function useTableStore() {
@@ -52,12 +64,21 @@ export function useTableStore() {
   );
 
   // Blocks edits on a view-only link. Remote merges and sync bookkeeping still
-  // flow, so the page keeps updating live while it stays read-only.
+  // flow, so the page keeps updating live while it stays read-only, and
+  // collapsing a folder still works — it changes nothing anyone else can see.
   const dispatch = useCallback(
     (action) => {
-      const isInternal = action.type.startsWith('remote/') || action.type.startsWith('sync/');
-      if (viewOnly && !isInternal && action.type !== 'table/replace') return;
-      rawDispatch(action);
+      if (!viewOnly) {
+        rawDispatch(action);
+        return;
+      }
+      const allowed =
+        action.type.startsWith('remote/') ||
+        action.type.startsWith('sync/') ||
+        action.type === 'table/replace' ||
+        action.type === 'table/adopt' ||
+        action.type === 'folders/toggle';
+      if (allowed) rawDispatch(action);
     },
     [viewOnly]
   );
@@ -216,14 +237,6 @@ export function useTableStore() {
     },
     [tableId, openTable, refreshTables]
   );
-
-  /* --------------------------------------------------------- reconciliation */
-
-  // A remote roster or schedule change can orphan cells this client still holds.
-  useEffect(() => {
-    const cleaned = reconcile(table);
-    if (cleaned !== table) rawDispatch({ type: 'table/prune', table: cleaned });
-  }, [table]);
 
   return {
     table,

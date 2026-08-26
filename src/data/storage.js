@@ -8,6 +8,7 @@
  */
 
 import { normalizeTable, emptyTable, demoTable } from './model';
+import { isValidTableCode } from './tableCode';
 
 const REGISTRY_KEY = 'at:registry';
 const ACTIVE_KEY = 'at:active';
@@ -16,7 +17,9 @@ const TABLE_PREFIX = 'at:table:';
 /** The id of the table that has never been shared. Everything else is a code. */
 export const LOCAL_TABLE_ID = 'local';
 
-const LEGACY_KEYS = ['people', 'events', 'attendance', 'groups', 'settings', 'tableCode'];
+/** v1's JSON-encoded keys. `tableCode` is deliberately absent — see below. */
+const LEGACY_KEYS = ['people', 'events', 'attendance', 'groups', 'settings'];
+const LEGACY_CODE_KEY = 'tableCode';
 
 function readJson(key, fallback) {
   try {
@@ -48,8 +51,15 @@ export function listTables() {
 }
 
 export function rememberTable(id, name) {
+  const existing = listTables().find((entry) => entry.id === id);
   const entries = listTables().filter((entry) => entry.id !== id);
-  entries.unshift({ id, name: name || defaultName(id), updatedAt: new Date().toISOString() });
+  entries.unshift({
+    id,
+    // A name the user set survives being reopened; only a table we have never
+    // seen takes the supplied or default name.
+    name: existing?.name || name || defaultName(id),
+    updatedAt: new Date().toISOString(),
+  });
   writeJson(REGISTRY_KEY, entries.slice(0, 12));
 }
 
@@ -140,6 +150,14 @@ export function migrateLegacyStorage() {
       found = true;
     }
   }
+
+  // v1 stored the share code as a bare string, so it is read directly. Putting
+  // it through readJson meant JSON.parse('QK4M9P') threw, the code came back
+  // undefined, and every table that was already being shared quietly became a
+  // local-only one with no way back to it.
+  const code = readLegacyCode();
+  if (code) found = true;
+
   if (!found) return null;
 
   const table = normalizeTable({
@@ -150,9 +168,20 @@ export function migrateLegacyStorage() {
     settings: legacy.settings,
   });
 
-  for (const key of LEGACY_KEYS) {
-    if (legacy[key] === undefined) continue;
-    writeJson(`at:legacy:${key}`, legacy[key]);
+  // Write the converted table before touching the originals: this runs against
+  // what may be the only copy of someone's data.
+  if (code) {
+    saveTable(code, table);
+    rememberTable(code, defaultName(code));
+    setActiveTableId(code);
+  }
+  saveTable(LOCAL_TABLE_ID, table);
+
+  for (const key of [...LEGACY_KEYS, LEGACY_CODE_KEY]) {
+    const value = key === LEGACY_CODE_KEY ? code : legacy[key];
+    if (value === undefined || value === null) continue;
+    // Only drop the original once the backup is definitely written.
+    if (!writeJson(`at:legacy:${key}`, value)) continue;
     try {
       localStorage.removeItem(key);
     } catch {
@@ -160,15 +189,20 @@ export function migrateLegacyStorage() {
     }
   }
 
-  // A v1 table that was already shared keeps its code, so the same link works.
-  const code = typeof legacy.tableCode === 'string' ? legacy.tableCode.toUpperCase() : null;
-  if (code) {
-    saveTable(code, table);
-    rememberTable(code, defaultName(code));
-    setActiveTableId(code);
-  }
-
   return table;
+}
+
+/** v1 wrote `tableCode` as a raw string, never as JSON. */
+function readLegacyCode() {
+  let raw = null;
+  try {
+    raw = localStorage.getItem(LEGACY_CODE_KEY);
+  } catch {
+    return null;
+  }
+  if (typeof raw !== 'string') return null;
+  const code = raw.trim().replace(/^"|"$/g, '').toUpperCase();
+  return isValidTableCode(code) ? code : null;
 }
 
 export { emptyTable };

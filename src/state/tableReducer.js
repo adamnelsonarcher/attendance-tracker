@@ -9,7 +9,15 @@
  * push the cells that changed rather than overwriting the whole document.
  */
 
-import { cellKey, clampWeight, newId, normalizeTable, pruneAttendance } from '../data/model';
+import {
+  cellKey,
+  clampWeight,
+  defaultSettings,
+  newId,
+  normalizeSettings,
+  normalizeTable,
+  pruneAttendance,
+} from '../data/model';
 
 export function initialState(table) {
   return { table, outbox: emptyOutbox() };
@@ -113,12 +121,15 @@ export function tableReducer(state, action) {
     }
 
     case 'folders/toggle': {
+      // Deliberately does not mark the outbox: whether a folder is collapsed is
+      // a view preference like the filters and the sort, and pushing it would
+      // fold the folder shut under everyone else mid-meeting.
       return {
         table: {
           ...table,
           folders: table.folders.map((f) => (f.id === action.id ? { ...f, isOpen: !f.isOpen } : f)),
         },
-        outbox: mark(outbox, 'schedule'),
+        outbox,
       };
     }
 
@@ -286,7 +297,28 @@ export function tableReducer(state, action) {
      */
     case 'remote/merge': {
       const merged = mergeSlice(table, action.slice, action.data);
-      return merged === table ? state : { table: merged, outbox };
+      if (merged === table) return state;
+
+      // Only a roster or schedule change can orphan a cell. Pruning after an
+      // attendance merge would delete marks whose event or person simply has
+      // not arrived yet — the four slices are separate documents and their
+      // snapshots are not ordered — and `lastAttendance` in the sync layer has
+      // already accepted them, so they would never be re-delivered.
+      const cleaned = action.slice === 'attendance' ? merged : reconcile(merged);
+      return { table: cleaned, outbox };
+    }
+
+    /**
+     * A write failed. Put what it claimed back, without clobbering anything
+     * edited while it was in flight — the drain is optimistic, so without this
+     * a rejected write silently discards the edits it was carrying.
+     */
+    case 'sync/requeue': {
+      const attendance = { ...(action.cells || {}), ...outbox.attendance };
+      const next = { ...outbox, attendance };
+      for (const slice of action.slices || []) next[slice] = true;
+      if (action.attendanceReplace) next.attendanceReplace = true;
+      return { ...state, outbox: next };
     }
 
     case 'sync/drained': {
@@ -342,20 +374,42 @@ function applyCells(state, entries) {
   };
 }
 
+/**
+ * Splices a slice that arrived over the wire into the table.
+ *
+ * Everything here is untrusted. Joining a table runs the payload through
+ * `normalizeTable`, but live updates arrive as raw snapshot data — so a
+ * half-written or future-schema document would otherwise reach the renderer
+ * unchecked, and something as small as `settings.statuses` not being an array
+ * throws during render and blanks the page for every connected client.
+ */
 function mergeSlice(table, slice, data) {
+  if (!data || typeof data !== 'object' || Array.isArray(data)) return table;
+
   switch (slice) {
     case 'roster':
-      return { ...table, people: data.people ?? table.people, groups: data.groups ?? table.groups };
+      return {
+        ...table,
+        people: Array.isArray(data.people) ? data.people : table.people,
+        groups: Array.isArray(data.groups) ? data.groups : table.groups,
+      };
     case 'schedule':
-      return { ...table, folders: data.folders ?? table.folders, events: data.events ?? table.events };
+      return {
+        ...table,
+        folders: Array.isArray(data.folders) ? data.folders : table.folders,
+        events: Array.isArray(data.events) ? data.events : table.events,
+      };
     case 'settings':
-      return { ...table, settings: { ...table.settings, ...data } };
+      return {
+        ...table,
+        settings: normalizeSettings({ ...table.settings, ...data }, defaultSettings()),
+      };
     case 'attendance': {
       // Field-level: only the keys the sender actually touched.
       const attendance = { ...table.attendance };
       for (const [key, value] of Object.entries(data)) {
         if (value === null) delete attendance[key];
-        else attendance[key] = value;
+        else if (typeof value === 'string') attendance[key] = value;
       }
       return { ...table, attendance };
     }

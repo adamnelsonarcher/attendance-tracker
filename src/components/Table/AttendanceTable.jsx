@@ -108,6 +108,9 @@ function AttendanceTable({ table, dispatch, filters, sort, onSortChange, readOnl
                     onClick={() => dispatch({ type: 'folders/toggle', id: group.folder.id })}
                     onContextMenu={(event) => {
                       event.preventDefault();
+                      // Every command in these menus is an edit, so on a
+                      // view-only link they would open and then do nothing.
+                      if (readOnly) return;
                       setFolderMenu({ x: event.clientX, y: event.clientY, folder: group.folder });
                     }}
                     title={group.folder.isOpen ? 'Collapse folder' : 'Expand folder'}
@@ -125,7 +128,7 @@ function AttendanceTable({ table, dispatch, filters, sort, onSortChange, readOnl
                     rowSpan={2}
                     sort={sort}
                     onSort={() => onSortChange(nextEventSort(sort, group.event.id))}
-                    onMenu={(x, y) => setEventMenu({ x, y, event: group.event })}
+                    onMenu={readOnly ? null : (x, y) => setEventMenu({ x, y, event: group.event })}
                   />
                 )
               )}
@@ -162,7 +165,7 @@ function AttendanceTable({ table, dispatch, filters, sort, onSortChange, readOnl
                     event={event}
                     sort={sort}
                     onSort={() => onSortChange(nextEventSort(sort, event.id))}
-                    onMenu={(x, y) => setEventMenu({ x, y, event })}
+                    onMenu={readOnly ? null : (x, y) => setEventMenu({ x, y, event })}
                   />
                 ));
               })}
@@ -184,6 +187,7 @@ function AttendanceTable({ table, dispatch, filters, sort, onSortChange, readOnl
                     }
                     onContextMenu={(event) => {
                       event.preventDefault();
+                      if (readOnly) return;
                       setPersonMenu({ x: event.clientX, y: event.clientY, person });
                     }}
                   >
@@ -332,6 +336,7 @@ function EventHeader({ event, rowSpan, sort, onSort, onMenu }) {
       className={`col-event sortable${active ? ' is-sorted' : ''}`}
       onClick={onSort}
       onContextMenu={(domEvent) => {
+        if (!onMenu) return;
         domEvent.preventDefault();
         onMenu(domEvent.clientX, domEvent.clientY);
       }}

@@ -219,3 +219,111 @@ describe('reconcile', () => {
     expect(reconcile(state.table)).toBe(state.table);
   });
 });
+
+describe('remote payloads are untrusted', () => {
+  it('keeps an incoming mark whose event has not arrived yet', () => {
+    // The blocker this guards: pruning after every change deleted cells naming
+    // an event this client had not received. The four slices are separate
+    // documents with no ordering guarantee, and the sync layer had already
+    // accepted the keys, so they were never re-delivered.
+    const next = run(seed(), {
+      type: 'remote/merge',
+      slice: 'attendance',
+      data: { 'p1-eNEW': 'present' },
+    });
+
+    expect(next.table.attendance['p1-eNEW']).toBe('present');
+  });
+
+  it('still drops cells orphaned by an incoming roster', () => {
+    const next = run(seed(), {
+      type: 'remote/merge',
+      slice: 'roster',
+      data: { people: [{ id: 'p2', name: 'Jordan Blake' }], groups: [] },
+    });
+
+    expect(next.table.attendance).toEqual({ 'p2-e1': 'absent' });
+  });
+
+  it('ignores a slice that is not an object', () => {
+    const state = seed();
+    for (const data of [null, undefined, 'nope', 42, []]) {
+      expect(run(state, { type: 'remote/merge', slice: 'roster', data }).table).toBe(state.table);
+    }
+  });
+
+  it('ignores a roster whose collections are the wrong type', () => {
+    const state = seed();
+    const next = run(state, {
+      type: 'remote/merge',
+      slice: 'roster',
+      data: { people: 'everyone', groups: null },
+    });
+
+    expect(next.table.people).toEqual(state.table.people);
+    expect(next.table.groups).toEqual(state.table.groups);
+  });
+
+  it('repairs a settings document that would otherwise crash every client', () => {
+    // `statuses` not being an array threw during render, and with no error
+    // boundary that blanked the page for everyone connected.
+    const next = run(seed(), {
+      type: 'remote/merge',
+      slice: 'settings',
+      data: { statuses: 'not an array', countUnmarkedAsAbsent: 'yes' },
+    });
+
+    expect(Array.isArray(next.table.settings.statuses)).toBe(true);
+    expect(next.table.settings.statuses.length).toBeGreaterThan(0);
+    expect(typeof next.table.settings.countUnmarkedAsAbsent).toBe('boolean');
+  });
+
+  it('ignores an attendance value that is not a status string', () => {
+    const next = run(seed(), {
+      type: 'remote/merge',
+      slice: 'attendance',
+      data: { 'p1-e1': { nested: true }, 'p2-e1': 'late' },
+    });
+
+    expect(next.table.attendance['p1-e1']).toBe('present');
+    expect(next.table.attendance['p2-e1']).toBe('late');
+  });
+});
+
+describe('a failed write', () => {
+  it('hands the changes back instead of dropping them', () => {
+    const edited = run(
+      seed(),
+      { type: 'attendance/set', personId: 'p2', eventId: 'e2', statusId: 'present' },
+      { type: 'people/add', names: ['Later'] }
+    );
+    const cells = { ...edited.outbox.attendance };
+
+    // The flush drains optimistically, then the write is rejected.
+    const drained = run(edited, { type: 'sync/drained', slices: ['roster'], cells: Object.keys(cells) });
+    const requeued = run(drained, { type: 'sync/requeue', slices: ['roster'], cells });
+
+    expect(requeued.outbox.roster).toBe(true);
+    expect(requeued.outbox.attendance['p2-e2']).toBe('present');
+  });
+
+  it('does not overwrite an edit made while the write was in flight', () => {
+    const state = seed();
+    const stale = { 'p1-e1': 'present' };
+    const fresh = run(state, { type: 'attendance/set', personId: 'p1', eventId: 'e1', statusId: 'late' });
+    const requeued = run(fresh, { type: 'sync/requeue', slices: [], cells: stale });
+
+    expect(requeued.outbox.attendance['p1-e1']).toBe('late');
+  });
+});
+
+describe('folder collapse', () => {
+  it('is not sent to everyone else', () => {
+    // Whether a folder is collapsed is a view preference like the filters and
+    // the sort; pushing it would fold the folder shut under everyone mid-meeting.
+    const next = run(seed(), { type: 'folders/toggle', id: 'f1' });
+
+    expect(next.table.folders[0].isOpen).toBe(false);
+    expect(next.outbox.schedule).toBe(false);
+  });
+});

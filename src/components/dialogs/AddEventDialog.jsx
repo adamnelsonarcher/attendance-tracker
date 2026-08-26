@@ -9,7 +9,9 @@ function AddEventDialog({ folders, dispatch, onClose }) {
     startDate: '',
     endDate: '',
     weight: '1',
-    folderId: folders[0]?.id || '',
+    // Defaults to no folder, as v1 did. Defaulting to the first folder files
+    // events somewhere the user did not choose — invisibly, if it is collapsed.
+    folderId: '',
     newFolderName: '',
   });
 
