@@ -12,8 +12,7 @@ const DISPLAY_OPTIONS = [
   { key: 'showTitle', label: 'Show the page title' },
 ];
 
-function SettingsDialog({ table, dispatch, tableId, tableName, code, sync, actions, readOnly, onClose }) {
-  const [name, setName] = useState(tableName);
+function SettingsDialog({ table, dispatch, tableId, code, sync, actions, readOnly, onClose }) {
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [uploadState, setUploadState] = useState(null);
   const { settings } = table;
@@ -49,17 +48,20 @@ function SettingsDialog({ table, dispatch, tableId, tableName, code, sync, actio
       <section className="settings-section">
         <h3>This table</h3>
         <label className="field">
-          <span>Name (only you see this)</span>
+          <span>Name</span>
           <input
             className="input"
-            value={name}
-            onChange={(event) => {
-              setName(event.target.value);
-              actions.rename(event.target.value);
-            }}
+            value={settings.name}
+            disabled={readOnly}
+            maxLength={80}
+            onChange={(event) => actions.rename(event.target.value)}
           />
         </label>
-        {code && <p className="hint">Shared as code <strong>{code}</strong>.</p>}
+        <p className="hint">
+          {code
+            ? <>Everyone who opens this table sees this name. Shared as code <strong>{code}</strong>.</>
+            : 'The name travels with the table if you share it later.'}
+        </p>
       </section>
 
       {readOnly && (
@@ -116,8 +118,8 @@ function SettingsDialog({ table, dispatch, tableId, tableName, code, sync, actio
       <section className="settings-section">
         <h3>Display</h3>
         <p className="hint">
-          These are part of the table, so everyone sharing it sees the same choices —
-          except collapsing a folder, which is yours alone.
+          Like the name and the statuses, these belong to the table, so everyone sharing
+          it sees the same choices — except collapsing a folder, which is yours alone.
         </p>
         {DISPLAY_OPTIONS.map((option) => (
           <label key={option.key} className="checkbox-row">

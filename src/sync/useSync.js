@@ -125,7 +125,7 @@ export function useSync({ code, table, outbox, dispatch }) {
 
       // Metadata only. If just this is rejected the table itself still saved,
       // so it must not turn a successful save into a reported failure.
-      await touchTable(code).catch(() => {});
+      await touchTable(code, tableRef.current.settings?.name).catch(() => {});
       setError(null);
       setStatus(online.current ? 'live' : 'offline');
     } catch (err) {
@@ -173,7 +173,7 @@ export function useSync({ code, table, outbox, dispatch }) {
         writeSlice(code, 'attendance', current.attendance),
       ]);
       lastAttendance.current = { ...current.attendance };
-      await touchTable(code).catch(() => {});
+      await touchTable(code, tableRef.current.settings?.name).catch(() => {});
       dispatch({
         type: 'sync/drained',
         slices: ['roster', 'schedule', 'settings'],
@@ -190,6 +190,29 @@ export function useSync({ code, table, outbox, dispatch }) {
   }, [code, dispatch]);
 
   /* ------------------------------------------------------------ liveness */
+
+  /**
+   * Send anything still on the debounce before the page goes away.
+   *
+   * `visibilitychange` is the one the browser reliably delivers — `beforeunload`
+   * is skipped on mobile and on tab discard. There is nothing to await: once
+   * Firestore has accepted a write it is in the durable offline queue and will
+   * be sent, on this page load or the next.
+   */
+  useEffect(() => {
+    if (!code || !isFirebaseConfigured) return undefined;
+
+    const flushIfHidden = () => {
+      if (document.visibilityState === 'hidden') flush();
+    };
+    document.addEventListener('visibilitychange', flushIfHidden);
+    window.addEventListener('pagehide', flush);
+
+    return () => {
+      document.removeEventListener('visibilitychange', flushIfHidden);
+      window.removeEventListener('pagehide', flush);
+    };
+  }, [code, flush]);
 
   useEffect(() => {
     const update = () => {

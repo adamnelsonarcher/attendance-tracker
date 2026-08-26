@@ -128,3 +128,24 @@ describe('cellKey', () => {
     expect(cellKey('p1', 'e2')).toBe('p1-e2');
   });
 });
+
+describe('the table name', () => {
+  it('is part of the table, so it travels with a share link', () => {
+    const table = normalizeTable({ version: 2, settings: { name: 'Fall 2025' } });
+    expect(table.settings.name).toBe('Fall 2025');
+  });
+
+  it('falls back to a default rather than an empty heading', () => {
+    expect(normalizeTable({ version: 2, settings: { name: '   ' } }).settings.name).toBeTruthy();
+    expect(normalizeTable({ version: 2, settings: { name: 42 } }).settings.name).toBeTruthy();
+  });
+
+  it('is trimmed and bounded', () => {
+    const table = normalizeTable({ version: 2, settings: { name: `  ${'x'.repeat(200)}  ` } });
+    expect(table.settings.name).toHaveLength(80);
+  });
+
+  it('gets a default when a v1 table is migrated', () => {
+    expect(normalizeTable({ people: [], events: [] }).settings.name).toBeTruthy();
+  });
+});

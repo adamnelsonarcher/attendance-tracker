@@ -16,7 +16,6 @@ import {
   loadTable,
   newLocalTableId,
   rememberTable,
-  renameTable,
   saveTable,
   setActiveTableId,
 } from '../data/storage';
@@ -155,14 +154,18 @@ export function useTableStore() {
   /** Switches to a table already stored in this browser. */
   const openTable = useCallback(
     (nextId) => {
+      // Anything still waiting on the flush debounce belongs to the table we
+      // are leaving, and `table/replace` empties the outbox — so send it first.
+      flushNow();
+
       const next = loadTable(nextId) || (nextId === LOCAL_TABLE_ID ? bootstrapLocalTable() : emptyTable());
       setTableId(nextId);
       rawDispatch({ type: 'table/replace', table: next, fromRemote: true });
-      rememberTable(nextId, defaultName(nextId));
+      rememberTable(nextId, next.settings.name || defaultName(nextId));
       refreshTables();
       updateAddress(nextId);
     },
-    [refreshTables]
+    [flushNow, refreshTables]
   );
 
   /** Turns the open table into a shared one and returns its link. */
@@ -171,9 +174,9 @@ export function useTableStore() {
     if (!isFirebaseConfigured) throw new Error('Sharing is not configured for this deployment.');
 
     const newCode = generateTableCode();
-    await createTable(newCode, table, defaultName(newCode));
+    await createTable(newCode, table);
     saveTable(newCode, table);
-    rememberTable(newCode, defaultName(newCode));
+    rememberTable(newCode, table.settings.name);
     setTableId(newCode);
     refreshTables();
     updateAddress(newCode);
@@ -209,6 +212,7 @@ export function useTableStore() {
    * it never overwrites the table already open.
    */
   const createBlank = useCallback(() => {
+    flushNow();
     const id = newLocalTableId();
     const next = emptyTable();
     saveTable(id, next);
@@ -217,16 +221,38 @@ export function useTableStore() {
     rememberTable(id, defaultName(id));
     refreshTables();
     updateAddress(id);
-  }, [refreshTables]);
+  }, [flushNow, refreshTables]);
 
-  /** Renames the open table in this browser's list. */
+  /**
+   * Renames the table. The name lives in the table, not in this browser, so
+   * everyone opening the share link sees what it is called rather than a code.
+   */
   const rename = useCallback(
     (name) => {
-      renameTable(tableId, name);
-      refreshTables();
+      dispatch({ type: 'settings/update', changes: { name } });
     },
-    [tableId, refreshTables]
+    [dispatch]
   );
+
+  /**
+   * Detaches from the shared copy by taking a private one.
+   *
+   * There is no way to un-share a table outright: with no accounts, the link is
+   * the only credential and anyone holding it still has it. So this is honest
+   * about what it does — you stop reading and writing the shared copy, and it
+   * carries on existing for whoever else has the link.
+   */
+  const makePrivateCopy = useCallback(() => {
+    const id = newLocalTableId();
+    const next = { ...table, settings: { ...table.settings, name: `${table.settings.name} (private)` } };
+    saveTable(id, next);
+    rememberTable(id, next.settings.name);
+    setTableId(id);
+    rawDispatch({ type: 'table/replace', table: next, fromRemote: true });
+    refreshTables();
+    updateAddress(id);
+    return id;
+  }, [table, refreshTables]);
 
   /** Removes this browser's copy. The shared table itself is left alone. */
   const forget = useCallback(
@@ -253,7 +279,7 @@ export function useTableStore() {
       configured: isFirebaseConfigured,
     },
     join: { ...joinState, run: join },
-    actions: { share, openTable, createBlank, forget, rename },
+    actions: { share, openTable, createBlank, forget, rename, makePrivateCopy },
   };
 }
 

@@ -102,12 +102,32 @@ describe('migrateLegacyStorage', () => {
 });
 
 describe('the table registry', () => {
-  it('keeps a name the user chose when the table is reopened', () => {
+  it('caches the table-s own name, which is what syncs', () => {
+    const table = emptyTable();
+    table.settings.name = 'Fall 2025';
     rememberTable('ABC234', 'Table ABC234');
-    rememberTable('ABC234', 'Fall 2025');
-    // A later remember must not reset it back to a default.
-    const entries = listTables();
-    expect(entries.find((e) => e.id === 'ABC234').name).toBe('Table ABC234');
+    saveTable('ABC234', table);
+
+    // The switcher lists tables it has not loaded, so the registry has to hold
+    // a copy — but the table's name is the source of truth.
+    expect(listTables().find((e) => e.id === 'ABC234').name).toBe('Fall 2025');
+  });
+
+  it('follows the name when it is renamed', () => {
+    const table = emptyTable();
+    table.settings.name = 'First';
+    saveTable('ABC234', table);
+    rememberTable('ABC234', 'First');
+
+    saveTable('ABC234', { ...table, settings: { ...table.settings, name: 'Second' } });
+    expect(listTables().find((e) => e.id === 'ABC234').name).toBe('Second');
+  });
+
+  it('keeps the name when the table is reloaded', () => {
+    const table = emptyTable();
+    table.settings.name = 'Fall 2025';
+    saveTable('ABC234', table);
+    expect(loadTable('ABC234').settings.name).toBe('Fall 2025');
   });
 
   it('moves the most recent table to the front', () => {

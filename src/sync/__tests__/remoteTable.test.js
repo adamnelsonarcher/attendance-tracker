@@ -95,12 +95,18 @@ describe('tableFromRemote', () => {
 });
 
 describe('remoteTableName', () => {
-  it('prefers the stored name', () => {
-    expect(remoteTableName(modern, 'Table ABC123')).toBe('Fall 2025');
+  it('prefers the name inside the table, which is the one that syncs', () => {
+    const named = { ...modern, settings: { ...modern.settings, name: 'Renamed' } };
+    expect(remoteTableName(named, 'Table ABC234')).toBe('Renamed');
   });
 
-  it('falls back when there is no name', () => {
-    expect(remoteTableName(legacy, 'Table ABC123')).toBe('Table ABC123');
+  it('falls back to the copy on the parent document', () => {
+    // Readable before the slices arrive.
+    expect(remoteTableName(modern, 'Table ABC234')).toBe('Fall 2025');
+  });
+
+  it('falls back again when there is no name anywhere', () => {
+    expect(remoteTableName(legacy, 'Table ABC234')).toBe('Table ABC234');
     expect(remoteTableName({ meta: { name: '  ' } }, 'fallback')).toBe('fallback');
   });
 });

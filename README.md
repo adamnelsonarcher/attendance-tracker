@@ -34,11 +34,17 @@ A table is five flat collections plus settings:
 | `folders` | `{ id, name, isOpen }` |
 | `events` | `{ id, name, weight, folderId, startDate, endDate }` |
 | `attendance` | `{ "personId-eventId": statusId }` |
-| `settings` | statuses, scoring and display options |
+| `settings` | name, statuses, scoring and display options |
 
 Groups own membership and nothing else stores it. Events point at a folder
 rather than nesting inside one, which is what keeps the table rendering to a
 single code path.
+
+Everything in `settings` belongs to the table rather than to the browser looking
+at it, so it travels with a share link — the name included. Whoever opens the
+link sees what the table is called, not a code. The one exception is whether a
+folder is collapsed, which is a per-viewer preference like the filters and the
+sort and is deliberately never sent.
 
 `normalizeTable` in [`src/data/model.js`](src/data/model.js) accepts any older
 shape — including tables written by the pre-0.9 versions — and upgrades it. It
@@ -74,7 +80,13 @@ connection and sends them on reconnect.
 
 Every table this browser has opened is kept separately, so opening someone's
 share link never replaces your own table — switch between them from the name in
-the top-left.
+the top-left. Changes still on the debounce are sent before switching tables and
+when the tab is hidden, so closing the page does not lose the last edit.
+
+There is no un-share. With no accounts the link is the only credential, and
+anyone holding it still holds it. "Make a private copy" in the share dialog is
+honest about that: it takes a copy, switches you to it, and leaves the shared
+table where it is.
 
 ### Access
 
@@ -105,6 +117,12 @@ reports "sync error" rather than failing silently.
 
 Deploying them also stops the pre-0.9 app from saving, since it wrote the whole
 table into `tables/{CODE}` and the rules now only allow metadata there.
+
+Optionally, register a reCAPTCHA v3 site key under Firebase App Check and set
+`REACT_APP_APPCHECK_SITE_KEY`. Requests then have to prove they came from this
+app, which closes off anonymous use of the endpoints — a cost concern rather
+than a data one, since a caller still has to guess a code to reach a table.
+With no key set, nothing changes.
 
 ### Hosting
 

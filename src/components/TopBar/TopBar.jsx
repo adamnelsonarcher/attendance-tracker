@@ -32,7 +32,7 @@ function TopBar({
     <header className="top-bar">
       <div className="top-bar__group">
         <button type="button" className="btn btn--ghost table-name" onClick={(e) => openBelow(e, setSwitcherAnchor)}>
-          <strong>{tableName(tables, tableId)}</strong>
+          <strong>{table.settings.name}</strong>
           <span className="table-name__caret">▾</span>
         </button>
 
@@ -89,10 +89,6 @@ function TopBar({
       )}
     </header>
   );
-}
-
-function tableName(tables, tableId) {
-  return tables.find((entry) => entry.id === tableId)?.name || 'My table';
 }
 
 export default TopBar;
