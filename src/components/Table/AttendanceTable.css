@@ -1,0 +1,278 @@
+/**
+ * The grid. Sticky positioning is driven by the token z-scale and by letting
+ * sticky cells inherit their row's background, rather than v1's approach of
+ * restating every stripe colour for `td:first-child`, `td:last-child` and
+ * `td:nth-last-child(2)` — which broke as soon as a column was added.
+ */
+
+.table-panel {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+
+.table-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+}
+
+.attendance-table {
+  --name-width: 220px;
+  --score-width: 78px;
+  --header-row-height: 32px;
+
+  /* `separate` keeps borders painted on sticky cells; `collapse` drops them. */
+  border-collapse: separate;
+  border-spacing: 0;
+  width: max-content;
+  min-width: 100%;
+}
+
+.attendance-table th,
+.attendance-table td {
+  padding: 0 var(--space-2);
+  height: 34px;
+  text-align: left;
+  vertical-align: middle;
+  border-right: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+}
+
+.attendance-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: var(--z-sticky-header);
+  height: var(--header-row-height);
+  background: var(--surface-header);
+  font-weight: 600;
+  font-size: var(--text-sm);
+}
+
+/* Second header row sits directly under the first. */
+.attendance-table thead tr:nth-child(2) th {
+  top: var(--header-row-height);
+}
+
+.attendance-table thead th[rowspan='2'] {
+  top: 0;
+}
+
+.sortable {
+  cursor: pointer;
+  user-select: none;
+}
+
+.sortable:hover {
+  background: var(--accent-soft);
+}
+
+.sort-hint {
+  margin-left: var(--space-1);
+  color: var(--accent);
+  font-weight: 600;
+}
+
+/* -------------------------------------------------------------------------- */
+/* rows                                                                       */
+/* -------------------------------------------------------------------------- */
+
+.attendance-table tbody tr {
+  background: var(--surface);
+}
+
+.attendance-table tbody tr:nth-child(even) {
+  background: var(--row-alt);
+}
+
+/* Row highlight is plain CSS; v1 tracked the hovered row in React state and
+   re-rendered every cell in the table on each pointer move. */
+.attendance-table.has-hover tbody tr:hover {
+  background: var(--row-hover);
+}
+
+/* -------------------------------------------------------------------------- */
+/* columns                                                                    */
+/* -------------------------------------------------------------------------- */
+
+.col-name {
+  width: var(--name-width);
+  min-width: var(--name-width);
+  max-width: var(--name-width);
+  padding-left: var(--space-2);
+}
+
+.attendance-table tbody .col-name {
+  /* Inherits the row's stripe, hover and all, so it never needs restating. */
+  background: inherit;
+  overflow: hidden;
+}
+
+/* The flex layout lives on a wrapper: a `display: flex` <td> drops out of table
+   layout and stops aligning with its column. */
+.name-cell {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  height: 100%;
+  overflow: hidden;
+}
+
+.person-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.group-bars {
+  display: flex;
+  gap: 2px;
+  flex: none;
+}
+
+.group-bars__bar {
+  width: 4px;
+  height: 22px;
+  border-radius: 2px;
+}
+
+.col-score {
+  width: var(--score-width);
+  min-width: var(--score-width);
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-muted);
+}
+
+.attendance-table tbody .col-score {
+  background: inherit;
+}
+
+.col-event {
+  width: 116px;
+  min-width: 116px;
+  max-width: 116px;
+}
+
+.col-event__name {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.col-event__meta {
+  display: flex;
+  gap: var(--space-1);
+  font-weight: 400;
+  color: var(--text-faint);
+  font-size: 11px;
+}
+
+.col-event__weight {
+  color: var(--warning);
+}
+
+.col-folder {
+  background: var(--surface-sunken);
+  cursor: pointer;
+  user-select: none;
+}
+
+.col-folder:hover {
+  background: var(--accent-soft);
+}
+
+.folder-toggle {
+  display: inline-block;
+  width: 12px;
+  font-size: 9px;
+  color: var(--text-muted);
+}
+
+.col-folder__count {
+  margin-left: var(--space-1);
+  padding: 1px 5px;
+  border-radius: 8px;
+  background: var(--border);
+  color: var(--text-muted);
+  font-size: 11px;
+}
+
+.col-collapsed {
+  width: 28px;
+  min-width: 28px;
+  background: var(--surface-sunken);
+}
+
+.is-hover-column {
+  background: var(--col-hover);
+}
+
+/* -------------------------------------------------------------------------- */
+/* sticky                                                                     */
+/* -------------------------------------------------------------------------- */
+
+.attendance-table.is-sticky .col-name {
+  position: sticky;
+  left: 0;
+  z-index: var(--z-sticky-cell);
+  border-right: 2px solid var(--border-strong);
+}
+
+.attendance-table.is-sticky .col-score {
+  position: sticky;
+  right: 0;
+  z-index: var(--z-sticky-cell);
+}
+
+/* The raw column sits to the left of the weighted one when both are pinned. */
+.attendance-table.is-sticky .col-score:nth-last-child(2) {
+  right: var(--score-width);
+  border-left: 2px solid var(--border-strong);
+}
+
+.attendance-table.is-sticky thead .col-name,
+.attendance-table.is-sticky thead .col-score {
+  z-index: var(--z-sticky-corner);
+}
+
+/* -------------------------------------------------------------------------- */
+/* cells                                                                      */
+/* -------------------------------------------------------------------------- */
+
+.attendance-table td.col-event {
+  padding: 2px 4px;
+}
+
+.attendance-select {
+  width: 100%;
+  height: 26px;
+  padding: 0 2px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  cursor: pointer;
+  transition: background-color 0.12s ease;
+}
+
+.attendance-select:hover:not(:disabled) {
+  border-color: var(--border-strong);
+}
+
+.attendance-select:disabled {
+  cursor: default;
+  opacity: 1;
+  -webkit-appearance: none;
+  appearance: none;
+  text-align: center;
+}
+
+.table-empty {
+  padding: var(--space-6);
+  text-align: center;
+  color: var(--text-muted);
+}

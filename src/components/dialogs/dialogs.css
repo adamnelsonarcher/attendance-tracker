@@ -1,0 +1,23 @@
+/* Layout helpers shared by the dialog forms. */
+
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.row {
+  display: flex;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+
+.row > .field {
+  flex: 1;
+  min-width: 140px;
+}
+
+.row > .field--narrow {
+  flex: 0 0 96px;
+  min-width: 96px;
+}

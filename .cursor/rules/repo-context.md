@@ -1,87 +1,87 @@
-# Attendance Tracker – Repository Context Rule
+# Attendance Tracker — repository context
 
-## Purpose
-Provide shared context and invariants so future edits align with how data, state, and cloud sync work across the app. This rule applies to all code under `src/` and to any additions that touch the same domains.
+Invariants for anything under `src/`. Read before changing data, state or sync.
 
-## Architecture Overview
-- React (CRA) single-page app. Entry at `src/index.js` renders `src/App.jsx`.
-- `App.jsx` orchestrates domain hooks (`usePeople`, `useEvents`, `useAttendance`, `useSort`, `useCalculateScores`) and optional cloud sync via `useCloudSync`.
-- Local-first: state lives in hooks and is persisted to `localStorage`. Cloud sync is optional and layered on top.
-- UI composed of `TopBar`, `Table`, modals/forms under `components/TopBar/*`, plus dynamic styling via `DynamicStyles`.
+## Shape
 
-## Data Domains (source of truth shapes)
-- people (`usePeople`)
-  - Shape: `{ id: string|number, name: string, groups: Array<{ id: string|number, color: string }> }`
-  - IDs generated at creation (e.g., `Date.now()` or composite strings). Treat IDs as opaque.
-  - `groups` here are lightweight chips derived from `groups.memberIds`; do not hand-edit `person.groups`—use `updatePeopleGroups(groups)`.
-- groups (edited via `components/TopBar/Groups/Groups.jsx`)
-  - Shape: `{ id: string|number, name: string, color: string, memberIds: Array<personId> }`
-  - Groups own membership; people display derived group chips. Persist to `localStorage` as a whole array.
-- events (`useEvents`)
-  - Two kinds of items in one array:
-    - Folder: `{ id, name, isFolder: true, isOpen: boolean, events: Array<Event> }`
-    - Event: `{ id, name, weight: number, startDate: 'YYYY-MM-DD'|null, endDate: 'YYYY-MM-DD'|null, isFolder?: false }`
-  - Folder event arrays are date-sorted (noon UTC to avoid TZ drift). Event IDs are opaque (often numbers via `Date.now()`).
-- attendance (`useAttendance`)
-  - Flat map keyed by `${personId}-${eventId}` → statusId (string). Example: `{ 'p1-e1': 'Present' }`.
-  - `Select` indicates unset; not stored as null.
-- settings (in `App.jsx` default + `Settings` modal)
-  - Keys: `hideTitle`, `onlyCountAbsent`, `colorCodeAttendance`, `showHoverHighlight`, `enableStickyColumns`, `colorChangeDropdown`, `cloudSync`, `tableCode?`, `customStatuses`.
-  - `customStatuses`: `{ id, name, credit: number|null, color, isDefault }[]`. `credit=null` means N/A.
+A table is five flat collections plus settings. Nothing nests.
 
-## Persistence Rules (local-first)
-- Every domain hook mirrors state to `localStorage` on change. When loading from cloud, write to `localStorage` before calling `setState`.
-- Do not mutate `localStorage` directly outside the places already established (hooks and sync flows). New features should prefer updating state via setters, letting effects write to `localStorage`.
+```
+people      { id, name }
+groups      { id, name, color, memberIds[] }
+folders     { id, name, isOpen }
+events      { id, name, weight, folderId, startDate, endDate }
+attendance  { "personId-eventId": statusId }
+settings    { statuses[], countUnmarkedAsAbsent, showTitle, colorCells,
+              colorDropdown, highlightHover, stickyColumns }
+```
 
-## Cloud Sync Rules (useCloudSync)
-- Model: local-first with debounced write-only updates; one-time initial cloud fetch.
-  - Initial load: When `settings.cloudSync === true` and a valid `tableCode` exists, fetch once via `getTableData`; seed `localStorage` and state; set `lastSyncedData` and status `'saved'`.
-  - Ongoing: local is the source of truth. Changes are detected by deep-compare of `{ people, events, attendance, groups, settings }` without timestamps.
-  - Debounce: push to cloud after 30,000ms of inactivity. During debounce, status is `'unsaved'`; on push `'saving'`; after success `'saved'`.
-  - Timestamp: include `lastUpdated: new Date().toISOString()` when writing.
-- Do not subscribe to remote changes in this hook. If you add remote subscriptions, you must define conflict resolution (e.g., LWW with timestamps, field-level merges, or vector clocks) and update invariants accordingly.
-- Table switching / joining: use `loadTableData(code)` from `useCloudSync`; it ensures `settings.tableCode` and `cloudSync: true` are set and state/localStorage are repopulated.
-- Adding new top-level synced keys: update both the compare logic and `lastSyncedData` writes in `useCloudSync` so change detection continues to work.
-- Attendance migration: `migrateAttendanceData` normalizes any legacy status values; extend its mapping when adding new statuses/aliases.
+- **Events point at folders; folders never contain events.** The previous model
+  put both in one array with an `isFolder` flag, which forced every mutation to
+  walk a tree and every render to have two branches. Do not reintroduce it.
+- **Groups own membership and nothing else stores it.** Derive per-person groups
+  with `buildMembership(groups)`. Never write a `groups` array onto a person.
+- **Attendance keys come from `cellKey(personId, eventId)` and are never parsed.**
+  To find orphans, rebuild the valid key set from people × events
+  (`pruneAttendance`), don't split on `-`.
+- **IDs are opaque.** Generate with `newId(prefix)`. Never parse or coerce one.
+- **Dates are `YYYY-MM-DD` strings**, parsed at noon UTC via `parseDate` so a day
+  never slips backwards west of UTC.
+- `statuses[].credit === null` means "does not count" — the event leaves both
+  sides of the fraction. That is different from `credit: 0`, which counts
+  against the score.
 
-## Sorting and Filtering Semantics
-- Sorting (`useSort`):
-  - Types: `'firstName' | 'lastName' | 'event' | 'group' | 'score' | 'none'`.
-  - Event sort uses status priority: Present < Absent < Late < DNA < Select (implicit).
-  - Score sort toggles direction; event sort toggles off if re-clicked.
-- Filters (`Table` with `GroupFilter`):
-  - Group filters: state 1 (include), -1 (exclude), 0 (neutral). If any include exists, person must match at least one include and no excludes.
-  - Folder filters: can hide/show entire folders; when any folder is positively filtered, non-matching folders/events are hidden.
+## Rules of the layers
 
-## UI/UX Invariants
-- `DynamicStyles` injects CSS rules for `select[data-status="$STATUS"]` when `settings.colorCodeAttendance` is active. Keep `data-status` attributes in selects accurate.
-- `Table` adds classes for hover highlighting and a `treat-select-as-dna` class when `settings.onlyCountAbsent` is enabled; ensure new UI respects these toggles.
-- Folder headers control `isOpen`; respect `colSpan` semantics in headers and maintain alignment.
+- `data/model.js` — shapes, ID generation, and `normalizeTable`, which accepts
+  **any** historical shape and never throws. All external input (Firestore,
+  localStorage) goes through it.
+- `data/selectors.js` — every derived value: scores, columns, filtering,
+  sorting, name matching. Pure functions of `(table, view)`. Put new derived
+  logic here, not in components.
+- `state/tableReducer.js` — the only place a table is mutated. Every edit is an
+  action. **Each action must mark the slices it touched in `outbox`**, or the
+  change will never sync.
+- `sync/` — Firestore. `useSync` drains the outbox and applies remote slices.
+- `components/` — rendering only. No business logic.
 
-## IDs and Consistency
-- Person/group/event IDs can be numbers or strings. Treat IDs as opaque, stable identifiers—never coerce or parse them for logic.
-- When generating new IDs, prefer monotonic strategies (`Date.now()` plus random suffix) to reduce collision risk.
+## Sync invariants
 
-## Firebase Integration
-- Config from `REACT_APP_FIREBASE_*` envs. Firestore doc: `tables/{tableCode}`.
-- Writes via `setDoc`; reads via `getDoc`. A `subscribeToTable` helper exists but is not consumed by `useCloudSync`.
-- On first enabling sync (`Settings`), generate a table code, persist it, and push a full snapshot.
+- One Firestore document per slice: `tables/{CODE}/slices/{roster|schedule|settings|attendance}`.
+- **Attendance is written per field with `{ merge: true }`**, and `null` means
+  `deleteField()`. Never write the attendance document whole except via
+  `attendanceReplace` (a cleared table) or `pushAll` (the manual override).
+- Incoming attendance is applied as a **diff against the last snapshot seen**,
+  not as a wholesale replace, so local edits made during the round trip survive.
+- Snapshots with `metadata.hasPendingWrites` are this client's own echo — ignore
+  them.
+- Never `list` the `tables` collection or the `slices` subcollection;
+  `firestore.rules` denies it so codes cannot be enumerated. Fetch slices by name.
+- Adding a synced field means updating `SLICE_PAYLOAD` in `useSync`, the matching
+  `mergeSlice` case in the reducer, and `normalizeTable`.
 
-## Extending Statuses and Scoring
-- `customStatuses` drive scoring via `credit` values and UI colors.
-- `useCalculateScores` computes raw and weighted percentages from flat events and attendance map. If adding status types, ensure:
-  - A `customStatuses` entry exists for the new status.
-  - Any migration mapping in `useCloudSync` is updated if legacy values may appear.
+## Local storage
 
-## Performance Considerations
-- Rendering computes scores per person by flattening events and looking up attendance; acceptable for small-to-medium tables. For larger data, memoize derived structures (flat event list, person scores) or virtualize rows.
-- Event sorting within folders uses noon-UTC dates to avoid TZ issues—preserve this.
+- Keys are `at:table:{id}`, `at:registry`, `at:active`. **Multiple tables coexist**
+  — opening a shared link must never overwrite another table.
+- Table ids are either a six-character share code or a `local`/`local-xxxxxx` id.
+  `isValidTableCode(id)` is what decides whether a table is shared.
+- Legacy v1 keys (`people`, `events`, …) are migrated once and moved to
+  `at:legacy:*` rather than deleted.
 
-## Operational Guidance
-- Resetting/creating a new table should clear local storage for affected domains and, if cloud sync is active, optionally push the cleared snapshot.
-- When adding new features that touch synced domains, adjust: localStorage mirrors, `useCloudSync` compare/set, Settings UI (if needed), and `DynamicStyles`/Table behaviors.
+## Styling
 
+- `styles/tokens.css` holds every colour, space, radius and z-index. Use the
+  tokens; do not hard-code values.
+- `styles/base.css` is the **only** file that styles bare elements. Component
+  stylesheets style their own classes and never `body`, `table`, `button`, etc.
+- Sticky cells take `background: inherit` from their row. Do not restate stripe
+  colours per column position.
+- The table fills the space left by the shell (`flex: 1; min-height: 0`). Never
+  reintroduce a `calc(100vh - Npx)` height.
 
----
-By following these rules, new code will interoperate correctly with persistence, sorting/filtering, and cloud sync behaviors established across the app.
+## Testing
 
+`src/data/__tests__` and `src/state/__tests__` cover scoring, migration and the
+reducer. Scoring and the v1 migration are the two places a silent regression
+does real damage — add cases there when touching either.

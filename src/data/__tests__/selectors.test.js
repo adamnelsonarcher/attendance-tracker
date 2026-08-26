@@ -1,0 +1,218 @@
+import { buildColumns, computeScores, filterPeople, matchNames, sortPeople, buildMembership } from '../selectors';
+import { DEFAULT_STATUSES, emptyTable } from '../model';
+
+function tableWith(overrides) {
+  return { ...emptyTable(), ...overrides };
+}
+
+const people = [
+  { id: 'p1', name: 'Avery Chen' },
+  { id: 'p2', name: 'Jordan Blake' },
+];
+
+const events = [
+  { id: 'e1', name: 'One', weight: 1, folderId: null, startDate: null, endDate: null },
+  { id: 'e2', name: 'Two', weight: 3, folderId: null, startDate: null, endDate: null },
+];
+
+describe('computeScores', () => {
+  it('ignores unmarked cells when countUnmarkedAsAbsent is off', () => {
+    const table = tableWith({
+      people,
+      events,
+      attendance: { 'p1-e1': 'present' },
+      settings: { ...emptyTable().settings, countUnmarkedAsAbsent: false },
+    });
+
+    expect(computeScores(table).get('p1')).toMatchObject({ raw: 100, weighted: 100, counted: 1 });
+  });
+
+  it('counts unmarked cells as missed when the setting is on', () => {
+    const table = tableWith({
+      people,
+      events,
+      attendance: { 'p1-e1': 'present' },
+      settings: { ...emptyTable().settings, countUnmarkedAsAbsent: true },
+    });
+
+    // e2 is unmarked and now counts: 1 of 2 raw, and 1 of 4 by weight.
+    expect(computeScores(table).get('p1')).toMatchObject({ raw: 50, weighted: 25, counted: 2 });
+  });
+
+  it('is the setting v1 ignored entirely', () => {
+    // Someone never marked at any event.
+    const base = { people, events, attendance: {} };
+    const ignored = computeScores(
+      tableWith({ ...base, settings: { ...emptyTable().settings, countUnmarkedAsAbsent: false } })
+    ).get('p2');
+    const counted = computeScores(
+      tableWith({ ...base, settings: { ...emptyTable().settings, countUnmarkedAsAbsent: true } })
+    ).get('p2');
+
+    expect(ignored.raw).toBeNull();
+    expect(counted.raw).toBe(0);
+  });
+
+  it('leaves null-credit statuses out of both sides of the fraction', () => {
+    const table = tableWith({
+      people,
+      events,
+      attendance: { 'p1-e1': 'present', 'p1-e2': 'excused' },
+    });
+
+    // The excused event drops out entirely rather than counting as a zero.
+    expect(computeScores(table).get('p1')).toMatchObject({ raw: 100, weighted: 100, counted: 1 });
+  });
+
+  it('weights events by their weight', () => {
+    const table = tableWith({
+      people,
+      events,
+      attendance: { 'p1-e1': 'absent', 'p1-e2': 'present' },
+    });
+
+    const score = computeScores(table).get('p1');
+    expect(score.raw).toBe(50);
+    expect(score.weighted).toBe(75); // 3 of 4 available weight
+  });
+
+  it('gives partial credit for a partial-credit status', () => {
+    const table = tableWith({
+      people,
+      events: [events[0]],
+      attendance: { 'p1-e1': 'late' },
+    });
+
+    expect(computeScores(table).get('p1').raw).toBe(50);
+  });
+
+  it('returns null rather than 0 when nothing counted', () => {
+    const table = tableWith({ people, events, attendance: {} });
+    expect(computeScores(table).get('p1').raw).toBeNull();
+  });
+});
+
+describe('buildColumns', () => {
+  const table = tableWith({
+    folders: [
+      { id: 'f1', name: 'Meetings', isOpen: true },
+      { id: 'f2', name: 'Service', isOpen: false },
+    ],
+    events: [
+      { id: 'e1', name: 'B', weight: 1, folderId: 'f1', startDate: '2025-02-02', endDate: null },
+      { id: 'e2', name: 'A', weight: 1, folderId: 'f1', startDate: '2025-01-01', endDate: null },
+      { id: 'e3', name: 'Loose', weight: 1, folderId: null, startDate: null, endDate: null },
+      { id: 'e4', name: 'Hidden', weight: 1, folderId: 'f2', startDate: null, endDate: null },
+    ],
+  });
+
+  it('orders events in a folder by date', () => {
+    const { columns } = buildColumns(table, {});
+    expect(columns.slice(0, 2).map((column) => column.event.id)).toEqual(['e2', 'e1']);
+  });
+
+  it('collapses a closed folder to a single column', () => {
+    const { groups, columns } = buildColumns(table, {});
+    const closed = groups.find((group) => group.folder?.id === 'f2');
+    expect(closed.span).toBe(1);
+    expect(columns.filter((column) => column.kind === 'collapsed')).toHaveLength(1);
+  });
+
+  it('keeps header spans and body columns the same width', () => {
+    const { groups, columns } = buildColumns(table, {});
+    const spanned = groups.reduce((total, group) => total + (group.kind === 'folder' ? group.span : 1), 0);
+    expect(spanned).toBe(columns.length);
+  });
+
+  it('hides everything outside a positively filtered folder', () => {
+    const { columns } = buildColumns(table, { f1: 1 });
+    expect(columns.every((column) => column.folder?.id === 'f1')).toBe(true);
+  });
+
+  it('keeps an empty folder visible instead of dropping it', () => {
+    const withEmpty = tableWith({ folders: [{ id: 'f9', name: 'Empty', isOpen: true }], events: [] });
+    const { groups } = buildColumns(withEmpty, {});
+    expect(groups).toHaveLength(1);
+  });
+});
+
+describe('filterPeople', () => {
+  const groups = [
+    { id: 'g1', name: 'Exec', color: '#000000', memberIds: ['p1'] },
+    { id: 'g2', name: 'New', color: '#111111', memberIds: ['p2'] },
+  ];
+  const membership = buildMembership(groups);
+
+  it('returns everyone when no filter is set', () => {
+    expect(filterPeople(people, membership, {})).toHaveLength(2);
+  });
+
+  it('keeps only included groups', () => {
+    expect(filterPeople(people, membership, { g1: 1 }).map((p) => p.id)).toEqual(['p1']);
+  });
+
+  it('drops excluded groups even when they are also included', () => {
+    expect(filterPeople(people, membership, { g1: 1, g2: -1 }).map((p) => p.id)).toEqual(['p1']);
+  });
+});
+
+describe('sortPeople', () => {
+  const context = {
+    attendance: {},
+    scores: new Map([
+      ['p1', { raw: 80, weighted: 80 }],
+      ['p2', { raw: null, weighted: null }],
+    ]),
+    membership: new Map(),
+    statusOrder: new Map(DEFAULT_STATUSES.map((s, i) => [s.id, i])),
+  };
+
+  it('sorts by last name', () => {
+    const sorted = sortPeople(people, { type: 'lastName', direction: 'asc' }, context);
+    expect(sorted.map((p) => p.name)).toEqual(['Jordan Blake', 'Avery Chen']);
+  });
+
+  it('treats an unscored person as lowest', () => {
+    const sorted = sortPeople(people, { type: 'score', direction: 'asc', scoreType: 'raw' }, context);
+    expect(sorted[0].id).toBe('p2');
+  });
+
+  it('reverses event sort, which v1 could not do', () => {
+    const attendance = { 'p1-e1': 'absent', 'p2-e1': 'present' };
+    const withMarks = { ...context, attendance };
+    const asc = sortPeople(people, { type: 'event', direction: 'asc', eventId: 'e1' }, withMarks);
+    const desc = sortPeople(people, { type: 'event', direction: 'desc', eventId: 'e1' }, withMarks);
+    expect(asc[0].id).toBe('p2');
+    expect(desc[0].id).toBe('p1');
+  });
+});
+
+describe('matchNames', () => {
+  const roster = [
+    { id: 'p1', name: 'Avery Chen' },
+    { id: 'p2', name: 'Jordan A. Blake' },
+    { id: 'p3', name: 'Jordan Reyes' },
+  ];
+
+  it('matches on a full name', () => {
+    expect(matchNames(['Avery Chen'], roster).matched.map((p) => p.id)).toEqual(['p1']);
+  });
+
+  it('ignores middle initials and accents', () => {
+    expect(matchNames(['Jordan Blake', 'Ávery Chen'], roster).matched.map((p) => p.id)).toEqual(['p2', 'p1']);
+  });
+
+  it('reports an ambiguous name instead of guessing', () => {
+    const result = matchNames(['Jordan'], roster);
+    expect(result.matched).toHaveLength(0);
+    expect(result.ambiguous[0].candidates).toHaveLength(2);
+  });
+
+  it('reports names that are not on the roster', () => {
+    expect(matchNames(['Nobody Here'], roster).unmatched).toEqual(['Nobody Here']);
+  });
+
+  it('never applies the same person twice', () => {
+    expect(matchNames(['Avery Chen', 'avery chen'], roster).matched).toHaveLength(1);
+  });
+});

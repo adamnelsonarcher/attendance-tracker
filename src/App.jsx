@@ -1,268 +1,97 @@
-import React, { useState, useEffect } from 'react';
+import { useState } from 'react';
 import './App.css';
-import Table from './components/Table/Table';
-import Settings from './components/TopBar/Settings/Settings';
+import './components/dialogs/dialogs.css';
 import TopBar from './components/TopBar/TopBar';
-import AddEventForm from './components/TopBar/AddEventForm/AddEventForm';
-import AddPersonForm from './components/TopBar/AddPersonForm/AddPersonForm';
-import { useAttendance } from './hooks/useAttendance';
-import { useEvents } from './hooks/useEvents';
-import { usePeople } from './hooks/usePeople';
-import { useSort } from './hooks/useSort';
-import { useCalculateScores } from './hooks/useCalculateScores';
-import SortContextMenu from './components/Table/SortContextMenu';
-import Groups from './components/TopBar/Groups/Groups';
-import { useCloudSync } from './hooks/useCloudSync';
-import { syncTable } from './services/firebase';
-import DynamicStyles from './components/DynamicStyles';
-import { isValidTableCode } from './utils/tableCode';
+import AttendanceTable from './components/Table/AttendanceTable';
+import AddPeopleDialog from './components/dialogs/AddPeopleDialog';
+import AddEventDialog from './components/dialogs/AddEventDialog';
+import GroupsDialog from './components/dialogs/GroupsDialog';
+import SettingsDialog from './components/dialogs/SettingsDialog';
+import ShareDialog from './components/dialogs/ShareDialog';
+import JoinDialog from './components/dialogs/JoinDialog';
+import { useTableStore } from './state/useTableStore';
+
+const NO_FILTERS = { groups: {}, folders: {} };
+const NO_SORT = { type: 'none', direction: 'asc', eventId: null, scoreType: null };
 
 function App() {
-  const [showSettings, setShowSettings] = useState(false);
-  const [showAddEvent, setShowAddEvent] = useState(false);
-  const [showAddPerson, setShowAddPerson] = useState(false);
-  const [showGroups, setShowGroups] = useState(false);
-  const [settings, setSettings] = useState(() => {
-    const storedSettings = localStorage.getItem('settings');
-    return storedSettings ? JSON.parse(storedSettings) : {
-      lateCredit: 0.5,
-      onlyCountAbsent: true,
-      colorCodeAttendance: true,
-      hideTitle: true,
-      showHoverHighlight: true,
-      enableStickyColumns: true,
-      cloudSync: false,
-      customStatuses: [
-        { id: 'Present', name: 'Present', credit: 1, color: '#e6ffe6', isDefault: true },
-        { id: 'Absent', name: 'Absent', credit: 0, color: '#ffe6e6', isDefault: true },
-        { id: 'Late', name: 'Late', credit: 0.5, color: '#fff3e6', isDefault: true },
-        { id: 'DNA', name: 'N/A', credit: null, color: '#f2f2f2', isDefault: true }
-      ]
-    };
-  });
-  const [contextMenu, setContextMenu] = useState(null);
-  const [syncStatus, setSyncStatus] = useState('saved');
-  
-  const [people, handleAddPerson, updatePeopleGroups, resetPeople, setPeople] = usePeople();
-  const [
-    events, 
-    handleAddEvent, 
-    handleRemoveEvent, 
-    handleMoveEvent, 
-    toggleFolder, 
-    handleRenameEvent,
-    handleEditEventDates,
-    handleEditEventWeight,
-    handleRenameFolder,
-    resetEvents, 
-    setEvents
-  ] = useEvents();
-  const [attendance, handleAttendanceChange, resetAttendance, setAttendance] = useAttendance();
-  const [sorting, handleSort, getStatusPriority] = useSort(settings);
-  const calculateScores = useCalculateScores(events, attendance, settings);
-  const [groups, setGroups] = useState(() => {
-    const stored = localStorage.getItem('groups');
-    if (stored) return JSON.parse(stored);
-    
-    const initialGroups = [
-      { id: 'dev', name: 'Developers', color: '#FF6B6B', memberIds: ['p1', 'p2', 'p9', 'p14', 'p17'] },
-      { id: 'design', name: 'Designers', color: '#4ECDC4', memberIds: ['p4', 'p10', 'p12', 'p18'] },
-      { id: 'qa', name: 'QA Team', color: '#45B7D1', memberIds: ['p7', 'p13', 'p16', 'p19'] },
-      { id: 'leads', name: 'Team Leads', color: '#96CEB4', memberIds: ['p1', 'p6'] }
-    ];
-    localStorage.setItem('groups', JSON.stringify(initialGroups));
-    return initialGroups;
-  });
+  const store = useTableStore();
+  const { table, dispatch, tableId, code, tables, viewOnly, sync, join, actions } = store;
 
-  const { loadTableData, syncTimeoutRef, setLastSyncedBaseline } = useCloudSync(
-    localStorage.getItem('tableCode'),
-    settings.cloudSync,
-    {
-      people,
-      events,
-      attendance,
-      groups,
-      settings,
-      setPeople: setPeople || (() => {}),
-      setEvents: setEvents || (() => {}),
-      setAttendance: setAttendance || (() => {}),
-      setGroups: setGroups || (() => {}),
-      setSettings: setSettings || (() => {}),
-      onSyncStatusChange: setSyncStatus
-    }
-  );
+  // Filters and sort are per-view, not part of the table: they should not sync
+  // to everyone else, and they should not persist as data.
+  const [filters, setFilters] = useState(NO_FILTERS);
+  const [sort, setSort] = useState(NO_SORT);
+  const [dialog, setDialog] = useState(null);
 
-  // Auto-load table when URL path contains a table code: /:code
-  useEffect(() => {
-    const pathSegment = window.location.pathname.replace(/^\/+/, '').split('/')[0] || '';
-    const code = pathSegment.toUpperCase();
-    const isValidCode = isValidTableCode(code);
-    if (!isValidCode) return;
-    // If we already have this code loaded, skip
-    if (localStorage.getItem('tableCode') === code) return;
-    (async () => {
-      const success = await loadTableData(code);
-      if (success) {
-        localStorage.setItem('tableCode', code);
-      }
-    })();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  useEffect(() => {
-    localStorage.setItem('groups', JSON.stringify(groups));
-  }, [groups]);
-
-  useEffect(() => {
-    localStorage.setItem('settings', JSON.stringify(settings));
-  }, [settings]);
-
-  const handleEventHeaderClick = (eventId, type = 'event', scoreType = null) => {
-    if (type === 'score') {
-      handleSort('score', null, null, scoreType);
-    } else {
-      handleSort('event', null, eventId);
-    }
-  };
-
-  const handleNameHeaderClick = () => {
-    if (sorting.type === 'firstName') {
-      handleSort('firstName', sorting.direction === 'asc' ? 'desc' : null);
-    } else {
-      handleSort('firstName', 'asc');
-    }
-  };
-
-  const handleNameHeaderContextMenu = (e) => {
-    e.preventDefault();
-    setContextMenu({
-      x: e.clientX,
-      y: e.clientY
-    });
-  };
+  const close = () => setDialog(null);
+  const tableName = tables.find((entry) => entry.id === tableId)?.name || 'My table';
 
   return (
-    <div className="App">
-      <DynamicStyles settings={settings} />
-      <TopBar 
-        onSettingsClick={() => setShowSettings(true)}
-        onAddPersonClick={() => setShowAddPerson(true)}
-        onAddEventClick={() => setShowAddEvent(true)}
-        onGroupsClick={() => setShowGroups(true)}
-        settings={settings}
-        syncStatus={syncStatus}
-        onSyncClick={() => {
-          if (syncTimeoutRef.current) {
-            clearTimeout(syncTimeoutRef.current);
-          }
-          setSyncStatus('saving');
-          const dataToSync = {
-            people,
-            events,
-            attendance,
-            groups,
-            settings,
-            lastUpdated: new Date().toISOString()
-          };
-          syncTable(localStorage.getItem('tableCode'), dataToSync).then(() => {
-            setLastSyncedBaseline(dataToSync);
-            setSyncStatus('saved');
-          });
-        }}
+    <div className="app">
+      <TopBar
+        table={table}
+        filters={filters}
+        onFiltersChange={setFilters}
+        tables={tables}
+        tableId={tableId}
+        code={code}
+        sync={sync}
+        viewOnly={viewOnly}
+        actions={actions}
+        onOpen={setDialog}
       />
 
-      {!settings.hideTitle && <h1>Attendance Tracker</h1>}
+      {join.status === 'error' && (
+        <p className="app__banner app__banner--error" role="alert">
+          {join.error}
+        </p>
+      )}
+      {join.status === 'loading' && <p className="app__banner">Opening shared table…</p>}
 
-      <Table 
-        people={people}
-        events={events}
-        attendance={attendance}
-        onAttendanceChange={handleAttendanceChange}
-        calculateScores={calculateScores}
-        sorting={sorting}
-        onEventHeaderClick={handleEventHeaderClick}
-        onNameHeaderClick={handleNameHeaderClick}
-        onFolderClick={toggleFolder}
-        getStatusPriority={getStatusPriority}
-        onNameHeaderContextMenu={handleNameHeaderContextMenu}
-        settings={settings}
-        groups={groups}
-        onMoveEvent={handleMoveEvent}
-        onRemoveEvent={handleRemoveEvent}
-        onRenameEvent={handleRenameEvent}
-        onEditEventDates={handleEditEventDates}
-        onEditEventWeight={handleEditEventWeight}
-        onRenameFolder={handleRenameFolder}
+      {table.settings.showTitle && <h1 className="app__title">{tableName}</h1>}
+
+      <AttendanceTable
+        table={table}
+        dispatch={dispatch}
+        filters={filters}
+        sort={sort}
+        onSortChange={setSort}
+        readOnly={viewOnly}
       />
 
-      {contextMenu && (
-        <SortContextMenu
-          x={contextMenu.x}
-          y={contextMenu.y}
-          onSort={handleSort}
-          onClose={() => setContextMenu(null)}
+      {dialog === 'people' && (
+        <AddPeopleDialog people={table.people} dispatch={dispatch} onClose={close} />
+      )}
+      {dialog === 'event' && (
+        <AddEventDialog folders={table.folders} dispatch={dispatch} onClose={close} />
+      )}
+      {dialog === 'groups' && (
+        <GroupsDialog
+          groups={table.groups}
+          people={table.people}
+          dispatch={dispatch}
+          onClose={close}
         />
       )}
-
-      {showSettings && (
-        <Settings
-          settings={settings}
-          onSave={setSettings}
-          onClose={() => setShowSettings(false)}
-          onResetData={() => {
-            if (window.confirm('Are you sure? This will clear ALL local data.')) {
-              resetPeople();
-              resetEvents();
-              resetAttendance();
-              setGroups([]);
-              updatePeopleGroups([]);
-              if (settings.cloudSync) {
-                syncTable(localStorage.getItem('tableCode'), {
-                  people: [],
-                  events: [],
-                  attendance: {},
-                  groups: [],
-                  settings: {
-                    ...settings,
-                    cloudSync: true
-                  }
-                });
-              }
-            }
-          }}
-          loadTableData={loadTableData}
-          onMigrateAttendance={(newAttendance) => setAttendance(newAttendance)}
-        />
+      {dialog === 'share' && (
+        <ShareDialog code={code} sync={sync} actions={actions} onClose={close} />
       )}
-
-      {showAddPerson && (
-        <AddPersonForm
-          onAdd={handleAddPerson}
-          onClose={() => setShowAddPerson(false)}
-        />
-      )}
-
-      {showAddEvent && (
-        <AddEventForm
-          onAdd={handleAddEvent}
-          onClose={() => setShowAddEvent(false)}
-          folders={events.filter(e => e.isFolder)}
-        />
-      )}
-
-      {showGroups && (
-        <Groups
-          groups={groups}
-          people={people}
-          onSave={(newGroups) => {
-            setGroups(newGroups);
-            updatePeopleGroups(newGroups);
-          }}
-          onClose={() => setShowGroups(false)}
+      {dialog === 'join' && <JoinDialog join={join} onClose={close} />}
+      {dialog === 'settings' && (
+        <SettingsDialog
+          table={table}
+          dispatch={dispatch}
+          tableId={tableId}
+          tableName={tableName}
+          code={code}
+          sync={sync}
+          actions={actions}
+          onClose={close}
         />
       )}
     </div>
   );
 }
 
-export default App; 
+export default App;
