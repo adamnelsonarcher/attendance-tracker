@@ -128,7 +128,9 @@ export function useSync({ code, table, outbox, dispatch }) {
         writes.push(writeCells(code, cells));
       }
       await Promise.all(writes);
-      await touchTable(code);
+      // Metadata only. If just this is rejected the table itself still saved,
+      // so it must not turn a successful save into a reported failure.
+      await touchTable(code).catch(() => {});
       setError(null);
       setStatus(online.current ? 'live' : 'offline');
     } catch (err) {
@@ -173,8 +175,13 @@ export function useSync({ code, table, outbox, dispatch }) {
         writeSlice(code, 'attendance', current.attendance),
       ]);
       lastAttendance.current = { ...current.attendance };
-      await touchTable(code);
-      dispatch({ type: 'sync/drained', slices: ['roster', 'schedule', 'settings'], cells: [] });
+      await touchTable(code).catch(() => {});
+      dispatch({
+        type: 'sync/drained',
+        slices: ['roster', 'schedule', 'settings'],
+        cells: [],
+        attendanceReplace: true,
+      });
       setError(null);
       setStatus('live');
     } catch (err) {

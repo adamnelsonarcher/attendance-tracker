@@ -83,11 +83,20 @@ The view-only link (`?view=1`) hides the editing controls as a courtesy; it is
 not a permission boundary.
 
 [`firestore.rules`](firestore.rules) blocks listing the `tables` collection, so
-codes cannot be enumerated, and caps document size. Deploy it with:
+codes cannot be enumerated, and restricts writes to the four known slices.
+
+**These rules must be deployed before sharing works at all.** The per-slice
+paths (`tables/{CODE}/slices/*`) are new, and a rule set written for the old
+single-document layout denies them — the app reports "Missing or insufficient
+permissions" when you try to create a share link.
 
 ```bash
-firebase deploy --only firestore:rules
+npm install -g firebase-tools && firebase login
+npm run deploy:rules
 ```
+
+Deploying them also stops the pre-0.9 app from saving, since it wrote the whole
+table into `tables/{CODE}` and the rules now only allow metadata there.
 
 ### Hosting
 
