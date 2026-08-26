@@ -87,6 +87,7 @@ function App() {
           code={code}
           sync={sync}
           actions={actions}
+          readOnly={viewOnly}
           onClose={close}
         />
       )}

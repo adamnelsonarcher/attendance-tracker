@@ -12,7 +12,7 @@ const DISPLAY_OPTIONS = [
   { key: 'showTitle', label: 'Show the page title' },
 ];
 
-function SettingsDialog({ table, dispatch, tableId, tableName, code, sync, actions, onClose }) {
+function SettingsDialog({ table, dispatch, tableId, tableName, code, sync, actions, readOnly, onClose }) {
   const [name, setName] = useState(tableName);
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [uploadState, setUploadState] = useState(null);
@@ -62,12 +62,20 @@ function SettingsDialog({ table, dispatch, tableId, tableName, code, sync, actio
         {code && <p className="hint">Shared as code <strong>{code}</strong>.</p>}
       </section>
 
+      {readOnly && (
+        <p className="hint">
+          You opened this table from a view-only link, so the shared settings below cannot be
+          changed here. Open the edit link to change them.
+        </p>
+      )}
+
       <section className="settings-section">
         <h3>Scoring</h3>
         <label className="checkbox-row">
           <input
             type="checkbox"
             checked={settings.countUnmarkedAsAbsent}
+            disabled={readOnly}
             onChange={(event) => set({ countUnmarkedAsAbsent: event.target.checked })}
           />
           <span>
@@ -84,11 +92,25 @@ function SettingsDialog({ table, dispatch, tableId, tableName, code, sync, actio
         <p className="hint">
           Statuses are part of the table, so everyone sharing it sees the same ones.
         </p>
-        <StatusEditor
-          statuses={settings.statuses}
-          attendance={table.attendance}
-          onChange={(statuses) => dispatch({ type: 'settings/setStatuses', statuses })}
-        />
+        {readOnly ? (
+          <ul className="status-summary">
+            {settings.statuses.map((status) => (
+              <li key={status.id}>
+                <span className="status-swatch" style={{ background: status.color }} />
+                {status.name}
+                <span className="hint">
+                  {status.credit === null ? 'does not count' : `counts as ${status.credit}`}
+                </span>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <StatusEditor
+            statuses={settings.statuses}
+            attendance={table.attendance}
+            onChange={(statuses) => dispatch({ type: 'settings/setStatuses', statuses })}
+          />
+        )}
       </section>
 
       <section className="settings-section">
@@ -99,6 +121,7 @@ function SettingsDialog({ table, dispatch, tableId, tableName, code, sync, actio
             <input
               type="checkbox"
               checked={Boolean(settings[option.key])}
+              disabled={readOnly}
               onChange={(event) => set({ [option.key]: event.target.checked })}
             />
             <span>
@@ -152,7 +175,9 @@ function SettingsDialog({ table, dispatch, tableId, tableName, code, sync, actio
             <strong>Clear this table</strong>
             <p className="hint">Removes all people, events and marks but keeps your statuses.</p>
           </div>
-          <button type="button" className="btn btn--danger" onClick={clearTable}>Clear</button>
+          <button type="button" className="btn btn--danger" onClick={clearTable} disabled={readOnly}>
+            Clear
+          </button>
         </div>
 
         <div className="settings-danger">

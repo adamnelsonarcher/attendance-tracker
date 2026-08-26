@@ -45,3 +45,18 @@
 .settings-disclosure:hover {
   color: var(--text);
 }
+
+.status-summary {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.status-summary li {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
