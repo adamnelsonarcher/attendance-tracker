@@ -245,6 +245,21 @@ export function tableReducer(state, action) {
       return { table: normalizeTable(action.table), outbox: emptyOutbox() };
 
     /**
+     * Opening a shared table. `upgrade` is set when the cloud copy still uses
+     * the old single-document layout: the whole table is queued for writing so
+     * the per-slice documents get laid down once, rather than appearing one at a
+     * time as edits happen and leaving other clients reading a half-migrated
+     * table.
+     */
+    case 'table/adopt':
+      return {
+        table: normalizeTable(action.table),
+        outbox: action.upgrade
+          ? { roster: true, schedule: true, settings: true, attendance: {}, attendanceReplace: true }
+          : emptyOutbox(),
+      };
+
+    /**
      * Empties the table but keeps its statuses. Attendance is marked for
      * wholesale replacement rather than as a set of changed cells, so the
      * shared copy is emptied too instead of keeping every deleted mark.

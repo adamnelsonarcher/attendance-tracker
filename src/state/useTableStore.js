@@ -5,7 +5,7 @@
 
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react';
 import { initialState, reconcile, tableReducer } from './tableReducer';
-import { emptyTable, normalizeTable } from '../data/model';
+import { emptyTable } from '../data/model';
 import {
   LOCAL_TABLE_ID,
   bootstrapLocalTable,
@@ -28,6 +28,7 @@ import {
   shareLink,
 } from '../data/tableCode';
 import { createTable, fetchTable, isFirebaseConfigured } from '../sync/firebase';
+import { isLegacyRemote, remoteTableName, tableFromRemote } from '../sync/remoteTable';
 import { useSync } from '../sync/useSync';
 
 /** Opens the table named in the URL, else the last one used, else the local one. */
@@ -118,19 +119,11 @@ export function useTableStore() {
 
   const adoptRemote = useCallback(
     (nextCode, remote) => {
-      const next = normalizeTable({
-        version: 2,
-        people: remote.roster?.people,
-        groups: remote.roster?.groups,
-        folders: remote.schedule?.folders,
-        events: remote.schedule?.events,
-        settings: remote.settings,
-        attendance: remote.attendance,
-      });
+      const next = tableFromRemote(remote);
       saveTable(nextCode, next);
-      rememberTable(nextCode, remote.meta?.name || defaultName(nextCode));
+      rememberTable(nextCode, remoteTableName(remote, defaultName(nextCode)));
       setTableId(nextCode);
-      rawDispatch({ type: 'table/replace', table: next, fromRemote: true });
+      rawDispatch({ type: 'table/adopt', table: next, upgrade: isLegacyRemote(remote) });
       refreshTables();
     },
     [refreshTables]

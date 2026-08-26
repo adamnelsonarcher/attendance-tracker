@@ -166,6 +166,22 @@ describe('sync bookkeeping', () => {
     expect(drained.outbox.attendanceReplace).toBe(false);
   });
 
+  it('queues the whole table when adopting one still in the old cloud layout', () => {
+    const adopted = run(seed(), { type: 'table/adopt', table: emptyTable(), upgrade: true });
+
+    expect(adopted.outbox.roster).toBe(true);
+    expect(adopted.outbox.schedule).toBe(true);
+    expect(adopted.outbox.settings).toBe(true);
+    expect(adopted.outbox.attendanceReplace).toBe(true);
+  });
+
+  it('sends nothing back when adopting an already-migrated table', () => {
+    const adopted = run(seed(), { type: 'table/adopt', table: emptyTable(), upgrade: false });
+
+    expect(adopted.outbox.roster).toBe(false);
+    expect(adopted.outbox.attendanceReplace).toBe(false);
+  });
+
   it('empties the outbox when a table is loaded', () => {
     const edited = run(seed(), { type: 'people/add', names: ['Someone'] });
     const loaded = run(edited, { type: 'table/replace', table: emptyTable() });

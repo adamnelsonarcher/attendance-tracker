@@ -70,6 +70,10 @@ export const SLICES = ['roster', 'schedule', 'settings', 'attendance'];
  * Each slice is fetched by name rather than by listing the collection, because
  * `firestore.rules` denies `list` — that is what stops someone walking the
  * `tables` collection to harvest codes.
+ *
+ * Tables created before the split live entirely in the `tables/{CODE}` document
+ * and have no slices; those come back as `legacy` and are converted on read.
+ * The first write after that lays down the slices.
  */
 export async function fetchTable(code) {
   if (!isFirebaseConfigured) return null;

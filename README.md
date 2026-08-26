@@ -62,6 +62,10 @@ tables/{CODE}/slices/settings    { ... }
 tables/{CODE}/slices/attendance  { "personId-eventId": statusId }
 ```
 
+Tables shared by earlier versions kept everything in the `tables/{CODE}`
+document itself. Opening one still works: it is converted on read and the slice
+documents are written once, in full, on adoption.
+
 Attendance is written per field with `{ merge: true }`, so two people marking
 different rows of the same event both land. Incoming snapshots are applied as a
 diff against the last one seen, so a remote update never reverts something typed
