@@ -19,8 +19,9 @@
     "build": "react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject",
-    "deploy:rules": "firebase deploy --only firestore:rules",
-    "emulator": "firebase emulators:start --only firestore"
+    "deploy:rules": "npx --yes firebase-tools@15 deploy --only firestore:rules",
+    "emulator": "npx --yes firebase-tools@15 emulators:start --only firestore",
+    "firebase:login": "npx --yes firebase-tools@15 login"
   },
   "eslintConfig": {
     "extends": [

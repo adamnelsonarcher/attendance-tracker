@@ -91,9 +91,17 @@ single-document layout denies them — the app reports "Missing or insufficient
 permissions" when you try to create a share link.
 
 ```bash
-npm install -g firebase-tools && firebase login
+npm run firebase:login    # one-time Google sign-in
 npm run deploy:rules
 ```
+
+Verified against the live project: the config is correct and the deploy is
+blocked only by that sign-in.
+
+The rules cap a slice at 20,000 fields, which for attendance means people ×
+events. That is well inside Firestore's own per-document limits and far beyond
+a normal roster, but a table past it would have its writes rejected — the app
+reports "sync error" rather than failing silently.
 
 Deploying them also stops the pre-0.9 app from saving, since it wrote the whole
 table into `tables/{CODE}` and the rules now only allow metadata there.
