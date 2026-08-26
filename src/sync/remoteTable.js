@@ -50,7 +50,13 @@ export function tableFromRemote(remote) {
   });
 }
 
+/**
+ * The table's own name wins. `meta.name` is only a convenience copy on the
+ * parent document, kept so the name is readable before the slices arrive.
+ */
 export function remoteTableName(remote, fallback) {
-  const name = remote?.meta?.name;
-  return typeof name === 'string' && name.trim() ? name : fallback;
+  for (const candidate of [remote?.settings?.name, remote?.meta?.name]) {
+    if (typeof candidate === 'string' && candidate.trim()) return candidate.trim();
+  }
+  return fallback;
 }

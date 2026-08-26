@@ -16,7 +16,16 @@ export const DEFAULT_STATUSES = [
   { id: 'excused', name: 'Excused', credit: null, color: '#e9ecef' },
 ];
 
+export const DEFAULT_TABLE_NAME = 'Untitled table';
+export const MAX_TABLE_NAME = 80;
+
 export const DEFAULT_SETTINGS = {
+  /**
+   * Everything in here belongs to the table, not to the browser looking at it,
+   * so it travels with a share link. The name is part of that on purpose:
+   * whoever opens the link should see what the table is called, not a code.
+   */
+  name: DEFAULT_TABLE_NAME,
   /** Statuses are shared with everyone on the table — they change the scores. */
   statuses: DEFAULT_STATUSES,
   /** An unmarked cell counts as a miss. Off means unmarked cells are ignored. */
@@ -71,6 +80,7 @@ export function emptyTable() {
 
 export function demoTable() {
   const table = emptyTable();
+  table.settings.name = 'Example table';
   table.folders = [
     { id: 'f_general', name: 'General Meetings', isOpen: true },
     { id: 'f_service', name: 'Service Events', isOpen: true },
@@ -183,8 +193,11 @@ export function normalizeSettings(raw, defaults) {
       color: isHexColor(s.color) ? s.color : '#e9ecef',
     }));
 
+  const name = typeof raw.name === 'string' && raw.name.trim() ? raw.name.trim().slice(0, MAX_TABLE_NAME) : null;
+
   return {
     ...defaults,
+    ...(name ? { name } : {}),
     ...pickBooleans(raw, [
       'countUnmarkedAsAbsent',
       'showTitle',

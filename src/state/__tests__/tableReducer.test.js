@@ -318,6 +318,29 @@ describe('a failed write', () => {
 });
 
 describe('folder collapse', () => {
+  it('survives a remote schedule arriving', () => {
+    const collapsed = run(seed(), { type: 'folders/toggle', id: 'f1' });
+    const next = run(collapsed, {
+      type: 'remote/merge',
+      slice: 'schedule',
+      // The wire carries no isOpen at all.
+      data: { folders: [{ id: 'f1', name: 'Meetings renamed' }], events: [] },
+    });
+
+    expect(next.table.folders[0].name).toBe('Meetings renamed');
+    expect(next.table.folders[0].isOpen).toBe(false);
+  });
+
+  it('opens a folder this viewer has never seen', () => {
+    const next = run(seed(), {
+      type: 'remote/merge',
+      slice: 'schedule',
+      data: { folders: [{ id: 'fNEW', name: 'New folder' }], events: [] },
+    });
+
+    expect(next.table.folders[0].isOpen).toBe(true);
+  });
+
   it('is not sent to everyone else', () => {
     // Whether a folder is collapsed is a view preference like the filters and
     // the sort; pushing it would fold the folder shut under everyone mid-meeting.

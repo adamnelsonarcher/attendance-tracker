@@ -12,7 +12,7 @@ groups      { id, name, color, memberIds[] }
 folders     { id, name, isOpen }
 events      { id, name, weight, folderId, startDate, endDate }
 attendance  { "personId-eventId": statusId }
-settings    { statuses[], countUnmarkedAsAbsent, showTitle, colorCells,
+settings    { name, statuses[], countUnmarkedAsAbsent, showTitle, colorCells,
               colorDropdown, highlightHover, stickyColumns }
 ```
 
@@ -27,6 +27,10 @@ settings    { statuses[], countUnmarkedAsAbsent, showTitle, colorCells,
 - **IDs are opaque.** Generate with `newId(prefix)`. Never parse or coerce one.
 - **Dates are `YYYY-MM-DD` strings**, parsed at noon UTC via `parseDate` so a day
   never slips backwards west of UTC.
+- **Everything in `settings` is shared**, the table name included — it is the
+  synced slice. The registry name in localStorage is only a cache of it. The one
+  thing that must NOT sync is `folders[].isOpen`; `folders/toggle` deliberately
+  does not mark the outbox.
 - `statuses[].credit === null` means "does not count" — the event leaves both
   sides of the fraction. That is different from `credit: 0`, which counts
   against the score.

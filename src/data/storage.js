@@ -50,17 +50,39 @@ export function listTables() {
   return Array.isArray(entries) ? entries.filter((e) => e && typeof e.id === 'string') : [];
 }
 
+const REGISTRY_LIMIT = 12;
+
 export function rememberTable(id, name) {
   const existing = listTables().find((entry) => entry.id === id);
   const entries = listTables().filter((entry) => entry.id !== id);
   entries.unshift({
     id,
-    // A name the user set survives being reopened; only a table we have never
-    // seen takes the supplied or default name.
-    name: existing?.name || name || defaultName(id),
+    name: name || existing?.name || defaultName(id),
     updatedAt: new Date().toISOString(),
   });
-  writeJson(REGISTRY_KEY, entries.slice(0, 12));
+
+  // A shared table can be reopened from its link; a local one cannot, and
+  // dropping it from the list would strand its data with no route back. So the
+  // cap only ever evicts shared tables.
+  const kept = [];
+  const evicted = [];
+  for (const entry of entries) {
+    if (kept.length < REGISTRY_LIMIT || isLocalTableId(entry.id)) kept.push(entry);
+    else evicted.push(entry);
+  }
+
+  writeJson(REGISTRY_KEY, kept);
+  for (const entry of evicted) {
+    try {
+      localStorage.removeItem(TABLE_PREFIX + entry.id);
+    } catch {
+      /* nothing to do */
+    }
+  }
+}
+
+export function isLocalTableId(id) {
+  return id === LOCAL_TABLE_ID || id.startsWith(LOCAL_PREFIX);
 }
 
 export function forgetTable(id) {
@@ -75,6 +97,7 @@ export function forgetTable(id) {
 /** Ids for extra local tables. Deliberately not share-code shaped. */
 const LOCAL_PREFIX = 'local-';
 
+/** Only used before a table has been loaded and its real name is known. */
 export function defaultName(id) {
   if (id === LOCAL_TABLE_ID) return 'My table';
   return id.startsWith(LOCAL_PREFIX) ? 'Untitled table' : `Table ${id}`;
@@ -82,12 +105,6 @@ export function defaultName(id) {
 
 export function newLocalTableId() {
   return `${LOCAL_PREFIX}${Math.random().toString(36).slice(2, 8)}`;
-}
-
-/** Renames a table for this browser only; it is not part of the shared data. */
-export function renameTable(id, name) {
-  const entries = listTables().map((entry) => (entry.id === id ? { ...entry, name } : entry));
-  writeJson(REGISTRY_KEY, entries);
 }
 
 /* -------------------------------------------------------------------------- */
@@ -100,7 +117,23 @@ export function loadTable(id) {
 }
 
 export function saveTable(id, table) {
-  return writeJson(TABLE_PREFIX + id, table);
+  const saved = writeJson(TABLE_PREFIX + id, table);
+
+  // The registry's name is only a cache so the switcher can list tables it has
+  // not loaded. The table's own name is the source of truth, and it syncs.
+  const name = table?.settings?.name;
+  if (saved && name) {
+    const entries = listTables();
+    const entry = entries.find((item) => item.id === id);
+    if (entry && entry.name !== name) {
+      writeJson(
+        REGISTRY_KEY,
+        entries.map((item) => (item.id === id ? { ...item, name } : item))
+      );
+    }
+  }
+
+  return saved;
 }
 
 export function getActiveTableId() {
@@ -165,7 +198,9 @@ export function migrateLegacyStorage() {
     events: legacy.events,
     groups: legacy.groups,
     attendance: legacy.attendance,
-    settings: legacy.settings,
+    // v1 had no table name, and "Untitled table" is a poor thing to greet
+    // someone with on the table they have been using all year.
+    settings: { ...(legacy.settings || {}), name: legacy.settings?.name || 'My table' },
   });
 
   // Write the converted table before touching the originals: this runs against

@@ -15,6 +15,27 @@ service cloud.firestore {
       return code.matches('^[ABCDEFGHJKLMNPQRSTUVWXYZ23456789]{6}$');
     }
 
+    function tableExists(database, code) {
+      return exists(/databases/$(database)/documents/tables/$(code));
+    }
+
+    /**
+     * Each slice has a known shape. Settings is left open beyond its one list
+     * field on purpose: it is the part that grows, and a rule enumerating its
+     * keys would reject every new setting until these rules were redeployed.
+     */
+    function isValidSlice(slice, data) {
+      return (slice == 'roster'
+                && data.keys().hasOnly(['people', 'groups'])
+                && data.people is list && data.groups is list)
+          || (slice == 'schedule'
+                && data.keys().hasOnly(['folders', 'events'])
+                && data.folders is list && data.events is list)
+          || (slice == 'settings'
+                && (!data.keys().hasAny(['statuses']) || data.statuses is list))
+          || slice == 'attendance';
+    }
+
     match /tables/{code} {
       // `get` but never `list`. Without `list` the collection cannot be walked,
       // so a code has to be guessed against 32^6 ~= 10^9 possibilities one
@@ -22,9 +43,17 @@ service cloud.firestore {
       allow get: if isTableCode(code);
       allow list: if false;
 
+      // `hasOnly` alone is satisfied by an empty map, which would let anyone
+      // conjure a parent document and so satisfy the tableExists() gate below.
+      // Requiring the real fields, and a server-stamped createdAt, means the
+      // document can only come from createTable.
       allow create: if isTableCode(code)
                     && request.resource.data.keys().hasOnly(
-                         ['version', 'name', 'createdAt', 'lastUpdated']);
+                         ['version', 'name', 'createdAt', 'lastUpdated'])
+                    && request.resource.data.keys().hasAll(
+                         ['version', 'createdAt', 'lastUpdated'])
+                    && request.resource.data.createdAt == request.time
+                    && request.resource.data.lastUpdated == request.time;
 
       // Checks which keys the write actually CHANGES, not what the finished
       // document contains. `setDoc(..., { merge: true })` sends the merged
@@ -41,12 +70,18 @@ service cloud.firestore {
         allow get: if isTableCode(code);
         allow list: if false;
 
-        // Only the four slices the app knows about. Firestore caps documents at
-        // 1 MiB and 40,000 index entries on its own; the field count here is
-        // about keeping a slice recognisable as a slice, not about bytes.
-        allow write: if isTableCode(code)
-                     && slice in ['roster', 'schedule', 'settings', 'attendance']
-                     && request.resource.data.size() <= 20000;
+        // Requiring the parent to exist stops slice documents being created
+        // under codes that were never handed out — otherwise the collection is
+        // writable storage for anyone with the public web config.
+        allow create, update: if isTableCode(code)
+                              && tableExists(database, code)
+                              && slice in ['roster', 'schedule', 'settings', 'attendance']
+                              // Firestore caps a document at 1 MiB and 40,000
+                              // index entries; this keeps a slice recognisable
+                              // as a slice. For attendance it is people x events.
+                              && request.resource.data.size() <= 20000
+                              && isValidSlice(slice, request.resource.data);
+
         allow delete: if false;
       }
     }

@@ -17,6 +17,7 @@
  */
 
 import { initializeApp } from 'firebase/app';
+import { ReCaptchaV3Provider, initializeAppCheck } from 'firebase/app-check';
 import {
   deleteField,
   doc,
@@ -42,12 +43,38 @@ const config = {
 /** Sharing is optional. With no config the app runs entirely on localStorage. */
 export const isFirebaseConfigured = Boolean(config.apiKey && config.projectId);
 
+/**
+ * App Check, if a reCAPTCHA v3 site key is configured.
+ *
+ * Table codes are unauthenticated, so without this the Firestore endpoints can
+ * be driven by anything holding the public web config — a cost problem rather
+ * than a data-exposure one, since a caller still has to guess a code to reach
+ * a real table. Attaching App Check makes requests prove they came from this
+ * app. It is opt-in because it needs a key registered in the Firebase console;
+ * with none set, nothing changes.
+ */
+const appCheckSiteKey = process.env.REACT_APP_APPCHECK_SITE_KEY;
+
 let db = null;
 
 function database() {
   if (!isFirebaseConfigured) return null;
   if (!db) {
     const app = initializeApp(config);
+
+    if (appCheckSiteKey) {
+      try {
+        initializeAppCheck(app, {
+          provider: new ReCaptchaV3Provider(appCheckSiteKey),
+          isTokenAutoRefreshEnabled: true,
+        });
+      } catch (error) {
+        // A bad key must not take sharing down with it.
+        // eslint-disable-next-line no-console
+        console.warn('App Check could not start; continuing without it.', error);
+      }
+    }
+
     // The offline cache is what lets marks made on bad venue wifi survive and
     // send themselves later, instead of being lost on reload. The multi-tab
     // manager matters because having the table open in two tabs is normal, and
@@ -87,11 +114,11 @@ export async function fetchTable(code) {
 }
 
 /** Creates the table document and writes the first full snapshot of each slice. */
-export async function createTable(code, table, name) {
+export async function createTable(code, table) {
   if (!isFirebaseConfigured) throw new Error('Sharing is not configured');
   await setDoc(tableRef(code), {
     version: table.version,
-    name: name || null,
+    name: table.settings?.name || null,
     createdAt: serverTimestamp(),
     lastUpdated: serverTimestamp(),
   });
@@ -117,8 +144,14 @@ export function writeCells(code, cells) {
   return setDoc(sliceRef(code, 'attendance'), payload, { merge: true });
 }
 
-export function touchTable(code) {
-  return setDoc(tableRef(code), { lastUpdated: serverTimestamp() }, { merge: true });
+/**
+ * Stamps the parent document, and mirrors the name onto it so the table can be
+ * identified without reading its slices.
+ */
+export function touchTable(code, name) {
+  const payload = { lastUpdated: serverTimestamp() };
+  if (typeof name === 'string' && name.trim()) payload.name = name.trim();
+  return setDoc(tableRef(code), payload, { merge: true });
 }
 
 /**

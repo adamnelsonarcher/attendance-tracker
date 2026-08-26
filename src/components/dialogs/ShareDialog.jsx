@@ -10,7 +10,7 @@ import './ShareDialog.css';
  * showed the code as plain text to be read aloud and retyped, even though the
  * app already understood `/CODE` links.
  */
-function ShareDialog({ code, sync, actions, onClose }) {
+function ShareDialog({ code, tableName, sync, actions, viewOnly, onClose }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(null);
 
@@ -84,10 +84,40 @@ function ShareDialog({ code, sync, actions, onClose }) {
       </div>
 
       <p className="hint">
+        Everyone who opens it sees the table as <strong>{tableName}</strong>. Renaming it in
+        Settings renames it for all of them.
+      </p>
+
+      <p className="hint">
         View-only hides the editing controls for whoever opens it. It is a courtesy, not a
         permission — the link still grants access to the data, so only send it to people you would
         let edit anyway.
       </p>
+
+      {/* A private copy made from a view-only link would be uneditable: the
+          read-only flag is read from the URL once, at mount. */}
+      {!viewOnly && (
+      <div className="share-stop">
+        <div>
+          <strong>Stop syncing this table</strong>
+          <p className="hint">
+            Takes a private copy and switches you to it. The shared table keeps existing for
+            anyone who already has the link — with no accounts, the link is the only key, so
+            there is nothing to take back.
+          </p>
+        </div>
+        <button
+          type="button"
+          className="btn"
+          onClick={() => {
+            actions.makePrivateCopy();
+            onClose();
+          }}
+        >
+          Make a private copy
+        </button>
+      </div>
+      )}
     </Modal>
   );
 }

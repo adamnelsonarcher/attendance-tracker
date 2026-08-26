@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Modal from '../ui/Modal';
 import StatusEditor from './StatusEditor';
+import { MAX_TABLE_NAME } from '../../data/model';
 import { APP_VERSION } from '../../version';
 import './SettingsDialog.css';
 
@@ -12,13 +13,34 @@ const DISPLAY_OPTIONS = [
   { key: 'showTitle', label: 'Show the page title' },
 ];
 
-function SettingsDialog({ table, dispatch, tableId, tableName, code, sync, actions, readOnly, onClose }) {
-  const [name, setName] = useState(tableName);
+function SettingsDialog({ table, dispatch, tableId, code, sync, actions, readOnly, onClose }) {
   const [showAdvanced, setShowAdvanced] = useState(false);
+  const [draftName, setDraftName] = useState(settingsName(table));
+  const nameFocused = useRef(false);
   const [uploadState, setUploadState] = useState(null);
   const { settings } = table;
 
   const set = (changes) => dispatch({ type: 'settings/update', changes });
+
+  // The name is synced, so someone else can change it while this dialog is
+  // open. Typing into a field bound straight to synced state means a remote
+  // update lands under the caret; a draft that only re-seeds when the field is
+  // idle keeps the edit intact and still shows their rename once you are done.
+  useEffect(() => {
+    if (!nameFocused.current) setDraftName(settingsName(table));
+  }, [table]);
+
+  // Takes the value from the event rather than from state, so it does not
+  // depend on React having re-rendered between the last keystroke and the blur.
+  const commitName = (value) => {
+    const trimmed = value.trim();
+    if (!trimmed || trimmed === settings.name) {
+      // Clearing the field is how you retype it, not a request to be nameless.
+      setDraftName(settings.name);
+      return;
+    }
+    actions.rename(trimmed);
+  };
 
   const forceUpload = async () => {
     if (!window.confirm('Overwrite the shared copy with this browser’s data? Anything another device has changed and not yet sent will be lost.')) {
@@ -49,17 +71,34 @@ function SettingsDialog({ table, dispatch, tableId, tableName, code, sync, actio
       <section className="settings-section">
         <h3>This table</h3>
         <label className="field">
-          <span>Name (only you see this)</span>
+          <span>Name</span>
           <input
             className="input"
-            value={name}
-            onChange={(event) => {
-              setName(event.target.value);
-              actions.rename(event.target.value);
+            value={draftName}
+            disabled={readOnly}
+            maxLength={MAX_TABLE_NAME}
+            onFocus={() => {
+              nameFocused.current = true;
+            }}
+            onBlur={(event) => {
+              nameFocused.current = false;
+              commitName(event.target.value);
+            }}
+            onChange={(event) => setDraftName(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key === 'Enter') event.currentTarget.blur();
+              if (event.key === 'Escape') {
+                setDraftName(settings.name);
+                event.currentTarget.blur();
+              }
             }}
           />
         </label>
-        {code && <p className="hint">Shared as code <strong>{code}</strong>.</p>}
+        <p className="hint">
+          {code
+            ? <>Everyone who opens this table sees this name. Shared as code <strong>{code}</strong>.</>
+            : 'The name travels with the table if you share it later.'}
+        </p>
       </section>
 
       {readOnly && (
@@ -116,8 +155,8 @@ function SettingsDialog({ table, dispatch, tableId, tableName, code, sync, actio
       <section className="settings-section">
         <h3>Display</h3>
         <p className="hint">
-          These are part of the table, so everyone sharing it sees the same choices —
-          except collapsing a folder, which is yours alone.
+          Like the name and the statuses, these belong to the table, so everyone sharing
+          it sees the same choices — except collapsing a folder, which is yours alone.
         </p>
         {DISPLAY_OPTIONS.map((option) => (
           <label key={option.key} className="checkbox-row">
@@ -224,6 +263,10 @@ function SettingsDialog({ table, dispatch, tableId, tableName, code, sync, actio
       </p>
     </Modal>
   );
+}
+
+function settingsName(table) {
+  return table.settings.name;
 }
 
 export default SettingsDialog;

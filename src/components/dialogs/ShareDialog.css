@@ -33,3 +33,13 @@
   font-size: 22px;
   letter-spacing: 0.18em;
 }
+
+.share-stop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  padding: var(--space-3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}

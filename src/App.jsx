@@ -25,7 +25,8 @@ function App() {
   const [dialog, setDialog] = useState(null);
 
   const close = useCallback(() => setDialog(null), []);
-  const tableName = tables.find((entry) => entry.id === tableId)?.name || 'My table';
+  // The name lives in the table, so it is the same for everyone sharing it.
+  const tableName = table.settings.name;
 
   return (
     <div className="app">
@@ -75,7 +76,14 @@ function App() {
         />
       )}
       {dialog === 'share' && (
-        <ShareDialog code={code} sync={sync} actions={actions} onClose={close} />
+        <ShareDialog
+          code={code}
+          tableName={tableName}
+          sync={sync}
+          actions={actions}
+          viewOnly={viewOnly}
+          onClose={close}
+        />
       )}
       {dialog === 'join' && <JoinDialog join={join} onClose={close} />}
       {dialog === 'settings' && (
@@ -83,7 +91,6 @@ function App() {
           table={table}
           dispatch={dispatch}
           tableId={tableId}
-          tableName={tableName}
           code={code}
           sync={sync}
           actions={actions}

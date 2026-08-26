@@ -21,6 +21,9 @@ import {
 import { SLICE_NAMES, SLICE_PAYLOAD, diffAttendance } from './slices';
 
 const FLUSH_DELAY_MS = 500;
+/** Ceiling on the retry backoff. Long enough to stop hammering, short enough
+ *  that deploying corrected rules is noticed without a reload. */
+const MAX_RETRY_DELAY_MS = 60000;
 
 export function useSync({ code, table, outbox, dispatch }) {
   const [status, setStatus] = useState(code ? 'connecting' : 'off');
@@ -32,8 +35,14 @@ export function useSync({ code, table, outbox, dispatch }) {
   const outboxRef = useRef(outbox);
   outboxRef.current = outbox;
 
+  // Which table is open right now, so a write that settles after a table switch
+  // can tell that it belongs to the previous one.
+  const codeRef = useRef(code);
+  codeRef.current = code;
+
   const lastAttendance = useRef({});
   const flushTimer = useRef(null);
+  const failures = useRef(0);
   const online = useRef(typeof navigator === 'undefined' ? true : navigator.onLine);
 
   /* ------------------------------------------------------------ subscribe */
@@ -46,6 +55,7 @@ export function useSync({ code, table, outbox, dispatch }) {
 
     setStatus('connecting');
     lastAttendance.current = {};
+    failures.current = 0;
     let cancelled = false;
 
     const handleError = (err) => {
@@ -97,7 +107,12 @@ export function useSync({ code, table, outbox, dispatch }) {
     // again and is picked up by the next flush.
     dispatch({ type: 'sync/drained', slices, cells: cellKeys, attendanceReplace: replaceAttendance });
 
+    // Everything this write needs is captured before the first await. Switching
+    // tables is what makes that matter: `code` here is the table we are sending,
+    // while the refs move on to whichever table is open when the write settles.
     const replacedAttendance = replaceAttendance ? { ...tableRef.current.attendance } : null;
+    const name = tableRef.current.settings?.name;
+    const isStillOpen = () => codeRef.current === code;
 
     try {
       const writes = slices.map((slice) => writeSlice(code, slice, SLICE_PAYLOAD[slice](tableRef.current)));
@@ -114,23 +129,33 @@ export function useSync({ code, table, outbox, dispatch }) {
       // The baseline only moves once the write has actually landed. Advancing it
       // first meant a rejected write left us believing the server held values it
       // never received, so the next snapshot diffed them as unchanged forever.
-      if (replacedAttendance) {
-        lastAttendance.current = replacedAttendance;
-      } else {
-        for (const [key, value] of Object.entries(cells)) {
-          if (value === null) delete lastAttendance.current[key];
-          else lastAttendance.current[key] = value;
+      // It belongs to whichever table is subscribed now, so leave it alone if
+      // that is no longer this one.
+      if (isStillOpen()) {
+        if (replacedAttendance) {
+          lastAttendance.current = replacedAttendance;
+        } else {
+          for (const [key, value] of Object.entries(cells)) {
+            if (value === null) delete lastAttendance.current[key];
+            else lastAttendance.current[key] = value;
+          }
         }
       }
 
       // Metadata only. If just this is rejected the table itself still saved,
       // so it must not turn a successful save into a reported failure.
-      await touchTable(code).catch(() => {});
+      await touchTable(code, name).catch(() => {});
+      if (!isStillOpen()) return;
+      failures.current = 0;
       setError(null);
       setStatus(online.current ? 'live' : 'offline');
     } catch (err) {
       // The drain above was optimistic, so hand the changes back before
       // reporting; otherwise a rejected write throws away the edits it carried.
+      // Only if we are still on this table — requeueing into a different one
+      // would write these cells under the wrong code.
+      if (!isStillOpen()) return;
+      failures.current += 1;
       dispatch({ type: 'sync/requeue', slices, cells, attendanceReplace: replaceAttendance });
       setError(err);
       // Offline is a queue that will drain itself; a rejection while online is
@@ -149,8 +174,14 @@ export function useSync({ code, table, outbox, dispatch }) {
       Object.keys(outbox.attendance).length > 0;
     if (!pending) return undefined;
 
+    // Requeueing hands back a fresh outbox, which re-runs this effect — so a
+    // permanently rejected write (rules not deployed, say) would otherwise
+    // retry twice a second forever. Offline writes never reject; Firestore
+    // queues them. So every rejection seen here is worth backing off from.
+    const delay = Math.min(FLUSH_DELAY_MS * 2 ** failures.current, MAX_RETRY_DELAY_MS);
+
     clearTimeout(flushTimer.current);
-    flushTimer.current = setTimeout(flush, FLUSH_DELAY_MS);
+    flushTimer.current = setTimeout(flush, delay);
     return () => clearTimeout(flushTimer.current);
   }, [code, outbox, flush]);
 
@@ -172,8 +203,13 @@ export function useSync({ code, table, outbox, dispatch }) {
         // cells deleted locally are actually removed.
         writeSlice(code, 'attendance', current.attendance),
       ]);
+      await touchTable(code, current.settings?.name).catch(() => {});
+
+      // Same rule as the debounced flush: once the write settles, the refs and
+      // the outbox may belong to a different table.
+      if (codeRef.current !== code) return;
+
       lastAttendance.current = { ...current.attendance };
-      await touchTable(code).catch(() => {});
       dispatch({
         type: 'sync/drained',
         slices: ['roster', 'schedule', 'settings'],
@@ -183,13 +219,38 @@ export function useSync({ code, table, outbox, dispatch }) {
       setError(null);
       setStatus('live');
     } catch (err) {
-      setError(err);
-      setStatus('error');
+      if (codeRef.current === code) {
+        setError(err);
+        setStatus('error');
+      }
       throw err;
     }
   }, [code, dispatch]);
 
   /* ------------------------------------------------------------ liveness */
+
+  /**
+   * Send anything still on the debounce before the page goes away.
+   *
+   * `visibilitychange` is the one the browser reliably delivers — `beforeunload`
+   * is skipped on mobile and on tab discard. There is nothing to await: once
+   * Firestore has accepted a write it is in the durable offline queue and will
+   * be sent, on this page load or the next.
+   */
+  useEffect(() => {
+    if (!code || !isFirebaseConfigured) return undefined;
+
+    const flushIfHidden = () => {
+      if (document.visibilityState === 'hidden') flush();
+    };
+    document.addEventListener('visibilitychange', flushIfHidden);
+    window.addEventListener('pagehide', flush);
+
+    return () => {
+      document.removeEventListener('visibilitychange', flushIfHidden);
+      window.removeEventListener('pagehide', flush);
+    };
+  }, [code, flush]);
 
   useEffect(() => {
     const update = () => {
