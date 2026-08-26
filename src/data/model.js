@@ -17,6 +17,7 @@ export const DEFAULT_STATUSES = [
 ];
 
 export const DEFAULT_TABLE_NAME = 'Untitled table';
+export const MAX_TABLE_NAME = 80;
 
 export const DEFAULT_SETTINGS = {
   /**
@@ -192,7 +193,7 @@ export function normalizeSettings(raw, defaults) {
       color: isHexColor(s.color) ? s.color : '#e9ecef',
     }));
 
-  const name = typeof raw.name === 'string' && raw.name.trim() ? raw.name.trim().slice(0, 80) : null;
+  const name = typeof raw.name === 'string' && raw.name.trim() ? raw.name.trim().slice(0, MAX_TABLE_NAME) : null;
 
   return {
     ...defaults,

@@ -76,7 +76,14 @@ function App() {
         />
       )}
       {dialog === 'share' && (
-        <ShareDialog code={code} tableName={tableName} sync={sync} actions={actions} onClose={close} />
+        <ShareDialog
+          code={code}
+          tableName={tableName}
+          sync={sync}
+          actions={actions}
+          viewOnly={viewOnly}
+          onClose={close}
+        />
       )}
       {dialog === 'join' && <JoinDialog join={join} onClose={close} />}
       {dialog === 'settings' && (

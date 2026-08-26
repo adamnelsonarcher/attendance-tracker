@@ -50,6 +50,8 @@ export function listTables() {
   return Array.isArray(entries) ? entries.filter((e) => e && typeof e.id === 'string') : [];
 }
 
+const REGISTRY_LIMIT = 12;
+
 export function rememberTable(id, name) {
   const existing = listTables().find((entry) => entry.id === id);
   const entries = listTables().filter((entry) => entry.id !== id);
@@ -58,7 +60,29 @@ export function rememberTable(id, name) {
     name: name || existing?.name || defaultName(id),
     updatedAt: new Date().toISOString(),
   });
-  writeJson(REGISTRY_KEY, entries.slice(0, 12));
+
+  // A shared table can be reopened from its link; a local one cannot, and
+  // dropping it from the list would strand its data with no route back. So the
+  // cap only ever evicts shared tables.
+  const kept = [];
+  const evicted = [];
+  for (const entry of entries) {
+    if (kept.length < REGISTRY_LIMIT || isLocalTableId(entry.id)) kept.push(entry);
+    else evicted.push(entry);
+  }
+
+  writeJson(REGISTRY_KEY, kept);
+  for (const entry of evicted) {
+    try {
+      localStorage.removeItem(TABLE_PREFIX + entry.id);
+    } catch {
+      /* nothing to do */
+    }
+  }
+}
+
+export function isLocalTableId(id) {
+  return id === LOCAL_TABLE_ID || id.startsWith(LOCAL_PREFIX);
 }
 
 export function forgetTable(id) {

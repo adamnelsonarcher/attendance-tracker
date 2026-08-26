@@ -43,9 +43,17 @@ service cloud.firestore {
       allow get: if isTableCode(code);
       allow list: if false;
 
+      // `hasOnly` alone is satisfied by an empty map, which would let anyone
+      // conjure a parent document and so satisfy the tableExists() gate below.
+      // Requiring the real fields, and a server-stamped createdAt, means the
+      // document can only come from createTable.
       allow create: if isTableCode(code)
                     && request.resource.data.keys().hasOnly(
-                         ['version', 'name', 'createdAt', 'lastUpdated']);
+                         ['version', 'name', 'createdAt', 'lastUpdated'])
+                    && request.resource.data.keys().hasAll(
+                         ['version', 'createdAt', 'lastUpdated'])
+                    && request.resource.data.createdAt == request.time
+                    && request.resource.data.lastUpdated == request.time;
 
       // Checks which keys the write actually CHANGES, not what the finished
       // document contains. `setDoc(..., { merge: true })` sends the merged

@@ -10,7 +10,7 @@ import './ShareDialog.css';
  * showed the code as plain text to be read aloud and retyped, even though the
  * app already understood `/CODE` links.
  */
-function ShareDialog({ code, tableName, sync, actions, onClose }) {
+function ShareDialog({ code, tableName, sync, actions, viewOnly, onClose }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(null);
 
@@ -94,6 +94,9 @@ function ShareDialog({ code, tableName, sync, actions, onClose }) {
         let edit anyway.
       </p>
 
+      {/* A private copy made from a view-only link would be uneditable: the
+          read-only flag is read from the URL once, at mount. */}
+      {!viewOnly && (
       <div className="share-stop">
         <div>
           <strong>Stop syncing this table</strong>
@@ -114,6 +117,7 @@ function ShareDialog({ code, tableName, sync, actions, onClose }) {
           Make a private copy
         </button>
       </div>
+      )}
     </Modal>
   );
 }

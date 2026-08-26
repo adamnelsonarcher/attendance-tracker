@@ -5,7 +5,7 @@
 
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react';
 import { initialState, tableReducer } from './tableReducer';
-import { emptyTable } from '../data/model';
+import { MAX_TABLE_NAME, emptyTable } from '../data/model';
 import {
   LOCAL_TABLE_ID,
   bootstrapLocalTable,
@@ -139,14 +139,22 @@ export function useTableStore() {
 
   const adoptRemote = useCallback(
     (nextCode, remote) => {
-      const next = tableFromRemote(remote);
+      flushNow();
+
+      const loaded = tableFromRemote(remote);
+      // A table shared by an older build has its name only on the parent
+      // document, so seed the table's own name from wherever it was found —
+      // otherwise it reads as "Untitled table" everywhere but the switcher.
+      const name = remoteTableName(remote, defaultName(nextCode));
+      const next = { ...loaded, settings: { ...loaded.settings, name } };
+
       saveTable(nextCode, next);
-      rememberTable(nextCode, remoteTableName(remote, defaultName(nextCode)));
+      rememberTable(nextCode, name);
       setTableId(nextCode);
       rawDispatch({ type: 'table/adopt', table: next, upgrade: isLegacyRemote(remote) });
       refreshTables();
     },
-    [refreshTables]
+    [flushNow, refreshTables]
   );
 
   /* -------------------------------------------------------------- actions */
@@ -243,8 +251,12 @@ export function useTableStore() {
    * carries on existing for whoever else has the link.
    */
   const makePrivateCopy = useCallback(() => {
+    // Anything still on the debounce belongs to the shared table; send it
+    // before detaching, or the collaborators never see the last edit.
+    flushNow();
+
     const id = newLocalTableId();
-    const next = { ...table, settings: { ...table.settings, name: `${table.settings.name} (private)` } };
+    const next = { ...table, settings: { ...table.settings, name: privateName(table.settings.name) } };
     saveTable(id, next);
     rememberTable(id, next.settings.name);
     setTableId(id);
@@ -252,7 +264,7 @@ export function useTableStore() {
     refreshTables();
     updateAddress(id);
     return id;
-  }, [table, refreshTables]);
+  }, [table, flushNow, refreshTables]);
 
   /** Removes this browser's copy. The shared table itself is left alone. */
   const forget = useCallback(
@@ -281,6 +293,18 @@ export function useTableStore() {
     join: { ...joinState, run: join },
     actions: { share, openTable, createBlank, forget, rename, makePrivateCopy },
   };
+}
+
+const PRIVATE_SUFFIX = ' (private)';
+
+/**
+ * Names the detached copy without stacking suffixes, and leaves room for the
+ * suffix inside the name limit so it cannot be truncated back off.
+ */
+function privateName(name) {
+  if (name.endsWith(PRIVATE_SUFFIX)) return name;
+  const base = name.slice(0, MAX_TABLE_NAME - PRIVATE_SUFFIX.length).trimEnd();
+  return base + PRIVATE_SUFFIX;
 }
 
 /** Keeps the address bar in step without a router or a reload. */

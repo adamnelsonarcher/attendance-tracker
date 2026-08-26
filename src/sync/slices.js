@@ -14,7 +14,14 @@ export const SLICE_NAMES = ['roster', 'schedule', 'settings', 'attendance'];
 /** The payload written for each structural slice. Attendance is handled per cell. */
 export const SLICE_PAYLOAD = {
   roster: (table) => ({ people: table.people, groups: table.groups }),
-  schedule: (table) => ({ folders: table.folders, events: table.events }),
+  schedule: (table) => ({
+    // `isOpen` is stripped on the way out. Whether a folder is collapsed is a
+    // per-viewer preference, and shipping the folder objects whole meant any
+    // schedule edit — adding an event, renaming a folder — folded everyone
+    // else's folders to match the writer's screen.
+    folders: table.folders.map(({ isOpen, ...folder }) => folder),
+    events: table.events,
+  }),
   settings: (table) => table.settings,
 };
 

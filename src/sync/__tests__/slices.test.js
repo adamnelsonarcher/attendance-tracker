@@ -15,6 +15,17 @@ describe('slice round trip', () => {
     expect(roundTrip(table)).toEqual(table);
   });
 
+  it('does not carry whether a folder is collapsed', () => {
+    // Collapse is a per-viewer preference. Sending the folder objects whole
+    // meant any schedule edit folded everyone else's folders to match.
+    const table = demoTable();
+    table.folders[0].isOpen = false;
+
+    expect(toSlices(table).schedule.folders[0]).not.toHaveProperty('isOpen');
+    // Nothing else about the folder is dropped.
+    expect(toSlices(table).schedule.folders[0].name).toBe(table.folders[0].name);
+  });
+
   it('survives an empty table unchanged', () => {
     const table = emptyTable();
     expect(roundTrip(table)).toEqual(table);

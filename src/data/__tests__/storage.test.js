@@ -145,6 +145,21 @@ describe('the table registry', () => {
     expect(listTables().map((e) => e.id)).not.toContain('ABC234');
   });
 
+  it('never evicts a local table, which has no link to reopen it from', () => {
+    for (let i = 0; i < 20; i += 1) {
+      const code = `AAAA${String(i).padStart(2, '2')}`;
+      saveTable(code, emptyTable());
+      rememberTable(code, `Shared ${i}`);
+    }
+    saveTable('local', emptyTable());
+    rememberTable('local', 'My table');
+    for (let i = 0; i < 20; i += 1) rememberTable(`BBBB${String(i).padStart(2, '2')}`, `More ${i}`);
+
+    const ids = listTables().map((entry) => entry.id);
+    expect(ids).toContain('local');
+    expect(loadTable('local')).not.toBeNull();
+  });
+
   it('survives a corrupt registry', () => {
     localStorage.setItem('at:registry', '{not json');
     expect(listTables()).toEqual([]);

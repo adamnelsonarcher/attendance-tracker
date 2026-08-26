@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Modal from '../ui/Modal';
 import StatusEditor from './StatusEditor';
+import { MAX_TABLE_NAME } from '../../data/model';
 import { APP_VERSION } from '../../version';
 import './SettingsDialog.css';
 
@@ -14,10 +15,32 @@ const DISPLAY_OPTIONS = [
 
 function SettingsDialog({ table, dispatch, tableId, code, sync, actions, readOnly, onClose }) {
   const [showAdvanced, setShowAdvanced] = useState(false);
+  const [draftName, setDraftName] = useState(settingsName(table));
+  const nameFocused = useRef(false);
   const [uploadState, setUploadState] = useState(null);
   const { settings } = table;
 
   const set = (changes) => dispatch({ type: 'settings/update', changes });
+
+  // The name is synced, so someone else can change it while this dialog is
+  // open. Typing into a field bound straight to synced state means a remote
+  // update lands under the caret; a draft that only re-seeds when the field is
+  // idle keeps the edit intact and still shows their rename once you are done.
+  useEffect(() => {
+    if (!nameFocused.current) setDraftName(settingsName(table));
+  }, [table]);
+
+  // Takes the value from the event rather than from state, so it does not
+  // depend on React having re-rendered between the last keystroke and the blur.
+  const commitName = (value) => {
+    const trimmed = value.trim();
+    if (!trimmed || trimmed === settings.name) {
+      // Clearing the field is how you retype it, not a request to be nameless.
+      setDraftName(settings.name);
+      return;
+    }
+    actions.rename(trimmed);
+  };
 
   const forceUpload = async () => {
     if (!window.confirm('Overwrite the shared copy with this browser’s data? Anything another device has changed and not yet sent will be lost.')) {
@@ -51,10 +74,24 @@ function SettingsDialog({ table, dispatch, tableId, code, sync, actions, readOnl
           <span>Name</span>
           <input
             className="input"
-            value={settings.name}
+            value={draftName}
             disabled={readOnly}
-            maxLength={80}
-            onChange={(event) => actions.rename(event.target.value)}
+            maxLength={MAX_TABLE_NAME}
+            onFocus={() => {
+              nameFocused.current = true;
+            }}
+            onBlur={(event) => {
+              nameFocused.current = false;
+              commitName(event.target.value);
+            }}
+            onChange={(event) => setDraftName(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key === 'Enter') event.currentTarget.blur();
+              if (event.key === 'Escape') {
+                setDraftName(settings.name);
+                event.currentTarget.blur();
+              }
+            }}
           />
         </label>
         <p className="hint">
@@ -226,6 +263,10 @@ function SettingsDialog({ table, dispatch, tableId, code, sync, actions, readOnl
       </p>
     </Modal>
   );
+}
+
+function settingsName(table) {
+  return table.settings.name;
 }
 
 export default SettingsDialog;

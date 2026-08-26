@@ -396,7 +396,7 @@ function mergeSlice(table, slice, data) {
     case 'schedule':
       return {
         ...table,
-        folders: Array.isArray(data.folders) ? data.folders : table.folders,
+        folders: Array.isArray(data.folders) ? withLocalCollapse(data.folders, table.folders) : table.folders,
         events: Array.isArray(data.events) ? data.events : table.events,
       };
     case 'settings':
@@ -416,6 +416,19 @@ function mergeSlice(table, slice, data) {
     default:
       return table;
   }
+}
+
+/**
+ * Keeps each folder collapsed or expanded the way this viewer left it. The
+ * incoming folders carry no `isOpen` at all, and a folder nobody has seen
+ * before opens.
+ */
+function withLocalCollapse(incoming, local) {
+  const wasOpen = new Map(local.map((folder) => [folder.id, folder.isOpen]));
+  return incoming.map((folder) => ({
+    ...folder,
+    isOpen: wasOpen.has(folder.id) ? wasOpen.get(folder.id) : folder.isOpen !== false,
+  }));
 }
 
 /**
