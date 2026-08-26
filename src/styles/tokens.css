@@ -1,0 +1,76 @@
+/**
+ * Design tokens. Every colour, radius, shadow and z-index in the app resolves
+ * to one of these. The old stylesheets hard-coded a dozen near-identical greys
+ * and twelve hand-tuned z-index values that only worked in one arrangement.
+ */
+
+:root {
+  /* surfaces */
+  --surface: #ffffff;
+  --surface-sunken: #f6f7f9;
+  --surface-raised: #ffffff;
+  --surface-header: #f1f3f5;
+  --row-alt: #fafbfc;
+  --row-hover: #eef4ff;
+  --col-hover: #f4f8ff;
+
+  /* ink */
+  --text: #1c2430;
+  --text-muted: #6b7684;
+  --text-faint: #98a1ad;
+
+  /* lines */
+  --border: #e2e6ea;
+  --border-strong: #c9d0d8;
+
+  /* accent */
+  --accent: #2f6fed;
+  --accent-hover: #245cd0;
+  --accent-soft: #e8f0fe;
+  --accent-ink: #ffffff;
+
+  /* feedback */
+  --danger: #c0392b;
+  --danger-soft: #fdecea;
+  --success: #2b8a4b;
+  --success-soft: #e6f4ea;
+  --warning: #a86a12;
+  --warning-soft: #fdf3e0;
+
+  /* spacing */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+
+  /* shape */
+  --radius-sm: 4px;
+  --radius: 6px;
+  --radius-lg: 10px;
+
+  --shadow-sm: 0 1px 2px rgba(16, 24, 40, 0.06);
+  --shadow: 0 4px 12px rgba(16, 24, 40, 0.1);
+  --shadow-lg: 0 12px 32px rgba(16, 24, 40, 0.18);
+
+  /* type */
+  --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --text-sm: 12px;
+  --text-base: 14px;
+  --text-lg: 16px;
+
+  /**
+   * One ordered stacking scale. Sticky cells sit under sticky headers, which sit
+   * under the corner cell where the two cross; menus and modals sit above all
+   * of it.
+   */
+  --z-sticky-cell: 2;
+  --z-sticky-header: 3;
+  --z-sticky-corner: 4;
+  --z-toolbar: 20;
+  --z-popover: 100;
+  --z-modal: 1000;
+
+  --control-height: 32px;
+}

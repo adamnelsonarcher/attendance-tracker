@@ -1,0 +1,46 @@
+button.sync-badge {
+  border: 1px solid transparent;
+  cursor: pointer;
+}
+
+button.sync-badge:hover {
+  border-color: currentColor;
+}
+
+.sync-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px var(--space-2);
+  border-radius: 12px;
+  font-size: var(--text-sm);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.sync-badge__dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.sync-badge--muted {
+  background: var(--surface-sunken);
+  color: var(--text-muted);
+}
+
+.sync-badge--ok {
+  background: var(--success-soft);
+  color: var(--success);
+}
+
+.sync-badge--warn {
+  background: var(--warning-soft);
+  color: var(--warning);
+}
+
+.sync-badge--bad {
+  background: var(--danger-soft);
+  color: var(--danger);
+}

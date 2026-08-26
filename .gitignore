@@ -22,3 +22,8 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 .env
+
+# editor / agent tooling
+.claude/
+.idea/
+.vscode/

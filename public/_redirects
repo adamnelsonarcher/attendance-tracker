@@ -1,0 +1,2 @@
+# Share links are /CODE paths, so every route has to serve the app shell.
+/*  /index.html  200
