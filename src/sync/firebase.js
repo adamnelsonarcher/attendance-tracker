@@ -28,6 +28,7 @@ import {
   serverTimestamp,
   setDoc,
 } from 'firebase/firestore';
+import { SLICE_NAMES, toSlices } from './slices';
 
 const config = {
   apiKey: process.env.REACT_APP_FIREBASE_API_KEY,
@@ -61,9 +62,6 @@ function database() {
 const tableRef = (code) => doc(database(), 'tables', code);
 const sliceRef = (code, slice) => doc(database(), 'tables', code, 'slices', slice);
 
-/** The four documents a table is split across. */
-export const SLICES = ['roster', 'schedule', 'settings', 'attendance'];
-
 /**
  * Reads every slice at once, for joining a table the first time.
  *
@@ -80,10 +78,10 @@ export async function fetchTable(code) {
   const meta = await getDoc(tableRef(code));
   if (!meta.exists()) return null;
 
-  const snapshots = await Promise.all(SLICES.map((slice) => getDoc(sliceRef(code, slice))));
+  const snapshots = await Promise.all(SLICE_NAMES.map((slice) => getDoc(sliceRef(code, slice))));
   const result = { meta: meta.data() };
   snapshots.forEach((snapshot, index) => {
-    if (snapshot.exists()) result[SLICES[index]] = snapshot.data();
+    if (snapshot.exists()) result[SLICE_NAMES[index]] = snapshot.data();
   });
   return result;
 }
@@ -97,12 +95,8 @@ export async function createTable(code, table, name) {
     createdAt: serverTimestamp(),
     lastUpdated: serverTimestamp(),
   });
-  await Promise.all([
-    writeSlice(code, 'roster', { people: table.people, groups: table.groups }),
-    writeSlice(code, 'schedule', { folders: table.folders, events: table.events }),
-    writeSlice(code, 'settings', table.settings),
-    writeSlice(code, 'attendance', table.attendance),
-  ]);
+  const slices = toSlices(table);
+  await Promise.all(SLICE_NAMES.map((slice) => writeSlice(code, slice, slices[slice])));
 }
 
 /** Replaces a whole slice. Used for roster, schedule and settings. */

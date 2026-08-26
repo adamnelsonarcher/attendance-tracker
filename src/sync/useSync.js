@@ -18,14 +18,9 @@ import {
   writeCells,
   writeSlice,
 } from './firebase';
+import { SLICE_NAMES, SLICE_PAYLOAD, diffAttendance } from './slices';
 
 const FLUSH_DELAY_MS = 500;
-
-const SLICE_PAYLOAD = {
-  roster: (table) => ({ people: table.people, groups: table.groups }),
-  schedule: (table) => ({ folders: table.folders, events: table.events }),
-  settings: (table) => table.settings,
-};
 
 export function useSync({ code, table, outbox, dispatch }) {
   const [status, setStatus] = useState(code ? 'connecting' : 'off');
@@ -68,21 +63,14 @@ export function useSync({ code, table, outbox, dispatch }) {
         return;
       }
 
-      const previous = lastAttendance.current;
-      const changed = {};
-      for (const [key, value] of Object.entries(data)) {
-        if (previous[key] !== value) changed[key] = value;
-      }
-      for (const key of Object.keys(previous)) {
-        if (!(key in data)) changed[key] = null;
-      }
+      const changed = diffAttendance(lastAttendance.current, data);
       lastAttendance.current = data;
       if (Object.keys(changed).length > 0) {
         dispatch({ type: 'remote/merge', slice: 'attendance', data: changed });
       }
     };
 
-    const unsubscribes = ['roster', 'schedule', 'settings', 'attendance'].map((slice) =>
+    const unsubscribes = SLICE_NAMES.map((slice) =>
       subscribeSlice(code, slice, receive(slice), handleError)
     );
 
