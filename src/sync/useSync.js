@@ -41,6 +41,9 @@ export function useSync({ code, table, outbox, dispatch }) {
   codeRef.current = code;
 
   const lastAttendance = useRef({});
+  // Cells this client has written but not yet had acknowledged. Used instead of
+  // the snapshot-wide `hasPendingWrites` flag to recognise our own echo.
+  const inFlight = useRef(new Set());
   const flushTimer = useRef(null);
   const failures = useRef(0);
   const online = useRef(typeof navigator === 'undefined' ? true : navigator.onLine);
@@ -55,6 +58,7 @@ export function useSync({ code, table, outbox, dispatch }) {
 
     setStatus('connecting');
     lastAttendance.current = {};
+    inFlight.current = new Set();
     failures.current = 0;
     let cancelled = false;
 
@@ -65,16 +69,35 @@ export function useSync({ code, table, outbox, dispatch }) {
     };
 
     const receive = (slice) => (data, isLocalEcho) => {
-      if (cancelled || isLocalEcho) return;
+      if (cancelled) return;
       setStatus((current) => (current === 'saving' ? current : 'live'));
 
       if (slice !== 'attendance') {
+        // For a whole-document slice the echo flag has to be obeyed: a snapshot
+        // reflecting our own earlier write does not contain edits we have made
+        // since and not yet flushed, and merging it would revert them.
+        if (isLocalEcho) return;
         dispatch({ type: 'remote/merge', slice, data });
         return;
       }
 
+      // Attendance is different, and must not use the flag. `hasPendingWrites`
+      // is per document, not per field, so any un-acknowledged write of ours
+      // marks the whole snapshot — and with the multi-tab cache the mutation
+      // queue is shared, so a second tab's pending write flags this tab's
+      // snapshots too. Dropping those wholesale is why two tabs of the same
+      // browser stopped seeing each other's marks.
+      //
+      // The diff against `lastAttendance` is already the precise echo filter:
+      // it reports only what actually changed. All that has to be excluded is
+      // the cells we ourselves have in flight, whose server value is about to
+      // be overtaken by our own write.
       const changed = diffAttendance(lastAttendance.current, data);
+      for (const key of Object.keys(changed)) {
+        if (inFlight.current.has(key)) delete changed[key];
+      }
       lastAttendance.current = data;
+
       if (Object.keys(changed).length > 0) {
         dispatch({ type: 'remote/merge', slice: 'attendance', data: changed });
       }
@@ -114,6 +137,12 @@ export function useSync({ code, table, outbox, dispatch }) {
     const name = tableRef.current.settings?.name;
     const isStillOpen = () => codeRef.current === code;
 
+    const sent = replacedAttendance ? Object.keys(replacedAttendance) : cellKeys;
+    for (const key of sent) inFlight.current.add(key);
+    const releaseInFlight = () => {
+      for (const key of sent) inFlight.current.delete(key);
+    };
+
     try {
       const writes = slices.map((slice) => writeSlice(code, slice, SLICE_PAYLOAD[slice](tableRef.current)));
 
@@ -125,6 +154,7 @@ export function useSync({ code, table, outbox, dispatch }) {
         writes.push(writeCells(code, cells));
       }
       await Promise.all(writes);
+      releaseInFlight();
 
       // The baseline only moves once the write has actually landed. Advancing it
       // first meant a rejected write left us believing the server held values it
@@ -154,6 +184,7 @@ export function useSync({ code, table, outbox, dispatch }) {
       // reporting; otherwise a rejected write throws away the edits it carried.
       // Only if we are still on this table — requeueing into a different one
       // would write these cells under the wrong code.
+      releaseInFlight();
       if (!isStillOpen()) return;
       failures.current += 1;
       dispatch({ type: 'sync/requeue', slices, cells, attendanceReplace: replaceAttendance });

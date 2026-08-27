@@ -130,7 +130,7 @@ export function useTableStore() {
     }
 
     setJoinState({ status: 'loading', error: null });
-    fetchTable(urlCode)
+    withTimeout(fetchTable(urlCode))
       .then((remote) => {
         if (!remote) {
           setJoinState({ status: 'error', error: `No table found with the code ${urlCode}.` });
@@ -212,7 +212,7 @@ export function useTableStore() {
       if (!isFirebaseConfigured) throw new Error('Sharing is not configured for this deployment.');
 
       setJoinState({ status: 'loading', error: null });
-      const remote = await fetchTable(nextCode);
+      const remote = await withTimeout(fetchTable(nextCode));
       if (!remote) {
         setJoinState({ status: 'error', error: `No table found with the code ${nextCode}.` });
         return false;
@@ -318,6 +318,22 @@ function privateName(name) {
   if (name.endsWith(PRIVATE_SUFFIX)) return name;
   const base = name.slice(0, MAX_TABLE_NAME - PRIVATE_SUFFIX.length).trimEnd();
   return base + PRIVATE_SUFFIX;
+}
+
+const JOIN_TIMEOUT_MS = 20000;
+
+/**
+ * Firestore's read promise can sit unresolved rather than rejecting — offline,
+ * or with its local cache in a bad state — and the banner would otherwise say
+ * "Opening shared table…" indefinitely with no way forward.
+ */
+function withTimeout(promise, ms = JOIN_TIMEOUT_MS) {
+  return Promise.race([
+    promise,
+    new Promise((_, reject) =>
+      setTimeout(() => reject(new Error('Could not reach the shared table. Check your connection and reload.')), ms)
+    ),
+  ]);
 }
 
 /** Keeps the address bar in step without a router or a reload. */
