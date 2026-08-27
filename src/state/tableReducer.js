@@ -85,7 +85,9 @@ export function tableReducer(state, action) {
       const loser = table.people.find((p) => p.id === action.mergeId);
       if (!winner || !loser || winner.id === loser.id) return state;
 
-      const aliases = Array.from(new Set([...winner.aliases, ...loser.aliases, loser.name]));
+      const aliases = Array.from(
+        new Set([...(winner.aliases || []), ...(loser.aliases || []), loser.name])
+      );
       const attendance = { ...table.attendance };
       const cells = {};
 
@@ -318,6 +320,12 @@ export function tableReducer(state, action) {
       const payload = action.payload || {};
       const attendance = payload.attendance || {};
 
+      // Sessions that already existed come back as updates rather than
+      // additions, so the term chosen in the dialog applies to every column
+      // being imported and not only to the ones it had to create.
+      const updates = new Map((payload.updatedEvents || []).map((event) => [event.id, event]));
+      const events = table.events.map((event) => updates.get(event.id) || event);
+
       return {
         table: {
           ...table,
@@ -325,7 +333,7 @@ export function tableReducer(state, action) {
           groups: mergeGroups(table.groups, payload.groups || []),
           folders: [...table.folders, ...(payload.folders || [])],
           terms: sortTerms([...table.terms, ...(payload.terms || [])]),
-          events: [...table.events, ...(payload.events || [])],
+          events: [...events, ...(payload.events || [])],
           attendance: { ...table.attendance, ...attendance },
         },
         outbox: markCells(mark(outbox, 'roster', 'schedule'), attendance),
@@ -511,8 +519,16 @@ function mergeGroups(existing, incoming) {
 
   for (const group of incoming) {
     const match = byId.get(group.id) || byName.get(group.name.toLowerCase());
-    if (match) match.memberIds = Array.from(new Set([...match.memberIds, ...group.memberIds]));
-    else added.push(group);
+    if (match) {
+      match.memberIds = Array.from(new Set([...match.memberIds, ...group.memberIds]));
+      continue;
+    }
+    // Register as we go, so two incoming groups sharing a name fold together
+    // instead of both landing.
+    const copy = { ...group };
+    added.push(copy);
+    byId.set(copy.id, copy);
+    byName.set(copy.name.toLowerCase(), copy);
   }
 
   return [...merged, ...added];

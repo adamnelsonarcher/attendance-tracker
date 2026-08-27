@@ -8,11 +8,21 @@ function PersonMenu({ x, y, person, people, dispatch, onClose }) {
   const [aliasText, setAliasText] = useState((person.aliases || []).join(', '));
   const [search, setSearch] = useState('');
 
+  const [mergeTarget, setMergeTarget] = useState(null);
+
   const others = useMemo(() => {
     const query = search.trim().toLowerCase();
     return people
       .filter((candidate) => candidate.id !== person.id)
-      .filter((candidate) => !query || candidate.name.toLowerCase().includes(query))
+      .filter(
+        (candidate) =>
+          !query ||
+          // Aliases are searchable too — the duplicate being hunted is often
+          // the one spelled the other way.
+          [candidate.name, ...(candidate.aliases || [])].some((label) =>
+            label.toLowerCase().includes(query)
+          )
+      )
       .slice(0, 8);
   }, [people, person.id, search]);
 
@@ -117,17 +127,44 @@ function PersonMenu({ x, y, person, people, dispatch, onClose }) {
                 type="button"
                 className="menu-item"
                 onClick={() => {
-                  dispatch({ type: 'people/merge', keepId: person.id, mergeId: candidate.id });
-                  onClose();
+                  setMergeTarget(candidate);
+                  setMode('mergeConfirm');
                 }}
               >
-                {candidate.name}
+                <span>{candidate.name}</span>
+                {(candidate.aliases || []).length > 0 && (
+                  <span className="menu-item__hint">{candidate.aliases.join(', ')}</span>
+                )}
               </button>
             ))}
             {others.length === 0 && <p className="hint">No one else matches.</p>}
           </div>
           <div className="menu-form__row">
             <button type="button" className="btn btn--small" onClick={() => setMode('root')}>Back</button>
+          </div>
+        </div>
+      )}
+
+      {mode === 'mergeConfirm' && mergeTarget && (
+        <div className="menu-form">
+          {/* Merging cannot be undone, and Remove already asks. */}
+          <p className="hint">
+            Fold <strong>{mergeTarget.name}</strong> into <strong>{person.name}</strong>? The other
+            row disappears, its name becomes an alias, and its marks fill any gaps in this one.
+            This cannot be undone.
+          </p>
+          <div className="menu-form__row">
+            <button
+              type="button"
+              className="btn btn--primary btn--small"
+              onClick={() => {
+                dispatch({ type: 'people/merge', keepId: person.id, mergeId: mergeTarget.id });
+                onClose();
+              }}
+            >
+              Merge
+            </button>
+            <button type="button" className="btn btn--small" onClick={() => setMode('merge')}>Back</button>
           </div>
         </div>
       )}

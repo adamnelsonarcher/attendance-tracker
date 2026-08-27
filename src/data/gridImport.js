@@ -112,7 +112,8 @@ export function parseGrid(text, fallbackYear = new Date().getFullYear()) {
     if (NOISE.test(name)) continue;
 
     blanks = 0;
-    const marks = {};
+    // A pasted cell can say anything, including `__proto__`.
+    const marks = Object.create(null);
     for (const { index, date } of current.columns) {
       const mark = (row[index] || '').trim();
       if (mark) marks[date] = mark;
@@ -189,26 +190,57 @@ export function buildImport({ blocks, mapping, table, termId = null, groupBlocks
   const groups = [];
   const folders = [];
   const events = [];
-  const attendance = {};
+  const updatedEvents = [];
+  const attendance = Object.create(null);
 
   const roster = table.people.slice();
+
+  // Every name and alias, mapped to everyone who answers to it. A key claimed
+  // by two people is not a match — it falls through to `matchNames`, which
+  // reports it as ambiguous rather than picking whoever was registered last.
   const byKey = new Map();
   const registerPerson = (person) => {
-    byKey.set(person.name.trim().toLowerCase(), person);
-    for (const alias of person.aliases || []) byKey.set(alias.trim().toLowerCase(), person);
+    const claim = (label) => {
+      const key = String(label).trim().toLowerCase();
+      if (!key) return;
+      const holders = byKey.get(key);
+      if (holders) {
+        if (!holders.some((held) => held.id === person.id)) holders.push(person);
+      } else byKey.set(key, [person]);
+    };
+    claim(person.name);
+    for (const alias of person.aliases || []) claim(alias);
   };
   roster.forEach(registerPerson);
+
+  const lookup = (name) => {
+    const holders = byKey.get(String(name).trim().toLowerCase());
+    return holders && holders.length === 1 ? holders[0] : null;
+  };
 
   // A folder or group of the same name already here is reused rather than
   // doubled — importing three semesters of "Monday 2pm" should leave one
   // "Monday 2pm", not three.
   const folderByName = new Map(table.folders.map((folder) => [folder.name.trim().toLowerCase(), folder]));
   const groupByName = new Map(table.groups.map((group) => [group.name.trim().toLowerCase(), group]));
+  // Groups this paste has already made, so two blocks with one label share one.
+  const pendingGroups = new Map();
+
+  // folderId -> date -> event, seeded from the table and extended as the paste
+  // creates sessions, so two blocks landing in one folder cannot both add a
+  // column for the same day.
+  const scheduled = new Map();
+  for (const event of table.events) {
+    if (!event.startDate) continue;
+    if (!scheduled.has(event.folderId)) scheduled.set(event.folderId, new Map());
+    scheduled.get(event.folderId).set(event.startDate, event);
+  }
 
   const summary = {
     blocks: blocks.length,
     events: 0,
     reusedEvents: 0,
+    refiledEvents: 0,
     marks: 0,
     newPeople: [],
     matchedPeople: [],
@@ -232,23 +264,23 @@ export function buildImport({ blocks, mapping, table, termId = null, groupBlocks
 
     let group = null;
     if (groupBlocks) {
-      const existing = groupByName.get(key);
-      // An existing group keeps its id, so the reducer folds the members in.
-      group = existing
-        ? { id: existing.id, name: existing.name, color: existing.color, memberIds: [] }
-        : { id: newId('g'), name: label, color: nextColor(groups.length), memberIds: [] };
-      groups.push(group);
-      groupByName.set(key, group);
+      group = pendingGroups.get(key);
+      if (!group) {
+        const existing = groupByName.get(key);
+        // An existing group keeps its id, so the reducer folds the members in.
+        group = existing
+          ? { id: existing.id, name: existing.name, color: existing.color, memberIds: [] }
+          : { id: newId('g'), name: label, color: nextColor(groups.length), memberIds: [] };
+        groups.push(group);
+        pendingGroups.set(key, group);
+      }
     }
 
-    // A session already recorded on this date in this folder is the same
-    // session, so re-importing a corrected sheet updates it instead of
-    // creating a second column for the same day.
-    const existingByDate = new Map(
-      table.events
-        .filter((event) => event.folderId === folder.id && event.startDate)
-        .map((event) => [event.startDate, event])
-    );
+    // A session already on this date in this folder is the same session, so
+    // re-importing a corrected sheet updates it instead of adding a second
+    // column for the same day.
+    if (!scheduled.has(folder.id)) scheduled.set(folder.id, new Map());
+    const existingByDate = scheduled.get(folder.id);
 
     const dateEvents = new Map();
     for (const { date } of block.columns) {
@@ -258,6 +290,12 @@ export function buildImport({ blocks, mapping, table, termId = null, groupBlocks
       if (already) {
         dateEvents.set(date, already);
         summary.reusedEvents += 1;
+        // Re-file it into the chosen term, so the Term picker means the same
+        // thing for every column in the import rather than only the new ones.
+        if (termId && already.termId !== termId && !updatedEvents.some((e) => e.id === already.id)) {
+          updatedEvents.push({ ...already, termId });
+          summary.refiledEvents += 1;
+        }
         continue;
       }
 
@@ -271,13 +309,13 @@ export function buildImport({ blocks, mapping, table, termId = null, groupBlocks
         endDate: null,
       };
       dateEvents.set(date, event);
+      existingByDate.set(date, event);
       events.push(event);
       summary.events += 1;
     }
 
     for (const row of block.people) {
-      const key = row.name.trim().toLowerCase();
-      let person = byKey.get(key);
+      let person = lookup(row.name);
 
       if (!person) {
         // Fall back to the fuzzy matcher, which tolerates middle initials and
@@ -305,7 +343,7 @@ export function buildImport({ blocks, mapping, table, termId = null, groupBlocks
       if (group && !group.memberIds.includes(person.id)) group.memberIds.push(person.id);
 
       for (const [date, mark] of Object.entries(row.marks)) {
-        const statusId = mapping[mark];
+        const statusId = typeof mapping[mark] === 'string' ? mapping[mark] : '';
         if (!statusId) {
           if (mapping[mark] === '') summary.unmappedSymbols.add(mark);
           continue;
@@ -319,7 +357,10 @@ export function buildImport({ blocks, mapping, table, termId = null, groupBlocks
   }
 
   summary.unmappedSymbols = Array.from(summary.unmappedSymbols);
-  return { payload: { people, groups, folders, events, attendance }, summary };
+  return {
+    payload: { people, groups, folders, events, updatedEvents, attendance: { ...attendance } },
+    summary,
+  };
 }
 
 const PALETTE = ['#5b8def', '#e8955a', '#3fae7d', '#b06ad8', '#d95b6b', '#3ca6b8', '#c9a227', '#7a8290'];

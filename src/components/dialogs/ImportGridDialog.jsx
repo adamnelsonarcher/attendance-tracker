@@ -19,8 +19,14 @@ function ImportGridDialog({ table, dispatch, activeTermId, onClose }) {
   const [termId, setTermId] = useState(null);
   const [groupBlocks, setGroupBlocks] = useState(true);
   const [touched, setTouched] = useState(false);
+  const [year, setYear] = useState(() => new Date().getFullYear());
 
-  const blocks = useMemo(() => parseGrid(text), [text]);
+  // These sheets write dates both ways. A cell reading "8/25" carries no year,
+  // and this app prints its own session columns that way too, so a historical
+  // block pasted back could otherwise be dated into the current term without
+  // anyone choosing that.
+  const blocks = useMemo(() => parseGrid(text, year), [text, year]);
+  const needsYear = useMemo(() => /(^|\t|,)\s*\d{1,2}[/.-]\d{1,2}\s*(\t|,|$)/m.test(text), [text]);
   const symbols = useMemo(() => collectSymbols(blocks), [blocks]);
 
   const dates = useMemo(
@@ -153,6 +159,19 @@ function ImportGridDialog({ table, dispatch, activeTermId, onClose }) {
           <section className="import-grid__section">
             <h3>Where it goes</h3>
             <div className="row">
+              {needsYear && (
+                <label className="field field--narrow">
+                  <span>Year</span>
+                  <input
+                    className="input"
+                    type="number"
+                    min="2000"
+                    max="2100"
+                    value={year}
+                    onChange={(event) => setYear(Number(event.target.value) || year)}
+                  />
+                </label>
+              )}
               <label className="field">
                 <span>Term</span>
                 <select
@@ -169,6 +188,7 @@ function ImportGridDialog({ table, dispatch, activeTermId, onClose }) {
             </div>
             {dates.length > 0 && (
               <p className="hint">
+                {needsYear && <strong>Some dates have no year, so {year} is assumed. </strong>}
                 These dates run {dates[0]} to {dates[dates.length - 1]}.{' '}
                 {datedTerm
                   ? `They fall inside ${datedTerm.name}.`
@@ -200,6 +220,7 @@ function ImportGridDialog({ table, dispatch, activeTermId, onClose }) {
                 {summary.reusedEvents > 0 && (
                   <span className="hint">
                     {' '}— {summary.reusedEvents} already scheduled and reused
+                    {summary.refiledEvents > 0 && `, ${summary.refiledEvents} moved into this term`}
                   </span>
                 )}
               </li>

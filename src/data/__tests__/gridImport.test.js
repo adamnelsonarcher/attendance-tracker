@@ -205,6 +205,73 @@ describe('buildImport', () => {
     expect(second.payload.attendance).toEqual(first.payload.attendance);
   });
 
+  it('does not create two columns for one day when two blocks share a folder', () => {
+    // A header row whose first cell is empty gives every block the same
+    // fallback label, so they land in one folder.
+    const two = parseGrid(
+      ['\t8/25/2025\t9/1/2025', 'Ada\t✓\t✓', '', '', '', '\t8/25/2025\t9/8/2025', 'Bo\t✓\t✓'].join('\n'),
+      2025
+    );
+    const { payload } = buildImport({ blocks: two, mapping, table: emptyTable() });
+
+    const dates = payload.events.map((event) => event.startDate);
+    expect(new Set(dates).size).toBe(dates.length);
+    expect(dates.sort()).toEqual(['2025-08-25', '2025-09-01', '2025-09-08']);
+  });
+
+  it('gives two same-named blocks one group, not two sharing an id', () => {
+    const two = parseGrid(
+      ['Monday 2pm\t8/25/2025\t9/1/2025', 'Ada\t✓\t✓', '', '', '', 'Monday 2pm\t9/8/2025\t9/15/2025', 'Bo\t✓\t✓'].join('\n'),
+      2025
+    );
+    const { payload } = buildImport({ blocks: two, mapping, table: emptyTable() });
+
+    expect(payload.groups).toHaveLength(1);
+    expect(payload.folders).toHaveLength(1);
+    expect(payload.groups[0].memberIds).toHaveLength(2);
+  });
+
+  it('will not resolve a name that two people answer to', () => {
+    // The fast path must not silently pick whoever was registered last.
+    const table = emptyTable();
+    table.people = [
+      { id: 'p1', name: 'Charles Levy-Thiebaut', aliases: ['Charles'] },
+      { id: 'p2', name: 'Charles Van Meter', aliases: ['Charles'] },
+    ];
+
+    const { summary } = buildImport({
+      blocks: parseGrid('Mon\t8/25/2025\t9/1/2025\nCharles\t✓\t✓', 2025),
+      mapping,
+      table,
+    });
+
+    expect(summary.matchedPeople).toEqual([]);
+    expect(summary.ambiguous).toHaveLength(1);
+  });
+
+  it('re-files a reused session into the chosen term', () => {
+    const table = emptyTable();
+    table.folders = [{ id: 'f1', name: 'Monday 2pm', isOpen: true }];
+    table.events = [
+      { id: 'e1', name: '8/25', weight: 1, folderId: 'f1', termId: null, startDate: '2025-08-25', endDate: null },
+    ];
+
+    const { payload, summary } = buildImport({ blocks, mapping, table, termId: 't1' });
+
+    // The term picker has to mean the same thing for every column, not only
+    // the ones the import happened to create.
+    expect(summary.refiledEvents).toBe(1);
+    expect(payload.updatedEvents).toEqual([expect.objectContaining({ id: 'e1', termId: 't1' })]);
+  });
+
+  it('does not let a pasted name reach Object.prototype', () => {
+    const nasty = parseGrid('Mon\t8/25/2025\t9/1/2025\n__proto__\t✓\t✓', 2025);
+    const { payload } = buildImport({ blocks: nasty, mapping, table: emptyTable() });
+
+    expect(Object.prototype.polluted).toBeUndefined();
+    expect(Object.keys(payload.attendance).length).toBe(2);
+  });
+
   it('never points a mark at a session that is not in the payload', () => {
     const { payload } = buildImport({ blocks, mapping, table: emptyTable() });
     const eventIds = new Set(payload.events.map((event) => event.id));

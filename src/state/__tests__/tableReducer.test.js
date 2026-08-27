@@ -9,8 +9,8 @@ function seed() {
   ];
   table.folders = [{ id: 'f1', name: 'Meetings', isOpen: true }];
   table.events = [
-    { id: 'e1', name: 'One', weight: 1, folderId: 'f1', startDate: null, endDate: null },
-    { id: 'e2', name: 'Two', weight: 1, folderId: null, startDate: null, endDate: null },
+    { id: 'e1', name: 'One', weight: 1, folderId: 'f1', termId: null, startDate: null, endDate: null },
+    { id: 'e2', name: 'Two', weight: 1, folderId: null, termId: null, startDate: null, endDate: null },
   ];
   table.attendance = { 'p1-e1': 'present', 'p2-e1': 'absent', 'p1-e2': 'virtual' };
   table.groups = [{ id: 'g1', name: 'Exec', color: '#000000', memberIds: ['p1', 'p2'] }];
@@ -348,5 +348,130 @@ describe('folder collapse', () => {
 
     expect(next.table.folders[0].isOpen).toBe(false);
     expect(next.outbox.schedule).toBe(false);
+  });
+});
+
+describe('terms', () => {
+  it('adds a term and keeps them in date order', () => {
+    const next = run(
+      seed(),
+      { type: 'terms/add', name: 'Spring 2027', startDate: '2027-01-11', endDate: '2027-05-07' },
+      { type: 'terms/add', name: 'Fall 2026', startDate: '2026-08-24', endDate: '2026-12-18' }
+    );
+
+    expect(next.table.terms.map((term) => term.name)).toEqual(['Fall 2026', 'Spring 2027']);
+    expect(next.outbox.schedule).toBe(true);
+  });
+
+  it('renames and re-dates a term', () => {
+    const added = run(seed(), { type: 'terms/add', name: 'Fall', startDate: '2026-08-24', endDate: '2026-12-18' });
+    const id = added.table.terms[0].id;
+    const next = run(added, { type: 'terms/update', id, changes: { name: 'Fall 2026' } });
+
+    expect(next.table.terms[0].name).toBe('Fall 2026');
+  });
+
+  it('keeps the sessions when a term is removed', () => {
+    const added = run(seed(), { type: 'terms/add', name: 'Fall', startDate: '2026-08-24', endDate: '2026-12-18' });
+    const id = added.table.terms[0].id;
+    const withEvent = run(added, { type: 'events/add', name: 'One-off', weight: 1, termId: id });
+    const next = run(withEvent, { type: 'terms/remove', id });
+
+    // Deleting a semester must not delete the semester's attendance.
+    expect(next.table.events).toHaveLength(withEvent.table.events.length);
+    for (const event of next.table.events) expect(event.termId).toBeNull();
+  });
+});
+
+describe('recurring sessions', () => {
+  it('builds a term of one weekday in one action', () => {
+    const next = run(seed(), {
+      type: 'events/addRecurring',
+      name: 'Monday 2pm',
+      weekday: 1,
+      startDate: '2026-08-24',
+      endDate: '2026-09-28',
+      weight: 1,
+      newFolderName: 'Monday 2pm',
+    });
+
+    const added = next.table.events.filter((event) => event.name === 'Monday 2pm');
+    expect(added).toHaveLength(6);
+    expect(next.table.folders.map((f) => f.name)).toContain('Monday 2pm');
+    for (const event of added) {
+      expect(new Date(`${event.startDate}T12:00:00Z`).getUTCDay()).toBe(1);
+    }
+  });
+
+  it('does nothing when the range contains no such day', () => {
+    const state = seed();
+    const next = run(state, {
+      type: 'events/addRecurring',
+      name: 'Nope',
+      weekday: 0,
+      startDate: '2026-08-24',
+      endDate: '2026-08-26',
+      weight: 1,
+    });
+    expect(next).toBe(state);
+  });
+});
+
+describe('merging people', () => {
+  it('survives a person stored without an aliases field', () => {
+    // A roster written by an older build has none, and a remote roster is
+    // installed verbatim.
+    const state = seed();
+    const legacy = {
+      ...state,
+      table: { ...state.table, people: state.table.people.map(({ id, name }) => ({ id, name })) },
+    };
+
+    expect(() => run(legacy, { type: 'people/merge', keepId: 'p1', mergeId: 'p2' })).not.toThrow();
+  });
+
+  it('folds the loser-s marks into the gaps and keeps its name as an alias', () => {
+    const next = run(seed(), { type: 'people/merge', keepId: 'p1', mergeId: 'p2' });
+    const kept = next.table.people.find((person) => person.id === 'p1');
+
+    expect(next.table.people.map((p) => p.id)).toEqual(['p1']);
+    expect(kept.aliases).toContain('Jordan Blake');
+    // p1 already had e1; p2's own e1 must not overwrite it.
+    expect(next.table.attendance['p1-e1']).toBe('present');
+    expect('p2-e1' in next.table.attendance).toBe(false);
+  });
+
+  it('refuses to merge someone into themselves', () => {
+    const state = seed();
+    expect(run(state, { type: 'people/merge', keepId: 'p1', mergeId: 'p1' })).toBe(state);
+  });
+});
+
+describe('importing', () => {
+  it('folds two incoming groups of the same name together', () => {
+    // Two blocks with the same label, or two blocks with no label at all.
+    const next = run(seed(), {
+      type: 'table/import',
+      payload: {
+        groups: [
+          { id: 'gA', name: 'Imported', color: '#111111', memberIds: ['p1'] },
+          { id: 'gB', name: 'Imported', color: '#111111', memberIds: ['p2'] },
+        ],
+      },
+    });
+
+    const imported = next.table.groups.filter((group) => group.name === 'Imported');
+    expect(imported).toHaveLength(1);
+    expect(imported[0].memberIds.sort()).toEqual(['p1', 'p2']);
+  });
+
+  it('re-files a session that already existed into the chosen term', () => {
+    const next = run(seed(), {
+      type: 'table/import',
+      payload: { updatedEvents: [{ ...seed().table.events[0], termId: 't_new' }] },
+    });
+
+    expect(next.table.events[0].termId).toBe('t_new');
+    expect(next.table.events).toHaveLength(seed().table.events.length);
   });
 });

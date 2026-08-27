@@ -1,11 +1,71 @@
-"""Builds the CIR Fall 2026 starter table from Ellie's workbooks."""
-import io, json, os, re, datetime, random, unicodedata
+"""Builds the CIR Fall 2026 starter table from the two source workbooks.
 
-TMP = os.environ.get('TEMP', '.')
-checkin = json.load(io.open(os.path.join(TMP, 'checkin.json'), encoding='utf-8'))
-events_raw = json.load(io.open(os.path.join(TMP, 'events.json'), encoding='utf-8'))
+    python scripts/build-cir-table.py [path/to/downloads]
 
-rng = random.Random(20260826)
+Writes public/cir-fall-2026.json. Everything it emits traces back to a cell in
+one of those workbooks; nothing is invented.
+"""
+import io, json, os, re, sys, datetime, unicodedata
+import pandas as pd
+
+SOURCE = sys.argv[1] if len(sys.argv) > 1 else os.path.expanduser('~/Downloads')
+CHECKIN_XLSX = os.path.join(SOURCE, 'Check-In Attendance.xlsx')
+EVENTS_XLSX = os.path.join(SOURCE, 'FY26_EVENTS_ATTENDANCE.xlsx')
+
+SHIFT_RE = re.compile(r'^(mon|tue|tues|wed|thur|thurs|fri|sat|sun)', re.I)
+
+
+def _is_date(v):
+    return isinstance(v, (pd.Timestamp, datetime.datetime, datetime.date))
+
+
+def read_checkin(path):
+    """Each sheet is a semester; each block is a weekly session."""
+    book = pd.ExcelFile(path)
+    sheets = {}
+    for name in book.sheet_names:
+        df = book.parse(name, header=None)
+        blocks, current = [], None
+        for _, row in df.iterrows():
+            vals = row.tolist()
+            label = '' if pd.isna(vals[0]) else str(vals[0]).strip()
+            dates = [(j, v) for j, v in enumerate(vals[1:], start=1) if _is_date(v)]
+
+            if label and SHIFT_RE.match(label) and len(dates) >= 3:
+                current = {'shift': label, 'dates': dates, 'people': []}
+                blocks.append(current)
+                continue
+            if current and label and not SHIFT_RE.match(label):
+                marks = {}
+                for j, d in current['dates']:
+                    v = vals[j] if j < len(vals) else None
+                    if not pd.isna(v) and str(v).strip():
+                        marks[str(pd.Timestamp(d).date())] = str(v).strip()
+                current['people'].append({'name': label, 'marks': marks})
+        if blocks:
+            sheets[name] = blocks
+    return sheets
+
+
+def read_events(path, sheet):
+    """Event blocks are `<title>` above a `Name | <date> | Staff` header row."""
+    df = pd.ExcelFile(path).parse(sheet, header=None)
+    rows, cols = df.shape
+    found = []
+    for i in range(rows):
+        for j in range(cols):
+            v = df.iat[i, j]
+            if not (isinstance(v, str) and v.strip().lower() == 'name'):
+                continue
+            date = df.iat[i, j + 1] if j + 1 < cols else None
+            title = df.iat[i - 1, j] if i > 0 else None
+            if _is_date(date) and isinstance(title, str) and title.strip():
+                found.append((title.strip(), str(pd.Timestamp(date).date())))
+    return found
+
+
+checkin = read_checkin(CHECKIN_XLSX)
+
 _counter = [0]
 
 def nid(prefix):
@@ -149,9 +209,32 @@ def shift_key(label):
     key = label.strip().lower()
     return SHIFT_ALIASES.get(key, label.strip())
 
+# Someone listed in two Spring blocks either transferred mid-semester or really
+# attends both. Real marks tell them apart: a block that is nearly all
+# holiday/blank after a transfer carries very few. Anything under 40% of the
+# person's busiest block is treated as the one they left.
+real_marks = {}
+for block in checkin.get(PRIOR, []):
+    key = shift_key(block['shift'])
+    for person in block['people']:
+        name = canonical(person['name'])
+        count = sum(1 for m in person['marks'].values() if m.strip() and m.strip() != '\u26aa')
+        real_marks.setdefault(name, {})[key] = count
+
+abandoned = set()
+for name, per_shift in real_marks.items():
+    if len(per_shift) < 2:
+        continue
+    best = max(per_shift.values())
+    for shift, count in per_shift.items():
+        if best > 0 and count < best * 0.4:
+            abandoned.add((name, shift))
+            print(f'dropped {name} from {shift} ({count} real marks vs {best} in their main block)')
+
 assign_by_shift = {}
 for shift, names in prior_assign.items():
-    assign_by_shift.setdefault(shift_key(shift), []).extend(names)
+    key = shift_key(shift)
+    assign_by_shift.setdefault(key, []).extend(n for n in names if (n, key) not in abandoned)
 
 # Anyone Fall 26 already placed moves to that slot and out of the old one.
 moved = {n for names in fall_assign.values() for n in names}
@@ -224,19 +307,12 @@ if unplaced:
 EVENT_FOLDER = {'id': nid('f'), 'name': 'Community events', 'isOpen': True}
 folders.append(EVENT_FOLDER)
 
-COMMUNITY = [
-    ('Welcome Back Event', '2026-08-26', 2),
-    ('First Friday All Recovery', '2026-09-04', 1),
-    ('CIR Tailgate', '2026-09-12', 1),
-    ('Recovery Celebration', '2026-09-29', 2),
-    ('Steering Committee', '2026-09-29', 1),
-    ('Family Tailgate', '2026-10-17', 1),
-    ('First Friday All Recovery', '2026-10-02', 1),
-    ('CIR Coogsgiving', '2026-11-19', 2),
-    ('First Friday All Recovery', '2026-11-06', 1),
-    ('CIR White Elephant', '2026-12-11', 1),
-]
-for name, date, weight in COMMUNITY:
+# Read from the FY26 workbook's own Fall 26 tab rather than guessed at, so
+# every column here is one staff already have on their calendar.
+COMMUNITY = sorted(set(read_events(EVENTS_XLSX, 'Fall 26')), key=lambda e: (e[1], e[0]))
+print(f'community events from the workbook: {len(COMMUNITY)}')
+for name, date in COMMUNITY:
+    weight = 1
     events.append({
         'id': nid('e'),
         'name': name,

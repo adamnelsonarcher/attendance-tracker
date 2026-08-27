@@ -39,10 +39,16 @@ function App() {
     lastEpoch.current = tableEpoch;
 
     setActiveTermId((current) => {
+      // `null` means "nothing chosen yet" and is distinct from ALL_TERMS, which
+      // is a choice. Collapsing the two meant that with no terms the view sat
+      // on ALL_TERMS, and creating the first term did not select it — so the
+      // sessions added next were filed under no term at all.
       const stillValid =
-        !swapped && current && (current === ALL_TERMS || table.terms.some((term) => term.id === current));
+        !swapped &&
+        current !== null &&
+        (current === ALL_TERMS ? table.terms.length > 0 : table.terms.some((term) => term.id === current));
       if (stillValid) return current;
-      return currentTerm(table.terms)?.id || ALL_TERMS;
+      return currentTerm(table.terms)?.id ?? null;
     });
   }, [table.terms, tableEpoch]);
 

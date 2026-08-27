@@ -382,7 +382,6 @@
         "p_seed0032",
         "p_seed0033",
         "p_seed0034",
-        "p_seed0035",
         "p_seed0036"
       ]
     },
@@ -418,8 +417,7 @@
         "p_seed0046",
         "p_seed0047",
         "p_seed0048",
-        "p_seed0035",
-        "p_seed0042"
+        "p_seed0035"
       ]
     },
     {
@@ -1495,25 +1493,16 @@
     },
     {
       "id": "e_seed0179",
-      "name": "Welcome Back Event",
-      "weight": 2,
+      "name": "Townhouse Meeting",
+      "weight": 1,
       "folderId": "f_seed0178",
       "termId": "t_seed0049",
-      "startDate": "2026-08-26",
+      "startDate": "2026-08-28",
       "endDate": null
     },
     {
       "id": "e_seed0180",
-      "name": "First Friday All Recovery",
-      "weight": 1,
-      "folderId": "f_seed0178",
-      "termId": "t_seed0049",
-      "startDate": "2026-09-04",
-      "endDate": null
-    },
-    {
-      "id": "e_seed0181",
-      "name": "CIR Tailgate",
+      "name": "Tailgate",
       "weight": 1,
       "folderId": "f_seed0178",
       "termId": "t_seed0049",
@@ -1521,16 +1510,16 @@
       "endDate": null
     },
     {
-      "id": "e_seed0182",
+      "id": "e_seed0181",
       "name": "Recovery Celebration",
-      "weight": 2,
+      "weight": 1,
       "folderId": "f_seed0178",
       "termId": "t_seed0049",
       "startDate": "2026-09-29",
       "endDate": null
     },
     {
-      "id": "e_seed0183",
+      "id": "e_seed0182",
       "name": "Steering Committee",
       "weight": 1,
       "folderId": "f_seed0178",
@@ -1539,48 +1528,12 @@
       "endDate": null
     },
     {
-      "id": "e_seed0184",
+      "id": "e_seed0183",
       "name": "Family Tailgate",
       "weight": 1,
       "folderId": "f_seed0178",
       "termId": "t_seed0049",
       "startDate": "2026-10-17",
-      "endDate": null
-    },
-    {
-      "id": "e_seed0185",
-      "name": "First Friday All Recovery",
-      "weight": 1,
-      "folderId": "f_seed0178",
-      "termId": "t_seed0049",
-      "startDate": "2026-10-02",
-      "endDate": null
-    },
-    {
-      "id": "e_seed0186",
-      "name": "CIR Coogsgiving",
-      "weight": 2,
-      "folderId": "f_seed0178",
-      "termId": "t_seed0049",
-      "startDate": "2026-11-19",
-      "endDate": null
-    },
-    {
-      "id": "e_seed0187",
-      "name": "First Friday All Recovery",
-      "weight": 1,
-      "folderId": "f_seed0178",
-      "termId": "t_seed0049",
-      "startDate": "2026-11-06",
-      "endDate": null
-    },
-    {
-      "id": "e_seed0188",
-      "name": "CIR White Elephant",
-      "weight": 1,
-      "folderId": "f_seed0178",
-      "termId": "t_seed0049",
-      "startDate": "2026-12-11",
       "endDate": null
     }
   ],

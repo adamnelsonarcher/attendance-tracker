@@ -82,6 +82,10 @@ date is not duplicated. The term is chosen from the pasted dates rather than
 from whatever is on screen, so importing last year's sheet does not file it
 under this year.
 
+Dates written as bare `8/25`, with no year, are dated into a year you pick — the
+dialog says which, because this app prints its own session columns that way and
+a historical block pasted back would otherwise land in the current term.
+
 **Add → Weekly session** builds a term of one weekday in a single step, which is
 the shape of every check-in block in those sheets — and removes the class of
 error where a hand-typed column picks up a date from the wrong semester.
@@ -93,7 +97,8 @@ The same student appears as `Matt Hwang` and `Matt Huang`, `Liv` and
 list of aliases, matched whenever a name is looked up — pasted sign-in sheets,
 bulk marking, imports. Right-click a name for **Also known as**, or **Merge
 with…** to fold a duplicate row in: its marks fill the gaps in the kept row, its
-groups carry over, and its name becomes an alias.
+groups carry over, and its name becomes an alias. An alias that would also name
+somebody else is refused rather than guessed at.
 
 ### Getting data out
 

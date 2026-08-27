@@ -76,7 +76,10 @@ function SettingsDialog({ table, dispatch, tableId, code, sync, actions, readOnl
           `${next.people.length} people, ${next.events.length} sessions, ` +
           `${next.terms.length} terms.\n\nThe table open now is overwritten.`;
         if (!window.confirm(message)) return;
-        dispatch({ type: 'table/replace', table: next });
+        // `table/adopt` with `upgrade` queues the whole table for sending.
+        // `table/replace` would empty the outbox, so on a shared table the
+        // restore would stay local and be overwritten by the next snapshot.
+        dispatch({ type: 'table/adopt', table: next, upgrade: true });
         onClose();
       } catch {
         setImportError('That does not look like a table backup.');

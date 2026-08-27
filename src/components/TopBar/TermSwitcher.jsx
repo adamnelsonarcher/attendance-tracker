@@ -13,11 +13,13 @@ import { formatDateRange } from '../../data/model';
  */
 function TermSwitcher({ x, y, terms, activeTermId, onSelect, dispatch, readOnly, onClose }) {
   const [mode, setMode] = useState('root');
+  const [editing, setEditing] = useState(null);
   const [form, setForm] = useState(() => ({ name: '', ...defaultTermWindow() }));
 
   const counts = terms.length;
 
-  if (mode === 'new') {
+  if (mode === 'new' || mode === 'edit') {
+    const isEdit = mode === 'edit';
     return (
       <Popover x={x} y={y} onClose={onClose}>
         <form
@@ -25,12 +27,24 @@ function TermSwitcher({ x, y, terms, activeTermId, onSelect, dispatch, readOnly,
           onSubmit={(event) => {
             event.preventDefault();
             if (!form.name.trim()) return;
-            dispatch({
-              type: 'terms/add',
-              name: form.name.trim(),
-              startDate: form.startDate,
-              endDate: form.endDate,
-            });
+            if (isEdit) {
+              dispatch({
+                type: 'terms/update',
+                id: editing,
+                changes: {
+                  name: form.name.trim(),
+                  startDate: form.startDate || null,
+                  endDate: form.endDate || null,
+                },
+              });
+            } else {
+              dispatch({
+                type: 'terms/add',
+                name: form.name.trim(),
+                startDate: form.startDate,
+                endDate: form.endDate,
+              });
+            }
             onClose();
           }}
         >
@@ -65,9 +79,24 @@ function TermSwitcher({ x, y, terms, activeTermId, onSelect, dispatch, readOnly,
           </label>
           <div className="menu-form__row">
             <button type="submit" className="btn btn--primary btn--small" disabled={!form.name.trim()}>
-              Add term
+              {isEdit ? 'Save' : 'Add term'}
             </button>
             <button type="button" className="btn btn--small" onClick={() => setMode('root')}>Back</button>
+            {isEdit && (
+              <button
+                type="button"
+                className="btn btn--danger btn--small"
+                onClick={() => {
+                  // The sessions survive; they just stop belonging to a term.
+                  if (window.confirm('Remove this term? Its sessions stay, without a term.')) {
+                    dispatch({ type: 'terms/remove', id: editing });
+                    onClose();
+                  }
+                }}
+              >
+                Delete
+              </button>
+            )}
           </div>
         </form>
       </Popover>
@@ -79,20 +108,35 @@ function TermSwitcher({ x, y, terms, activeTermId, onSelect, dispatch, readOnly,
       <div className="menu-label">Term</div>
 
       {terms.map((term) => (
-        <button
-          key={term.id}
-          type="button"
-          className="menu-item"
-          onClick={() => {
-            onSelect(term.id);
-            onClose();
-          }}
-        >
-          <span>{term.name}</span>
-          <span className="menu-item__hint">
-            {term.id === activeTermId ? '✓' : formatDateRange(term.startDate, term.endDate)}
-          </span>
-        </button>
+        <div key={term.id} className="term-row">
+          <button
+            type="button"
+            className="menu-item term-row__select"
+            onClick={() => {
+              onSelect(term.id);
+              onClose();
+            }}
+          >
+            <span>{term.name}</span>
+            <span className="menu-item__hint">
+              {term.id === activeTermId ? '✓' : formatDateRange(term.startDate, term.endDate)}
+            </span>
+          </button>
+          {!readOnly && (
+            <button
+              type="button"
+              className="btn btn--ghost btn--small"
+              aria-label={`Edit ${term.name}`}
+              onClick={() => {
+                setForm({ name: term.name, startDate: term.startDate || '', endDate: term.endDate || '' });
+                setEditing(term.id);
+                setMode('edit');
+              }}
+            >
+              ✎
+            </button>
+          )}
+        </div>
       ))}
 
       {counts === 0 && <p className="hint menu-form">No terms yet. Add one to group a semester's events.</p>}
