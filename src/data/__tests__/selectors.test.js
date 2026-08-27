@@ -119,17 +119,31 @@ describe('computeScores', () => {
   });
 });
 
+/**
+ * The width a header row actually covers, counting cells that span into it from
+ * a row above. A row whose coverage is not the full width is a broken table.
+ */
+function coverage(headerRows, rowIndex) {
+  let width = 0;
+  headerRows.forEach((row, declaredAt) => {
+    for (const cell of row) {
+      if (declaredAt <= rowIndex && rowIndex < declaredAt + cell.rowSpan) width += cell.colSpan;
+    }
+  });
+  return width;
+}
+
 describe('buildColumns', () => {
   const table = tableWith({
     folders: [
-      { id: 'f1', name: 'Meetings', isOpen: true },
-      { id: 'f2', name: 'Service', isOpen: false },
+      { id: 'f1', name: 'Meetings', isOpen: true, parentId: null, groupId: null },
+      { id: 'f2', name: 'Service', isOpen: false, parentId: null, groupId: null },
     ],
     events: [
-      { id: 'e1', name: 'B', weight: 1, folderId: 'f1', startDate: '2025-02-02', endDate: null },
-      { id: 'e2', name: 'A', weight: 1, folderId: 'f1', startDate: '2025-01-01', endDate: null },
-      { id: 'e3', name: 'Loose', weight: 1, folderId: null, startDate: null, endDate: null },
-      { id: 'e4', name: 'Hidden', weight: 1, folderId: 'f2', startDate: null, endDate: null },
+      { id: 'e1', name: 'B', weight: 1, folderId: 'f1', termId: null, startDate: '2025-02-02', endDate: null },
+      { id: 'e2', name: 'A', weight: 1, folderId: 'f1', termId: null, startDate: '2025-01-01', endDate: null },
+      { id: 'e3', name: 'Loose', weight: 1, folderId: null, termId: null, startDate: null, endDate: null },
+      { id: 'e4', name: 'Hidden', weight: 1, folderId: 'f2', termId: null, startDate: null, endDate: null },
     ],
   });
 
@@ -139,16 +153,19 @@ describe('buildColumns', () => {
   });
 
   it('collapses a closed folder to a single column', () => {
-    const { groups, columns } = buildColumns(table, {});
-    const closed = groups.find((group) => group.folder?.id === 'f2');
-    expect(closed.span).toBe(1);
+    const { columns, headerRows } = buildColumns(table, {});
+    const closed = headerRows[0].find((cell) => cell.folder?.id === 'f2');
+
+    expect(closed.colSpan).toBe(1);
+    expect(closed.collapsed).toBe(true);
     expect(columns.filter((column) => column.kind === 'collapsed')).toHaveLength(1);
   });
 
-  it('keeps header spans and body columns the same width', () => {
-    const { groups, columns } = buildColumns(table, {});
-    const spanned = groups.reduce((total, group) => total + (group.kind === 'folder' ? group.span : 1), 0);
-    expect(spanned).toBe(columns.length);
+  it('keeps every header row the same width as the body', () => {
+    const { columns, headerRows } = buildColumns(table, {});
+    for (let row = 0; row < headerRows.length; row += 1) {
+      expect(coverage(headerRows, row)).toBe(columns.length);
+    }
   });
 
   it('hides everything outside a positively filtered folder', () => {
@@ -157,9 +174,100 @@ describe('buildColumns', () => {
   });
 
   it('keeps an empty folder visible instead of dropping it', () => {
-    const withEmpty = tableWith({ folders: [{ id: 'f9', name: 'Empty', isOpen: true }], events: [] });
-    const { groups } = buildColumns(withEmpty, {});
-    expect(groups).toHaveLength(1);
+    const withEmpty = tableWith({
+      folders: [{ id: 'f9', name: 'Empty', isOpen: true, parentId: null, groupId: null }],
+      events: [],
+    });
+    const { headerRows, columns } = buildColumns(withEmpty, {});
+
+    expect(headerRows[0]).toHaveLength(1);
+    expect(columns).toHaveLength(1);
+  });
+
+  it('uses two header rows when nothing is nested', () => {
+    expect(buildColumns(table, {}).depth).toBe(1);
+  });
+});
+
+describe('sections', () => {
+  /** "Check-ins" over two weekly folders, plus a flat events folder. */
+  const nested = tableWith({
+    folders: [
+      { id: 'sec', name: 'Check-ins', isOpen: true, parentId: null, groupId: null },
+      { id: 'mon', name: 'Monday 2pm', isOpen: true, parentId: 'sec', groupId: null },
+      { id: 'tue', name: 'Tuesday 10am', isOpen: true, parentId: 'sec', groupId: null },
+      { id: 'evt', name: 'Community events', isOpen: true, parentId: null, groupId: null },
+    ],
+    events: [
+      { id: 'm1', name: '8/24', weight: 1, folderId: 'mon', termId: null, startDate: '2026-08-24', endDate: null },
+      { id: 'm2', name: '8/31', weight: 1, folderId: 'mon', termId: null, startDate: '2026-08-31', endDate: null },
+      { id: 't1', name: '8/25', weight: 1, folderId: 'tue', termId: null, startDate: '2026-08-25', endDate: null },
+      { id: 'x1', name: 'Tailgate', weight: 1, folderId: 'evt', termId: null, startDate: '2026-09-12', endDate: null },
+    ],
+  });
+
+  it('adds a third header row only when something is nested', () => {
+    expect(buildColumns(nested, {}).depth).toBe(2);
+  });
+
+  it('spans the section across everything inside it', () => {
+    const { headerRows } = buildColumns(nested, {});
+    const section = headerRows[0].find((cell) => cell.folder?.id === 'sec');
+
+    expect(section.section).toBe(true);
+    expect(section.colSpan).toBe(3);
+  });
+
+  it('keeps every row the width of the body', () => {
+    const { columns, headerRows } = buildColumns(nested, {});
+    for (let row = 0; row < headerRows.length; row += 1) {
+      expect(coverage(headerRows, row)).toBe(columns.length);
+    }
+    expect(columns).toHaveLength(4);
+  });
+
+  it('lets a flat folder span down to its own dates', () => {
+    const { headerRows } = buildColumns(nested, {});
+    const events = headerRows[0].find((cell) => cell.folder?.id === 'evt');
+    // Nothing sits between "Community events" and its dates.
+    expect(events.rowSpan).toBe(2);
+  });
+
+  it('collapses the whole section to one column', () => {
+    const collapsed = {
+      ...nested,
+      folders: nested.folders.map((f) => (f.id === 'sec' ? { ...f, isOpen: false } : f)),
+    };
+    const { columns, headerRows } = buildColumns(collapsed, {});
+
+    expect(columns.filter((column) => column.folder?.id === 'sec')).toHaveLength(1);
+    // One click hides all three weekly columns.
+    expect(columns).toHaveLength(2);
+    for (let row = 0; row < headerRows.length; row += 1) {
+      expect(coverage(headerRows, row)).toBe(columns.length);
+    }
+  });
+
+  it('collapses one folder inside the section without touching the others', () => {
+    const collapsed = {
+      ...nested,
+      folders: nested.folders.map((f) => (f.id === 'mon' ? { ...f, isOpen: false } : f)),
+    };
+    const { columns } = buildColumns(collapsed, {});
+    expect(columns.map((column) => column.id)).toEqual(['collapsed-mon', 't1', 'x1']);
+  });
+
+  it('shows the whole section when the section is the filter', () => {
+    const { columns } = buildColumns(nested, { sec: 1 });
+    expect(columns.map((column) => column.id)).toEqual(['m1', 'm2', 't1']);
+  });
+
+  it('keeps the section header when one folder inside it is the filter', () => {
+    const { columns, headerRows } = buildColumns(nested, { mon: 1 });
+    expect(columns.map((column) => column.id)).toEqual(['m1', 'm2']);
+    // Without its parent the section bar would vanish and the spans break.
+    expect(headerRows[0].some((cell) => cell.folder?.id === 'sec')).toBe(true);
+    expect(coverage(headerRows, 0)).toBe(columns.length);
   });
 });
 

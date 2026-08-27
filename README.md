@@ -31,7 +31,7 @@ A table is five flat collections plus settings:
 | --- | --- |
 | `people` | `{ id, name, aliases[] }` |
 | `groups` | `{ id, name, color, memberIds[] }` |
-| `folders` | `{ id, name, isOpen, groupId }` |
+| `folders` | `{ id, name, isOpen, parentId, groupId }` |
 | `terms` | `{ id, name, startDate, endDate }` |
 | `events` | `{ id, name, weight, folderId, termId, startDate, endDate }` |
 | `attendance` | `{ "personId-eventId": statusId }` |
@@ -50,6 +50,21 @@ sort and is deliberately never sent.
 `normalizeTable` in [`src/data/model.js`](src/data/model.js) accepts any older
 shape — including tables written by the pre-0.9 versions — and upgrades it. It
 never throws; anything unrecognisable is dropped.
+
+### Sections
+
+A folder can sit inside one other folder, one level deep. "Check-ins" is a
+section holding the eight weekly folders, so the whole check-in block collapses
+in a single click, the same way "Community events" collapses its own dates.
+"Townhouse" and "Community events" are flat folders whose dates expand directly
+inside them.
+
+The header is drawn as a grid rather than fixed rows: each leaf column is
+covered in every row, by colSpan across siblings and rowSpan down through the
+levels that do not apply. With nothing nested it stays two rows, as before.
+
+Sessions can repeat weekly or on the first or last given weekday of each month —
+the townhouse meets on the last Friday.
 
 ### Who a session is for
 

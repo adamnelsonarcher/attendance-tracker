@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import Popover from '../ui/Popover';
 
-function FolderMenu({ x, y, folder, groups = [], dispatch, onClose }) {
+function FolderMenu({ x, y, folder, folders = [], groups = [], dispatch, onClose }) {
   const [mode, setMode] = useState('root');
   const [name, setName] = useState(folder.name);
 
@@ -17,6 +17,12 @@ function FolderMenu({ x, y, folder, groups = [], dispatch, onClose }) {
             Who attends
             <span className="menu-item__hint">
               {groups.find((group) => group.id === folder.groupId)?.name || 'everyone'}
+            </span>
+          </button>
+          <button type="button" className="menu-item" onClick={() => setMode('section')}>
+            Section
+            <span className="menu-item__hint">
+              {folders.find((entry) => entry.id === folder.parentId)?.name || 'top level'}
             </span>
           </button>
           <button
@@ -43,6 +49,41 @@ function FolderMenu({ x, y, folder, groups = [], dispatch, onClose }) {
                 section. v1 deleted a folder's events along with it. */}
             <span className="menu-item__hint">keeps events</span>
           </button>
+        </>
+      ) : mode === 'section' ? (
+        <>
+          <div className="menu-label">Put {folder.name} under</div>
+          <button
+            type="button"
+            className="menu-item"
+            onClick={() => {
+              dispatch({ type: 'folders/setParent', id: folder.id, parentId: null });
+              onClose();
+            }}
+          >
+            <span>Nothing — top level</span>
+            <span className="menu-item__hint">{!folder.parentId ? '✓' : ''}</span>
+          </button>
+          {/* Only a top-level folder that is not this one can be a section, and
+              a folder that already holds folders cannot be filed inside one. */}
+          {folders
+            .filter((entry) => !entry.parentId && entry.id !== folder.id)
+            .map((entry) => (
+              <button
+                key={entry.id}
+                type="button"
+                className="menu-item"
+                onClick={() => {
+                  dispatch({ type: 'folders/setParent', id: folder.id, parentId: entry.id });
+                  onClose();
+                }}
+              >
+                <span>{entry.name}</span>
+                <span className="menu-item__hint">{folder.parentId === entry.id ? '✓' : ''}</span>
+              </button>
+            ))}
+          <div className="menu-divider" />
+          <button type="button" className="menu-item" onClick={() => setMode('root')}>Back</button>
         </>
       ) : mode === 'cohort' ? (
         <>

@@ -128,8 +128,8 @@ export function demoTable() {
   table.terms = [{ id: 't_fall25', name: 'Fall 2025', startDate: '2025-08-01', endDate: '2025-12-31' }];
   table.folders = [
     // Both open to everyone in the demo; a real weekly session names its cohort.
-    { id: 'f_general', name: 'General Meetings', isOpen: true, groupId: null },
-    { id: 'f_service', name: 'Service Events', isOpen: true, groupId: null },
+    { id: 'f_general', name: 'General Meetings', isOpen: true, parentId: null, groupId: null },
+    { id: 'f_service', name: 'Service Events', isOpen: true, parentId: null, groupId: null },
   ];
   table.events = [
     { id: 'e1', name: 'Kickoff', weight: 1, termId: 't_fall25', folderId: 'f_general', startDate: '2025-09-03', endDate: null },
@@ -199,17 +199,7 @@ export function normalizeTable(raw) {
     }));
 
   const groupIds = new Set(groups.map((g) => g.id));
-  const folders = asArray(source.folders)
-    .filter((f) => isObject(f) && f.id != null)
-    .map((f) => ({
-      id: String(f.id),
-      name: typeof f.name === 'string' ? f.name : 'Folder',
-      isOpen: f.isOpen !== false,
-      // The cohort this series of sessions is for. Null means everyone — a
-      // tailgate, a workshop. Set, it means only these people ever attend, so
-      // nobody else gets a cell or has it counted against them.
-      groupId: f.groupId != null && groupIds.has(String(f.groupId)) ? String(f.groupId) : null,
-    }));
+  const folders = normalizeFolders(source.folders, groupIds);
 
   const terms = asArray(source.terms)
     .filter((t) => isObject(t) && t.id != null)
@@ -278,6 +268,58 @@ export function normalizeSettings(raw, defaults) {
     ]),
     statuses: statuses.length > 0 ? statuses : defaults.statuses,
   };
+}
+
+/** How deep folders may nest: a section, its folders, their sessions. */
+export const MAX_FOLDER_DEPTH = 2;
+
+/**
+ * Folders, with nesting flattened to a depth the header can actually draw.
+ *
+ * A section like "Check-ins" holds the weekly folders; each of those holds its
+ * dates. Anything deeper, or any parent that does not exist, is lifted to the
+ * top rather than dropped — losing a folder loses its sessions.
+ */
+function normalizeFolders(raw, groupIds) {
+  const folders = asArray(raw)
+    .filter((f) => isObject(f) && f.id != null)
+    .map((f) => ({
+      id: String(f.id),
+      name: typeof f.name === 'string' ? f.name : 'Folder',
+      isOpen: f.isOpen !== false,
+      parentId: f.parentId != null ? String(f.parentId) : null,
+      // The cohort this series of sessions is for. Null means everyone — a
+      // tailgate, a workshop. Set, it means only these people ever attend, so
+      // nobody else gets a cell or has it counted against them.
+      groupId: f.groupId != null && groupIds.has(String(f.groupId)) ? String(f.groupId) : null,
+    }));
+
+  const byId = new Map(folders.map((folder) => [folder.id, folder]));
+
+  return folders.map((folder) => {
+    let parentId = folder.parentId;
+
+    // Walk up. A missing parent, a cycle, or a third level all resolve to a
+    // top-level folder.
+    const seen = new Set([folder.id]);
+    let depth = 0;
+    let cursor = parentId ? byId.get(parentId) : null;
+    while (cursor && !seen.has(cursor.id) && depth < 8) {
+      seen.add(cursor.id);
+      depth += 1;
+      cursor = cursor.parentId ? byId.get(cursor.parentId) : null;
+    }
+
+    if (!parentId) return { ...folder, parentId: null };
+    const parent = byId.get(parentId);
+    if (!parent || parent.id === folder.id || depth >= MAX_FOLDER_DEPTH || seen.size <= depth) {
+      parentId = null;
+    }
+    // A parent that itself has a parent would make this the third level.
+    if (parentId && byId.get(parentId)?.parentId) parentId = null;
+
+    return { ...folder, parentId };
+  });
 }
 
 /**

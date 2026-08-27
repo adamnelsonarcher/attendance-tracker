@@ -54,13 +54,33 @@
   font-size: var(--text-sm);
 }
 
-/* Second header row sits directly under the first. */
+/* Each header row sticks below the ones above it. A cell that spans rows is
+   pinned by its topmost row, which is the row it is written in. */
 .attendance-table thead tr:nth-child(2) th {
   top: var(--header-row-height);
 }
 
-.attendance-table thead th[rowspan='2'] {
+.attendance-table thead tr:nth-child(3) th {
+  top: calc(var(--header-row-height) * 2);
+}
+
+.attendance-table thead th[rowspan] {
   top: 0;
+}
+
+.attendance-table thead tr:nth-child(2) th[rowspan] {
+  top: var(--header-row-height);
+}
+
+/* A section bar — "Check-ins" over the weekly folders. */
+.col-folder--section {
+  background: var(--accent-soft);
+  color: var(--accent-hover);
+  font-weight: 700;
+}
+
+.col-folder--spacer {
+  cursor: default;
 }
 
 .sortable {

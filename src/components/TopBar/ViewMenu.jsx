@@ -14,8 +14,11 @@ import Popover from '../ui/Popover';
  * is the common case, not an advanced one.
  */
 function ViewMenu({ x, y, folders, filters, onChange, onClose }) {
+  const sections = folders.filter((folder) => folders.some((child) => child.parentId === folder.id));
   const cohortFolders = folders.filter((folder) => folder.groupId);
-  const openFolders = folders.filter((folder) => !folder.groupId);
+  const openFolders = folders.filter(
+    (folder) => !folder.groupId && !sections.some((section) => section.id === folder.id)
+  );
 
   const set = (next) => {
     onChange({ ...filters, folders: next });
@@ -37,6 +40,19 @@ function ViewMenu({ x, y, folders, filters, onChange, onClose }) {
         <span className="menu-item__hint">{showingAll ? '✓' : ''}</span>
       </button>
 
+      {sections.length > 0 && (
+        <>
+          <div className="menu-divider" />
+          <div className="menu-label">A whole section</div>
+          {sections.map((section) => (
+            <button key={section.id} type="button" className="menu-item" onClick={() => only([section.id])}>
+              <span>{section.name}</span>
+              <span className="menu-item__hint">{isOnly([section.id]) ? '✓' : ''}</span>
+            </button>
+          ))}
+        </>
+      )}
+
       {cohortFolders.length > 0 && (
         <>
           <div className="menu-divider" />
@@ -52,16 +68,6 @@ function ViewMenu({ x, y, folders, filters, onChange, onClose }) {
               <span className="menu-item__hint">{isOnly([folder.id]) ? '✓' : ''}</span>
             </button>
           ))}
-          <button
-            type="button"
-            className="menu-item"
-            onClick={() => only(cohortFolders.map((folder) => folder.id))}
-          >
-            <span>All weekly sessions</span>
-            <span className="menu-item__hint">
-              {isOnly(cohortFolders.map((folder) => folder.id)) ? '✓' : 'hides events'}
-            </span>
-          </button>
         </>
       )}
 

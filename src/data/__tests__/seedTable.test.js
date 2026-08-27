@@ -93,8 +93,9 @@ describe('the CIR starter table', () => {
   });
 
   it('schedules each weekly session on one weekday, all term', () => {
-    const weeklyFolders = table.folders.filter((folder) => folder.name !== 'Community events');
-    expect(weeklyFolders.length).toBeGreaterThanOrEqual(8);
+    const section = table.folders.find((folder) => folder.name === 'Check-ins');
+    const weeklyFolders = table.folders.filter((folder) => folder.parentId === section.id);
+    expect(weeklyFolders.length).toBe(8);
 
     for (const folder of weeklyFolders) {
       const dates = table.events
@@ -147,11 +148,46 @@ describe('the CIR starter table', () => {
     });
   });
 
-  it('gives every weekly session a cohort, and leaves events open to all', () => {
-    for (const folder of table.folders) {
-      if (folder.name === 'Community events') expect(folder.groupId).toBeNull();
-      else expect(folder.groupId).not.toBeNull();
+  it('files the weekly folders under one Check-ins section', () => {
+    const section = table.folders.find((folder) => folder.name === 'Check-ins');
+    expect(section).toBeDefined();
+    expect(section.parentId).toBeNull();
+
+    const weekly = table.folders.filter((folder) => folder.parentId === section.id);
+    expect(weekly).toHaveLength(8);
+    // Each keeps its own cohort; the section itself is open to everyone.
+    for (const folder of weekly) expect(folder.groupId).not.toBeNull();
+    expect(section.groupId).toBeNull();
+  });
+
+  it('keeps Townhouse and Community events as flat folders of dates', () => {
+    for (const name of ['Townhouse', 'Community events']) {
+      const folder = table.folders.find((entry) => entry.name === name);
+      expect(folder.parentId).toBeNull();
+      expect(folder.groupId).toBeNull();
+      expect(table.folders.some((entry) => entry.parentId === folder.id)).toBe(false);
+      expect(table.events.some((event) => event.folderId === folder.id)).toBe(true);
     }
+  });
+
+  it('puts a townhouse meeting on the last Friday of each month', () => {
+    const folder = table.folders.find((entry) => entry.name === 'Townhouse');
+    const dates = table.events
+      .filter((event) => event.folderId === folder.id)
+      .map((event) => event.startDate)
+      .sort();
+
+    expect(dates.length).toBeGreaterThan(0);
+    for (const date of dates) {
+      const day = new Date(`${date}T12:00:00Z`);
+      expect(day.getUTCDay()).toBe(5);
+      // The last Friday is within seven days of the month's end.
+      const endOfMonth = new Date(Date.UTC(day.getUTCFullYear(), day.getUTCMonth() + 1, 0, 12));
+      expect((endOfMonth - day) / 86400000).toBeLessThan(7);
+    }
+    // The workbook's own 8/28 meeting is the first of the series, not a duplicate.
+    expect(dates[0]).toBe('2026-08-28');
+    expect(new Set(dates).size).toBe(dates.length);
   });
 
   it('shows a student only the sessions they attend', () => {

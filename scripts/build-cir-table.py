@@ -262,6 +262,12 @@ def weekly(weekday):
     return out
 
 folders, groups, events = [], [], []
+
+# One section over the eight weekly folders, so the whole check-in block
+# collapses in a single click and reads as one thing.
+CHECKIN_SECTION = {'id': nid('f'), 'name': 'Check-ins', 'isOpen': True, 'parentId': None, 'groupId': None}
+folders.append(CHECKIN_SECTION)
+
 for label, weekday in SHIFTS:
     seen_ids = []
     for n in assign_by_shift.get(label, []):
@@ -279,7 +285,13 @@ for label, weekday in SHIFTS:
     # The series belongs to its cohort. Only these students get a cell under
     # these dates, and only they are scored on them — which is how the block
     # read in the spreadsheet this replaces.
-    folder = {'id': nid('f'), 'name': label, 'isOpen': True, 'groupId': group['id']}
+    folder = {
+        'id': nid('f'),
+        'name': label,
+        'isOpen': True,
+        'parentId': CHECKIN_SECTION['id'],
+        'groupId': group['id'],
+    }
     folders.append(folder)
 
     for date in weekly(weekday):
@@ -309,8 +321,42 @@ if unplaced:
 # ------------------------------------------------------------ community events
 # The recurring fixtures from the events workbook, so staff recognise the shape.
 # No cohort: anyone in the programme can turn up to a tailgate.
-EVENT_FOLDER = {'id': nid('f'), 'name': 'Community events', 'isOpen': True, 'groupId': None}
+EVENT_FOLDER = {'id': nid('f'), 'name': 'Community events', 'isOpen': True, 'parentId': None, 'groupId': None}
 folders.append(EVENT_FOLDER)
+
+# The townhouse meets on the last Friday of the month. Its own folder, holding
+# its dates directly — the same shape as Community events.
+TOWNHOUSE_FOLDER = {'id': nid('f'), 'name': 'Townhouse', 'isOpen': True, 'parentId': None, 'groupId': None}
+folders.append(TOWNHOUSE_FOLDER)
+
+
+def last_fridays(first, last):
+    out = []
+    cursor = datetime.date(first.year, first.month, 1)
+    while cursor <= last:
+        nxt = (cursor.replace(day=28) + datetime.timedelta(days=4)).replace(day=1)
+        day = nxt - datetime.timedelta(days=1)
+        while day.weekday() != 4:
+            day -= datetime.timedelta(days=1)
+        if first <= day <= last:
+            out.append(day)
+        cursor = nxt
+    return out
+
+
+for day in last_fridays(FIRST, LAST):
+    if day in BREAK:
+        print(f'townhouse meeting on {day} falls in the Thanksgiving break - left out')
+        continue
+    events.append({
+        'id': nid('e'),
+        'name': 'Townhouse Meeting',
+        'weight': 1,
+        'folderId': TOWNHOUSE_FOLDER['id'],
+        'termId': TERM['id'],
+        'startDate': day.isoformat(),
+        'endDate': None,
+    })
 
 # Read from the FY26 workbook's own Fall 26 tab rather than guessed at, so
 # every column here is one staff already have on their calendar.
@@ -318,6 +364,10 @@ COMMUNITY = sorted(set(read_events(EVENTS_XLSX, 'Fall 26')), key=lambda e: (e[1]
 print(f'community events from the workbook: {len(COMMUNITY)}')
 for name, date in COMMUNITY:
     weight = 1
+    if 'townhouse' in name.lower():
+        # Already generated as part of the monthly series.
+        print(f'skipping {name} {date} - covered by the Townhouse series')
+        continue
     events.append({
         'id': nid('e'),
         'name': name,
@@ -367,6 +417,11 @@ print(f'people   {len(people)}')
 print(f'groups   {len(groups)} (assigned: {sum(len(g["memberIds"]) for g in groups)})')
 print(f'folders  {len(folders)}')
 print(f'events   {len(events)}')
+for f in folders:
+    kids = [c['name'] for c in folders if c.get('parentId') == f['id']]
+    own = len([e for e in events if e['folderId'] == f['id']])
+    where = f'{len(kids)} folders' if kids else f'{own} sessions'
+    print(f'  {f["name"]:<18} {where}')
 for g in groups:
     linked = next((f['name'] for f in folders if f.get('groupId') == g['id']), '-')
     print(f'  {g["name"]:<16} {len(g["memberIds"]):>2} members   sessions: {linked}')

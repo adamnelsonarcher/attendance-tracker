@@ -167,62 +167,154 @@ const byDateThenName = (a, b) => {
  * Returns `groups` (what the top header row spans) and `columns` (the flat list
  * of body cells), which always line up.
  */
+/**
+ * The column layout, and the header rows that sit above it.
+ *
+ * Folders nest one level: a section like "Check-ins" holds the weekly folders,
+ * each of which holds its dates. So the header is built as a grid rather than
+ * two hand-written rows — every leaf column gets a cell in every row, via
+ * colSpan across siblings and rowSpan down through levels that do not apply.
+ *
+ * `columns` is the flat list of body cells and always lines up with the spans.
+ */
 export function buildColumns(table, folderFilters = {}, termId = ALL_TERMS) {
   const included = includedFolders(table.folders, folderFilters);
-  const eventsByFolder = new Map(table.folders.map((f) => [f.id, []]));
-  const loose = [];
+  const events = eventsInTerm(table, termId);
 
-  for (const event of eventsInTerm(table, termId)) {
+  const eventsByFolder = new Map(table.folders.map((folder) => [folder.id, []]));
+  const loose = [];
+  for (const event of events) {
     const bucket = event.folderId ? eventsByFolder.get(event.folderId) : null;
     if (bucket) bucket.push(event);
     else loose.push(event);
   }
 
-  const groups = [];
-  const columns = [];
-
+  const childrenOf = new Map();
   for (const folder of table.folders) {
-    if (!included.has(folder.id)) continue;
-    const events = (eventsByFolder.get(folder.id) || []).slice().sort(byDateThenName);
-    if (events.length === 0) {
-      // An empty folder still gets a header, so it can be renamed or filled
-      // rather than vanishing the way v1 deleted folders on last-event-delete.
-      groups.push({ kind: 'folder', folder, events: [], collapsed: true, span: 1 });
-      columns.push({ kind: 'placeholder', id: `empty-${folder.id}`, folderId: folder.id });
+    if (!folder.parentId) continue;
+    if (!childrenOf.has(folder.parentId)) childrenOf.set(folder.parentId, []);
+    childrenOf.get(folder.parentId).push(folder);
+  }
+
+  const topLevel = table.folders.filter((folder) => !folder.parentId && included.has(folder.id));
+  const sectioned = topLevel.some((folder) => (childrenOf.get(folder.id) || []).length > 0);
+  const depth = sectioned ? 2 : 1;
+
+  const columns = [];
+  const rows = Array.from({ length: depth + 1 }, () => []);
+  const eventRow = rows[depth];
+
+  const ownEvents = (folder) => (eventsByFolder.get(folder.id) || []).slice().sort(byDateThenName);
+
+  /** Emits an open folder's dates as leaf columns, and their header cells. */
+  const emitEvents = (folder, list) => {
+    for (const event of list) {
+      columns.push({ kind: 'event', id: event.id, event, folder });
+      eventRow.push({ kind: 'event', key: event.id, event, colSpan: 1, rowSpan: 1 });
+    }
+  };
+
+  for (const folder of topLevel) {
+    const children = (childrenOf.get(folder.id) || []).filter((child) => included.has(child.id));
+    const direct = ownEvents(folder);
+
+    // A collapsed section is a single column, and its header spans every row.
+    if (!folder.isOpen) {
+      const count = direct.length + children.reduce((n, child) => n + ownEvents(child).length, 0);
+      columns.push({ kind: 'collapsed', id: `collapsed-${folder.id}`, folder, count });
+      rows[0].push({ kind: 'folder', key: folder.id, folder, collapsed: true, count, colSpan: 1, rowSpan: depth + 1 });
       continue;
     }
-    if (folder.isOpen) {
-      groups.push({ kind: 'folder', folder, events, collapsed: false, span: events.length });
-      for (const event of events) columns.push({ kind: 'event', id: event.id, event, folder });
-    } else {
-      groups.push({ kind: 'folder', folder, events, collapsed: true, span: 1 });
-      columns.push({ kind: 'collapsed', id: `collapsed-${folder.id}`, folder, count: events.length });
+
+    if (children.length === 0) {
+      if (direct.length === 0) {
+        // An empty folder keeps its header, so it can be renamed or filled
+        // rather than silently vanishing.
+        columns.push({ kind: 'placeholder', id: `empty-${folder.id}`, folder });
+        rows[0].push({ kind: 'folder', key: folder.id, folder, colSpan: 1, rowSpan: depth + 1, empty: true });
+        continue;
+      }
+      rows[0].push({ kind: 'folder', key: folder.id, folder, colSpan: direct.length, rowSpan: depth });
+      emitEvents(folder, direct);
+      continue;
     }
+
+    // A section: its own row-0 cell spans everything beneath, and each folder
+    // inside gets a cell on row 1.
+    const leavesBefore = columns.length;
+    const sectionCell = { kind: 'folder', key: folder.id, folder, colSpan: 0, rowSpan: 1, section: true };
+    rows[0].push(sectionCell);
+
+    for (const child of children) {
+      const childEvents = ownEvents(child);
+      if (!child.isOpen) {
+        columns.push({ kind: 'collapsed', id: `collapsed-${child.id}`, folder: child, count: childEvents.length });
+        rows[1].push({
+          kind: 'folder', key: child.id, folder: child, collapsed: true,
+          count: childEvents.length, colSpan: 1, rowSpan: 2,
+        });
+        continue;
+      }
+      if (childEvents.length === 0) {
+        columns.push({ kind: 'placeholder', id: `empty-${child.id}`, folder: child });
+        rows[1].push({ kind: 'folder', key: child.id, folder: child, colSpan: 1, rowSpan: 2, empty: true });
+        continue;
+      }
+      rows[1].push({ kind: 'folder', key: child.id, folder: child, colSpan: childEvents.length, rowSpan: 1 });
+      emitEvents(child, childEvents);
+    }
+
+    // Dates filed straight into the section, alongside its folders.
+    if (direct.length > 0) {
+      rows[1].push({ kind: 'spacer', key: `${folder.id}-direct`, colSpan: direct.length, rowSpan: 1 });
+      emitEvents(folder, direct);
+    }
+
+    sectionCell.colSpan = columns.length - leavesBefore;
+    if (sectionCell.colSpan === 0) rows[0].pop();
   }
 
-  // Ungrouped events sit after the folders and have no second header row.
+  // Dates in no folder at all sit after the sections, spanning every header row.
   if (!hasPositiveFolderFilter(folderFilters)) {
     for (const event of loose.slice().sort(byDateThenName)) {
-      groups.push({ kind: 'event', event });
       columns.push({ kind: 'event', id: event.id, event, folder: null });
+      rows[0].push({ kind: 'event', key: event.id, event, colSpan: 1, rowSpan: depth + 1 });
     }
   }
 
-  return { groups, columns };
+  return { columns, headerRows: rows, depth };
 }
 
 function hasPositiveFolderFilter(folderFilters) {
   return Object.values(folderFilters).some((state) => state === 1);
 }
 
+/**
+ * Which folders survive the filter. Choosing a section chooses everything in
+ * it, and choosing one folder keeps the section that holds it — otherwise
+ * picking "Tuesday 10am" would hide the very header it sits under.
+ */
 function includedFolders(folders, folderFilters) {
   const anyPositive = hasPositiveFolderFilter(folderFilters);
+  const byId = new Map(folders.map((folder) => [folder.id, folder]));
+
+  const state = (folder) => {
+    const own = folderFilters[folder.id] || 0;
+    if (own !== 0) return own;
+    return folder.parentId ? folderFilters[folder.parentId] || 0 : 0;
+  };
+
   const included = new Set();
   for (const folder of folders) {
-    const state = folderFilters[folder.id] || 0;
-    if (state === -1) continue;
-    if (anyPositive && state !== 1) continue;
+    if (state(folder) === -1) continue;
+    if (anyPositive && state(folder) !== 1) continue;
     included.add(folder.id);
+  }
+
+  // Keep the parent of anything included, so its header still draws.
+  for (const id of Array.from(included)) {
+    const parentId = byId.get(id)?.parentId;
+    if (parentId) included.add(parentId);
   }
   return included;
 }

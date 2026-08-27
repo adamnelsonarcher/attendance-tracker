@@ -9,7 +9,7 @@ A table is five flat collections plus settings. Nothing nests.
 ```
 people      { id, name, aliases[] }
 groups      { id, name, color, memberIds[] }
-folders     { id, name, isOpen, groupId }
+folders     { id, name, isOpen, parentId, groupId }
 terms       { id, name, startDate, endDate }
 events      { id, name, weight, folderId, termId, startDate, endDate }
 attendance  { "personId-eventId": statusId }
@@ -28,6 +28,11 @@ settings    { name, statuses[], countUnmarkedAsAbsent, showTitle, colorCells,
 - **IDs are opaque.** Generate with `newId(prefix)`. Never parse or coerce one.
 - **Dates are `YYYY-MM-DD` strings**, parsed at noon UTC via `parseDate` so a day
   never slips backwards west of UTC.
+- **Folders nest exactly one level** (`parentId`). `normalizeFolders` lifts
+  anything deeper, cyclic, or orphaned to the top rather than dropping it —
+  losing a folder loses its sessions. `buildColumns` returns `headerRows`, a
+  grid; the invariant is that for every row, the cells declared in it plus the
+  cells spanning into it from above cover exactly `columns.length`.
 - **A folder can name the cohort that attends it** (`folder.groupId`). Anything
   that renders a cell, computes a score, or counts a denominator must go through
   `buildApplicability(table)` first — a session that is not a person's is not

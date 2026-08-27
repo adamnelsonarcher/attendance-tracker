@@ -45,7 +45,7 @@ function AttendanceTable({ table, dispatch, filters, sort, onSortChange, termId 
   const termEvents = useMemo(() => eventsInTerm(table, termId), [table, termId]);
   const scores = useMemo(() => computeScores(table, termEvents), [table, termEvents]);
 
-  const { groups: headerGroups, columns } = useMemo(
+  const { headerRows, columns, depth } = useMemo(
     () => buildColumns(table, filters.folders, termId),
     [table, filters.folders, termId]
   );
@@ -119,102 +119,105 @@ function AttendanceTable({ table, dispatch, filters, sort, onSortChange, termId 
             .join(' ')}
         >
           <thead>
-            <tr>
-              <th
-                rowSpan={2}
-                className="col-name sortable"
-                onClick={() => onSortChange(nextNameSort(sort))}
-                onContextMenu={(event) => {
-                  event.preventDefault();
-                  setSortMenu({ x: event.clientX, y: event.clientY });
-                }}
-                title="Click to sort by name, right-click for more options"
-              >
-                <span>Name</span>
-                <SortHint sort={sort} />
-              </th>
-
-              {headerGroups.map((group) =>
-                group.kind === 'folder' ? (
+            {headerRows.map((row, rowIndex) => (
+              <tr key={`header-${rowIndex}`}>
+                {rowIndex === 0 && (
                   <th
-                    key={group.folder.id}
-                    colSpan={group.span}
-                    className="col-folder"
-                    onClick={() => dispatch({ type: 'folders/toggle', id: group.folder.id })}
+                    rowSpan={depth + 1}
+                    className="col-name sortable"
+                    onClick={() => onSortChange(nextNameSort(sort))}
                     onContextMenu={(event) => {
                       event.preventDefault();
-                      // Every command in these menus is an edit, so on a
-                      // view-only link they would open and then do nothing.
-                      if (readOnly) return;
-                      setFolderMenu({ x: event.clientX, y: event.clientY, folder: group.folder });
+                      setSortMenu({ x: event.clientX, y: event.clientY });
                     }}
-                    title={group.folder.isOpen ? 'Collapse folder' : 'Expand folder'}
+                    title="Click to sort by name, right-click for more options"
                   >
-                    <span className="folder-toggle">{group.collapsed ? '▶' : '▼'}</span>
-                    {group.folder.name}
-                    {group.folder.groupId && (
-                      <span className="col-folder__cohort" title="Only this group attends these sessions">
-                        {cohortSize(table, group.folder.groupId)}
-                      </span>
-                    )}
-                    {group.collapsed && group.events.length > 0 && (
-                      <span className="col-folder__count">{group.events.length}</span>
-                    )}
+                    <span>Name</span>
+                    <SortHint sort={sort} />
                   </th>
-                ) : (
-                  <EventHeader
-                    key={group.event.id}
-                    event={group.event}
-                    rowSpan={2}
-                    sort={sort}
-                    onSort={() => onSortChange(nextEventSort(sort, group.event.id))}
-                    onMenu={readOnly ? null : (x, y) => setEventMenu({ x, y, event: group.event })}
-                  />
-                )
-              )}
+                )}
 
-              {/* The old sheets kept this beside the percentage, and it answers
-                  a different question: how many sessions someone actually made. */}
-              <th rowSpan={2} className="col-score" title="Sessions attended out of those that counted">
-                Present
-              </th>
-              <th
-                rowSpan={2}
-                className="col-score sortable"
-                onClick={() => onSortChange(nextScoreSort(sort, 'raw'))}
-                title="Share of counted events attended"
-              >
-                Raw
-                <ScoreHint sort={sort} scoreType="raw" />
-              </th>
-              <th
-                rowSpan={2}
-                className="col-score sortable"
-                onClick={() => onSortChange(nextScoreSort(sort, 'weighted'))}
-                title="Same, but each event counts for its weight"
-              >
-                Weighted
-                <ScoreHint sort={sort} scoreType="weighted" />
-              </th>
-            </tr>
+                {row.map((cell) =>
+                  cell.kind === 'folder' ? (
+                    <th
+                      key={cell.key}
+                      colSpan={cell.colSpan}
+                      rowSpan={cell.rowSpan}
+                      className={`col-folder${cell.section ? ' col-folder--section' : ''}`}
+                      onClick={() => dispatch({ type: 'folders/toggle', id: cell.folder.id })}
+                      onContextMenu={(event) => {
+                        event.preventDefault();
+                        // Every command in this menu is an edit.
+                        if (readOnly) return;
+                        setFolderMenu({ x: event.clientX, y: event.clientY, folder: cell.folder });
+                      }}
+                      title={cell.folder.isOpen ? 'Collapse' : 'Expand'}
+                    >
+                      <span className="folder-toggle">{cell.folder.isOpen ? '▼' : '▶'}</span>
+                      {cell.folder.name}
+                      {cell.folder.groupId && (
+                        <span className="col-folder__cohort" title="Only this group attends these sessions">
+                          {cohortSize(table, cell.folder.groupId)}
+                        </span>
+                      )}
+                      {cell.collapsed && cell.count > 0 && (
+                        <span className="col-folder__count">{cell.count}</span>
+                      )}
+                    </th>
+                  ) : cell.kind === 'event' ? (
+                    <EventHeader
+                      key={cell.key}
+                      event={cell.event}
+                      rowSpan={cell.rowSpan}
+                      sort={sort}
+                      onSort={() => onSortChange(nextEventSort(sort, cell.event.id))}
+                      onMenu={readOnly ? null : (x, y) => setEventMenu({ x, y, event: cell.event })}
+                    />
+                  ) : (
+                    <th
+                      key={cell.key}
+                      colSpan={cell.colSpan}
+                      rowSpan={cell.rowSpan}
+                      className="col-folder col-folder--spacer"
+                      aria-hidden="true"
+                    />
+                  )
+                )}
 
-            <tr>
-              {headerGroups.map((group) => {
-                if (group.kind !== 'folder') return null;
-                if (group.collapsed) {
-                  return <th key={group.folder.id} className="col-collapsed" aria-hidden="true" />;
-                }
-                return group.events.map((event) => (
-                  <EventHeader
-                    key={event.id}
-                    event={event}
-                    sort={sort}
-                    onSort={() => onSortChange(nextEventSort(sort, event.id))}
-                    onMenu={readOnly ? null : (x, y) => setEventMenu({ x, y, event })}
-                  />
-                ));
-              })}
-            </tr>
+                {rowIndex === 0 && (
+                  <>
+                    {/* The old sheets kept this beside the percentage, and it
+                        answers a different question: how many sessions someone
+                        actually made. */}
+                    <th
+                      rowSpan={depth + 1}
+                      className="col-score"
+                      title="Sessions attended out of those that counted"
+                    >
+                      Present
+                    </th>
+                    <th
+                      rowSpan={depth + 1}
+                      className="col-score sortable"
+                      onClick={() => onSortChange(nextScoreSort(sort, 'raw'))}
+                      title="Share of counted events attended"
+                    >
+                      Raw
+                      <ScoreHint sort={sort} scoreType="raw" />
+                    </th>
+                    <th
+                      rowSpan={depth + 1}
+                      className="col-score sortable"
+                      onClick={() => onSortChange(nextScoreSort(sort, 'weighted'))}
+                      title="Same, but each event counts for its weight"
+                    >
+                      Weighted
+                      <ScoreHint sort={sort} scoreType="weighted" />
+                    </th>
+                  </>
+                )}
+              </tr>
+            ))}
           </thead>
 
           <tbody onMouseOver={handlePointer} onMouseLeave={() => setHoverColumn(null)}>
@@ -325,6 +328,7 @@ function AttendanceTable({ table, dispatch, filters, sort, onSortChange, termId 
       {folderMenu && (
         <FolderMenu
           {...folderMenu}
+          folders={table.folders}
           groups={table.groups}
           dispatch={dispatch}
           onClose={() => setFolderMenu(null)}

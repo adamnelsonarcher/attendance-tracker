@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import Modal from '../ui/Modal';
-import { WEEKDAYS, weeklyDates } from '../../data/recurrence';
+import { REPEATS, WEEKDAYS, occurrences } from '../../data/recurrence';
 import { formatDateRange } from '../../data/model';
 import { ALL_TERMS } from '../../data/selectors';
 
@@ -18,6 +18,7 @@ function AddRecurringDialog({ table, dispatch, activeTermId, onClose }) {
 
   const [form, setForm] = useState(() => ({
     name: '',
+    repeats: 'weekly',
     weekday: 1,
     startDate: activeTerm?.startDate || '',
     endDate: activeTerm?.endDate || '',
@@ -25,14 +26,21 @@ function AddRecurringDialog({ table, dispatch, activeTermId, onClose }) {
     folderId: NEW_FOLDER,
     newFolderName: '',
     folderGroupId: '',
+    folderParentId: '',
     termId: activeTermId === ALL_TERMS ? activeTerm?.id || '' : activeTermId || '',
   }));
 
   const set = (changes) => setForm((current) => ({ ...current, ...changes }));
 
   const dates = useMemo(
-    () => weeklyDates(form.startDate, form.endDate, form.weekday),
-    [form.startDate, form.endDate, form.weekday]
+    () =>
+      occurrences({
+        repeats: form.repeats,
+        startDate: form.startDate,
+        endDate: form.endDate,
+        weekday: form.weekday,
+      }),
+    [form.repeats, form.startDate, form.endDate, form.weekday]
   );
 
   const creatingFolder = form.folderId === NEW_FOLDER;
@@ -51,6 +59,7 @@ function AddRecurringDialog({ table, dispatch, activeTermId, onClose }) {
     dispatch({
       type: 'events/addRecurring',
       name: form.name.trim(),
+      repeats: form.repeats,
       weekday: form.weekday,
       startDate: form.startDate,
       endDate: form.endDate,
@@ -58,6 +67,7 @@ function AddRecurringDialog({ table, dispatch, activeTermId, onClose }) {
       folderId: creatingFolder ? null : form.folderId || null,
       newFolderName: creatingFolder ? folderName : null,
       folderGroupId: creatingFolder ? form.folderGroupId || null : null,
+      folderParentId: creatingFolder ? form.folderParentId || null : null,
       termId: form.termId || null,
     });
     onClose();
@@ -65,7 +75,7 @@ function AddRecurringDialog({ table, dispatch, activeTermId, onClose }) {
 
   return (
     <Modal
-      title="Add a weekly session"
+      title="Add a repeating session"
       description="One session, repeated for the whole term."
       onClose={onClose}
       footer={
@@ -89,6 +99,18 @@ function AddRecurringDialog({ table, dispatch, activeTermId, onClose }) {
               onChange={(event) => set({ name: event.target.value })}
               onBlur={suggestFolder}
             />
+          </label>
+          <label className="field">
+            <span>Repeats</span>
+            <select
+              className="select"
+              value={form.repeats}
+              onChange={(event) => set({ repeats: event.target.value })}
+            >
+              {REPEATS.map((option) => (
+                <option key={option.value} value={option.value}>{option.label}</option>
+              ))}
+            </select>
           </label>
           <label className="field">
             <span>Day</span>
@@ -176,6 +198,24 @@ function AddRecurringDialog({ table, dispatch, activeTermId, onClose }) {
 
         {creatingFolder && (
           <label className="field">
+            <span>Section</span>
+            <select
+              className="select"
+              value={form.folderParentId}
+              onChange={(event) => set({ folderParentId: event.target.value })}
+            >
+              <option value="">Top level</option>
+              {table.folders
+                .filter((folder) => !folder.parentId)
+                .map((folder) => (
+                  <option key={folder.id} value={folder.id}>{folder.name}</option>
+                ))}
+            </select>
+          </label>
+        )}
+
+        {creatingFolder && (
+          <label className="field">
             <span>Who attends</span>
             <select
               className="select"
@@ -202,12 +242,16 @@ function AddRecurringDialog({ table, dispatch, activeTermId, onClose }) {
 
         {dates.length > 0 ? (
           <p className="hint">
-            {dates.length} sessions, {formatDateRange(dates[0], dates[dates.length - 1])} — every{' '}
-            {WEEKDAYS.find((day) => day.value === form.weekday)?.label}. You can delete or reschedule
-            any single one afterwards.
+            {dates.length} sessions, {formatDateRange(dates[0], dates[dates.length - 1])} —{' '}
+            {form.repeats === 'weekly'
+              ? `every ${WEEKDAYS.find((day) => day.value === form.weekday)?.label}`
+              : `the ${form.repeats === 'monthly-last' ? 'last' : 'first'} ${
+                  WEEKDAYS.find((day) => day.value === form.weekday)?.label
+                } of each month`}
+            . You can delete or reschedule any single one afterwards.
           </p>
         ) : (
-          <p className="hint">Pick a date range that contains at least one of the chosen weekday.</p>
+          <p className="hint">Pick a date range that contains at least one such day.</p>
         )}
       </form>
     </Modal>

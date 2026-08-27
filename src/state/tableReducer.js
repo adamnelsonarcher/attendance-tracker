@@ -18,7 +18,7 @@ import {
   normalizeTable,
   pruneAttendance,
 } from '../data/model';
-import { weeklyDates } from '../data/recurrence';
+import { occurrences } from '../data/recurrence';
 
 export function initialState(table) {
   return { table, outbox: emptyOutbox() };
@@ -205,9 +205,35 @@ export function tableReducer(state, action) {
     /* --------------------------------------------------------------- folders */
 
     case 'folders/add': {
-      const folder = { id: newId('f'), name: action.name, isOpen: true, groupId: action.groupId || null };
+      const folder = {
+        id: newId('f'),
+        name: action.name,
+        isOpen: true,
+        parentId: action.parentId || null,
+        groupId: action.groupId || null,
+      };
       return {
         table: { ...table, folders: [...table.folders, folder] },
+        outbox: mark(outbox, 'schedule'),
+      };
+    }
+
+    /** Moves a folder into a section, or back out to the top level. */
+    case 'folders/setParent': {
+      // A folder with children cannot itself be filed inside one; two levels is
+      // what the header can draw.
+      const hasChildren = table.folders.some((f) => f.parentId === action.id);
+      const target = table.folders.find((f) => f.id === action.parentId);
+      if (action.parentId && (hasChildren || !target || target.parentId || target.id === action.id)) {
+        return state;
+      }
+      return {
+        table: {
+          ...table,
+          folders: table.folders.map((f) =>
+            f.id === action.id ? { ...f, parentId: action.parentId || null } : f
+          ),
+        },
         outbox: mark(outbox, 'schedule'),
       };
     }
@@ -249,12 +275,15 @@ export function tableReducer(state, action) {
     }
 
     case 'folders/remove': {
-      // Deleting a folder releases its events. v1 did the reverse — deleting the
-      // last event in a folder silently deleted the folder with it.
+      // Deleting a folder releases its events, and lifts any folders inside it
+      // to the top rather than taking them down with it. v1 did the reverse —
+      // deleting the last event in a folder silently deleted the folder too.
       return {
         table: {
           ...table,
-          folders: table.folders.filter((f) => f.id !== action.id),
+          folders: table.folders
+            .filter((f) => f.id !== action.id)
+            .map((f) => (f.parentId === action.id ? { ...f, parentId: null } : f)),
           events: table.events.map((e) => (e.folderId === action.id ? { ...e, folderId: null } : e)),
         },
         outbox: mark(outbox, 'schedule'),
@@ -272,6 +301,7 @@ export function tableReducer(state, action) {
           id: newId('f'),
           name: action.newFolderName,
           isOpen: true,
+          parentId: action.folderParentId || null,
           groupId: action.folderGroupId || null,
         };
         folders = [...folders, folder];
@@ -309,13 +339,20 @@ export function tableReducer(state, action) {
           id: newId('f'),
           name: action.newFolderName,
           isOpen: true,
+          parentId: action.folderParentId || null,
           groupId: action.folderGroupId || null,
         };
         folders = [...folders, folder];
         folderId = folder.id;
       }
 
-      const dates = weeklyDates(action.startDate, action.endDate, action.weekday);
+      const dates = occurrences({
+        repeats: action.repeats || 'weekly',
+        startDate: action.startDate,
+        endDate: action.endDate,
+        weekday: action.weekday,
+        skip: action.skipDates,
+      });
       if (dates.length === 0) return state;
 
       const events = dates.map((date) => ({
