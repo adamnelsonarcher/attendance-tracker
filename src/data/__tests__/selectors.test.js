@@ -233,4 +233,35 @@ describe('matchNames', () => {
   it('never applies the same person twice', () => {
     expect(matchNames(['Avery Chen', 'avery chen'], roster).matched).toHaveLength(1);
   });
+
+  it('matches an alias', () => {
+    const withAlias = [{ id: 'p1', name: 'Olivia Frank', aliases: ['Liv', 'Liv F'] }];
+    expect(matchNames(['Liv'], withAlias).matched.map((p) => p.id)).toEqual(['p1']);
+  });
+
+  it('counts two aliases of one person as one match, not an ambiguity', () => {
+    const withAlias = [{ id: 'p1', name: 'Sam Harwell', aliases: ['Sam H', 'sam h'] }];
+    expect(matchNames(['Sam H'], withAlias).ambiguous).toHaveLength(0);
+  });
+
+  it('refuses to let an alias shadow another person-s real name', () => {
+    // "Charles" is an alias of one Charles and the first name of another.
+    // Guessing would put a student's attendance on the wrong row.
+    const two = [
+      { id: 'p1', name: 'Charles Levy-Thiebaut', aliases: ['Charles'] },
+      { id: 'p2', name: 'Charles Van Meter', aliases: [] },
+    ];
+    const result = matchNames(['Charles'], two);
+
+    expect(result.matched).toHaveLength(0);
+    expect(result.ambiguous[0].candidates.map((p) => p.id).sort()).toEqual(['p1', 'p2']);
+  });
+
+  it('still takes an unambiguous alias', () => {
+    const two = [
+      { id: 'p1', name: 'Olivia Frank', aliases: ['Liv'] },
+      { id: 'p2', name: 'Charles Van Meter', aliases: [] },
+    ];
+    expect(matchNames(['Liv'], two).matched.map((p) => p.id)).toEqual(['p1']);
+  });
 });

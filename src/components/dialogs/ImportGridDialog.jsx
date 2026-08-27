@@ -54,7 +54,15 @@ function ImportGridDialog({ table, dispatch, activeTermId, onClose }) {
   );
 
   const { summary } = result;
-  const canImport = blocks.length > 0 && summary.events > 0;
+
+  // Filling in marks against sessions that already exist is the normal case —
+  // the schedule is usually built first, or a corrected sheet is re-imported —
+  // so having nothing new to schedule must not block the import.
+  const canImport = blocks.length > 0 && (summary.events > 0 || summary.marks > 0);
+  const actionLabel =
+    summary.events > 0
+      ? `Import ${summary.events} ${summary.events === 1 ? 'session' : 'sessions'}`
+      : `Import ${summary.marks} ${summary.marks === 1 ? 'mark' : 'marks'}`;
 
   const setSymbol = (symbol, statusId) => {
     setTouched(true);
@@ -80,7 +88,7 @@ function ImportGridDialog({ table, dispatch, activeTermId, onClose }) {
               onClose();
             }}
           >
-            Import {summary.events || ''} {summary.events === 1 ? 'session' : 'sessions'}
+            {actionLabel}
           </button>
         </>
       }
@@ -187,7 +195,16 @@ function ImportGridDialog({ table, dispatch, activeTermId, onClose }) {
             <h3>Before importing</h3>
             <ul className="import-grid__facts">
               <li>
-                <strong>{summary.events}</strong> sessions and <strong>{summary.marks}</strong> marks
+                <strong>{summary.events}</strong> new{' '}
+                {summary.events === 1 ? 'session' : 'sessions'}
+                {summary.reusedEvents > 0 && (
+                  <span className="hint">
+                    {' '}— {summary.reusedEvents} already scheduled and reused
+                  </span>
+                )}
+              </li>
+              <li>
+                <strong>{summary.marks}</strong> marks
               </li>
               <li>
                 <strong>{summary.matchedPeople.length}</strong> matched to people already here

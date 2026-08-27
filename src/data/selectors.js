@@ -297,6 +297,25 @@ export function matchNames(rawNames, people) {
 
     const queryTokens = query.split(/\s+/).filter(Boolean);
     let hits = roster.filter((entry) => entry.full === query);
+
+    // An exact hit that came from an alias must not shadow a different person
+    // whose real name starts with the same word — "Charles" is an alias of one
+    // Charles and the first name of another, and picking silently would put a
+    // student's attendance on the wrong row.
+    if (hits.length > 0) {
+      const hitIds = new Set(hits.map((entry) => entry.person.id));
+      const shadowed = people.filter(
+        (person) => !hitIds.has(person.id) && normalize(person.name).startsWith(`${query} `)
+      );
+      if (shadowed.length > 0) {
+        ambiguous.push({
+          query: raw.trim(),
+          candidates: [...hits.map((entry) => entry.person), ...shadowed],
+        });
+        continue;
+      }
+    }
+
     if (hits.length === 0) hits = roster.filter((entry) => entry.full.includes(query));
     if (hits.length === 0) {
       hits = roster.filter((entry) =>

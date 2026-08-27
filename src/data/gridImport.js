@@ -208,6 +208,7 @@ export function buildImport({ blocks, mapping, table, termId = null, groupBlocks
   const summary = {
     blocks: blocks.length,
     events: 0,
+    reusedEvents: 0,
     marks: 0,
     newPeople: [],
     matchedPeople: [],
@@ -256,6 +257,7 @@ export function buildImport({ blocks, mapping, table, termId = null, groupBlocks
       const already = existingByDate.get(date);
       if (already) {
         dateEvents.set(date, already);
+        summary.reusedEvents += 1;
         continue;
       }
 

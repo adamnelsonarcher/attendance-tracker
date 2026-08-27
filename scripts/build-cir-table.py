@@ -25,7 +25,9 @@ ALIAS_GROUPS = [
     ('Johnnie Gelehrte', ['Johnnie Gelherte', 'Johnny Gelehrte', 'Johnnie']),
     ('Chandler Bowick', ['Chandler Bowlick', 'Chandler']),
     ('Olivia Frank', ['Liv Frank', 'Liv']),
-    ('Charles Levy-Thiebaut', ['Charles LT', 'Charles Levy', 'Charles']),
+    # No bare 'Charles': there are two of them in this roster, and an alias that
+    # shadows another student's name puts attendance on the wrong row.
+    ('Charles Levy-Thiebaut', ['Charles LT', 'Charles Levy']),
     ('Charles Van Meter', ['Charles VanMeter', 'Charles V']),
     ('Collin Hull', ['Colin Hull', 'Collin', 'Colin']),
     ('Anisa Casteneda', ['Anissa Casteneda', 'Anissa C', 'Anisa C']),
@@ -101,10 +103,24 @@ for n in [x for names in fall_assign.values() for x in names] + returning:
     seen.add(k)
     roster_order.append(n)
 
+# An alias that is also another student's first name is dropped rather than
+# shipped: matching it would be a coin flip between two people.
+first_names = {}
+for name in roster_order:
+    first_names.setdefault(norm(name).split()[0], []).append(name)
+
 people = []
 by_name = {}
+dropped_aliases = []
 for name in roster_order:
-    person = {'id': nid('p'), 'name': name, 'aliases': sorted(aliases_for.get(name, []))}
+    keep = []
+    for alias in sorted(aliases_for.get(name, [])):
+        others = [o for o in first_names.get(norm(alias), []) if o != name]
+        if others:
+            dropped_aliases.append((name, alias, others))
+            continue
+        keep.append(alias)
+    person = {'id': nid('p'), 'name': name, 'aliases': keep}
     people.append(person)
     by_name[name] = person
 
@@ -264,6 +280,8 @@ table = {
 out = os.path.join('public', 'cir-fall-2026.json')
 io.open(out, 'w', encoding='utf-8', newline='\n').write(json.dumps(table, indent=2) + '\n')
 
+for name, alias, others in dropped_aliases:
+    print(f'dropped ambiguous alias {alias!r} for {name} (also matches {others})')
 print(f'people   {len(people)}')
 print(f'groups   {len(groups)} (assigned: {sum(len(g["memberIds"]) for g in groups)})')
 print(f'folders  {len(folders)}')

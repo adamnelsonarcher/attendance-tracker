@@ -1,6 +1,6 @@
 import seed from '../../../public/cir-fall-2026.json';
 import { cellKey, currentTerm, normalizeTable } from '../model';
-import { buildColumns, computeScores, eventsInTerm } from '../selectors';
+import { buildColumns, computeScores, eventsInTerm, matchNames } from '../selectors';
 import { toSlices } from '../../sync/slices';
 import { tableFromRemote } from '../../sync/remoteTable';
 
@@ -36,6 +36,36 @@ describe('the CIR starter table', () => {
     expect(byName.get('Matt Hwang').aliases).toContain('Matt Huang');
     expect(byName.get('Olivia Frank').aliases).toContain('Liv');
     expect(table.people.filter((person) => person.aliases.length > 0).length).toBeGreaterThan(20);
+  });
+
+  it('ships no alias that could name someone else', () => {
+    // An alias matching two students is worse than no alias: it puts one
+    // student's attendance on the other's row without saying so.
+    const normalize = (value) => value.toLowerCase().replace(/[^a-z ]/g, '').trim();
+
+    for (const person of table.people) {
+      for (const alias of person.aliases) {
+        const key = normalize(alias);
+        const others = table.people.filter(
+          (other) =>
+            other.id !== person.id &&
+            (normalize(other.name) === key || normalize(other.name).startsWith(`${key} `))
+        );
+        expect({ alias, of: person.name, alsoMatches: others.map((o) => o.name) }).toEqual({
+          alias,
+          of: person.name,
+          alsoMatches: [],
+        });
+      }
+    }
+  });
+
+  it('resolves each alias to exactly the person it belongs to', () => {
+    for (const person of table.people) {
+      for (const alias of person.aliases) {
+        expect(matchNames([alias], table.people).matched.map((p) => p.id)).toEqual([person.id]);
+      }
+    }
   });
 
   it('has no duplicate people', () => {

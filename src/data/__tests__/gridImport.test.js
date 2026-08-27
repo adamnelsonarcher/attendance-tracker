@@ -153,6 +153,58 @@ describe('buildImport', () => {
     expect(summary.newPeople).toEqual(['Chandler Bowlick', 'Oscar Perez', 'Anisa Casteneda']);
   });
 
+  it('reuses a folder that is already here rather than making a second one', () => {
+    const table = emptyTable();
+    table.folders = [{ id: 'f1', name: 'Monday 2pm', isOpen: true }];
+
+    const { payload, summary } = buildImport({ blocks, mapping, table });
+
+    expect(payload.folders).toEqual([]);
+    expect(summary.reusedFolders).toEqual(['Monday 2pm']);
+    for (const event of payload.events) expect(event.folderId).toBe('f1');
+  });
+
+  it('reuses a session already recorded on the same date', () => {
+    // Building the schedule first and pasting the marks in afterwards is the
+    // normal order of things, not an edge case.
+    const table = emptyTable();
+    table.folders = [{ id: 'f1', name: 'Monday 2pm', isOpen: true }];
+    table.events = [
+      { id: 'e1', name: '8/25', weight: 1, folderId: 'f1', termId: null, startDate: '2025-08-25', endDate: null },
+    ];
+
+    const { payload, summary } = buildImport({ blocks, mapping, table });
+
+    expect(summary.reusedEvents).toBe(1);
+    expect(summary.events).toBe(2);
+    expect(payload.events.map((event) => event.startDate)).toEqual(['2025-09-01', '2025-09-08']);
+    // The marks for that date land on the session that was already there.
+    expect(Object.keys(payload.attendance).some((key) => key.endsWith('-e1'))).toBe(true);
+  });
+
+  it('is idempotent: importing the same block twice changes nothing the second time', () => {
+    const first = buildImport({ blocks, mapping, table: emptyTable() });
+
+    // Apply it, the way the reducer would.
+    const applied = {
+      ...emptyTable(),
+      people: first.payload.people,
+      groups: first.payload.groups,
+      folders: first.payload.folders,
+      events: first.payload.events,
+      attendance: first.payload.attendance,
+    };
+
+    const second = buildImport({ blocks, mapping, table: applied });
+
+    expect(second.payload.people).toEqual([]);
+    expect(second.payload.folders).toEqual([]);
+    expect(second.payload.events).toEqual([]);
+    expect(second.summary.reusedEvents).toBe(3);
+    // The same marks, pointing at the same cells — so applying it is a no-op.
+    expect(second.payload.attendance).toEqual(first.payload.attendance);
+  });
+
   it('never points a mark at a session that is not in the payload', () => {
     const { payload } = buildImport({ blocks, mapping, table: emptyTable() });
     const eventIds = new Set(payload.events.map((event) => event.id));
