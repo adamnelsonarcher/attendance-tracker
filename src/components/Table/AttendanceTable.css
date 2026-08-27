@@ -23,7 +23,7 @@
 
 .attendance-table {
   --name-width: 220px;
-  --score-width: 78px;
+  --score-width: 76px;
   --header-row-height: 32px;
 
   /* `separate` keeps borders painted on sticky cells; `collapse` drops them. */
@@ -140,6 +140,11 @@
   border-radius: 2px;
 }
 
+.col-score--count {
+  font-variant-numeric: tabular-nums;
+  color: var(--text-muted);
+}
+
 .col-score {
   width: var(--score-width);
   min-width: var(--score-width);
@@ -229,9 +234,14 @@
   z-index: var(--z-sticky-cell);
 }
 
-/* The raw column sits to the left of the weighted one when both are pinned. */
+/* Three summary columns are pinned: present, raw, weighted. Each sits one
+   column further left than the last. */
 .attendance-table.is-sticky .col-score:nth-last-child(2) {
   right: var(--score-width);
+}
+
+.attendance-table.is-sticky .col-score:nth-last-child(3) {
+  right: calc(var(--score-width) * 2);
   border-left: 2px solid var(--border-strong);
 }
 

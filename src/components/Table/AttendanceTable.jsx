@@ -1,6 +1,16 @@
 import { memo, useCallback, useMemo, useState } from 'react';
 import './AttendanceTable.css';
-import { buildColumns, computeScores, filterPeople, formatScore, sortPeople, buildMembership } from '../../data/selectors';
+import {
+  ALL_TERMS,
+  buildColumns,
+  buildMembership,
+  computeScores,
+  eventsInTerm,
+  filterPeople,
+  formatCount,
+  formatScore,
+  sortPeople,
+} from '../../data/selectors';
 import { cellKey, formatDateRange } from '../../data/model';
 import EventMenu from './EventMenu';
 import FolderMenu from './FolderMenu';
@@ -16,7 +26,7 @@ import SortMenu from './SortMenu';
  * — once for events inside folders and once for events outside them — and the
  * two copies drifted apart.
  */
-function AttendanceTable({ table, dispatch, filters, sort, onSortChange, readOnly }) {
+function AttendanceTable({ table, dispatch, filters, sort, onSortChange, termId = ALL_TERMS, readOnly }) {
   const [eventMenu, setEventMenu] = useState(null);
   const [folderMenu, setFolderMenu] = useState(null);
   const [personMenu, setPersonMenu] = useState(null);
@@ -26,10 +36,15 @@ function AttendanceTable({ table, dispatch, filters, sort, onSortChange, readOnl
   const { settings } = table;
 
   const membership = useMemo(() => buildMembership(table.groups), [table.groups]);
-  const scores = useMemo(() => computeScores(table), [table]);
+
+  // Scores describe the term on screen. A semester percentage that silently
+  // included last year's sessions would be worse than useless.
+  const termEvents = useMemo(() => eventsInTerm(table, termId), [table, termId]);
+  const scores = useMemo(() => computeScores(table, termEvents), [table, termEvents]);
+
   const { groups: headerGroups, columns } = useMemo(
-    () => buildColumns(table, filters.folders),
-    [table, filters.folders]
+    () => buildColumns(table, filters.folders, termId),
+    [table, filters.folders, termId]
   );
 
   const statusOrder = useMemo(
@@ -70,6 +85,7 @@ function AttendanceTable({ table, dispatch, filters, sort, onSortChange, readOnl
 
   const eventColumns = columns.filter((column) => column.kind === 'event');
   const isEmpty = table.people.length === 0 || eventColumns.length === 0;
+  const hasTermFilter = termId !== ALL_TERMS && table.terms.length > 0;
 
   return (
     <div className="table-panel">
@@ -133,6 +149,11 @@ function AttendanceTable({ table, dispatch, filters, sort, onSortChange, readOnl
                 )
               )}
 
+              {/* The old sheets kept this beside the percentage, and it answers
+                  a different question: how many sessions someone actually made. */}
+              <th rowSpan={2} className="col-score" title="Sessions attended out of those that counted">
+                Present
+              </th>
               <th
                 rowSpan={2}
                 className="col-score sortable"
@@ -231,6 +252,7 @@ function AttendanceTable({ table, dispatch, filters, sort, onSortChange, readOnl
                     );
                   })}
 
+                  <td className="col-score col-score--count">{formatCount(score)}</td>
                   <td className="col-score">{formatScore(score?.raw)}</td>
                   <td className="col-score">{formatScore(score?.weighted)}</td>
                 </tr>
@@ -242,8 +264,10 @@ function AttendanceTable({ table, dispatch, filters, sort, onSortChange, readOnl
         {isEmpty && (
           <p className="table-empty">
             {table.people.length === 0
-              ? 'No people yet — use “Add people” to paste in your roster.'
-              : 'No events yet — use “Add event” to create the first one.'}
+              ? 'No people yet — use Add → People to paste in your roster.'
+              : hasTermFilter && table.events.length > 0
+                ? 'Nothing scheduled in this term yet. Use Add → Weekly session, or switch to All terms.'
+                : 'No sessions yet — use Add → Weekly session to build out a term.'}
           </p>
         )}
       </div>
@@ -261,7 +285,12 @@ function AttendanceTable({ table, dispatch, filters, sort, onSortChange, readOnl
         <FolderMenu {...folderMenu} dispatch={dispatch} onClose={() => setFolderMenu(null)} />
       )}
       {personMenu && (
-        <PersonMenu {...personMenu} dispatch={dispatch} onClose={() => setPersonMenu(null)} />
+        <PersonMenu
+          {...personMenu}
+          people={table.people}
+          dispatch={dispatch}
+          onClose={() => setPersonMenu(null)}
+        />
       )}
       {sortMenu && (
         <SortMenu

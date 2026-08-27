@@ -60,3 +60,15 @@
   align-items: center;
   gap: var(--space-2);
 }
+
+.settings-actions {
+  display: flex;
+  gap: var(--space-2);
+  flex: none;
+}
+
+/* A file input has to be wrapped in a label, which cannot be :disabled. */
+.btn--disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}

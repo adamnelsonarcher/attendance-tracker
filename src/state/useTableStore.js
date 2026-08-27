@@ -56,6 +56,11 @@ export function useTableStore() {
   const [joinState, setJoinState] = useState({ status: 'idle', error: null });
   const viewOnly = useMemo(() => isViewOnlyLocation(), []);
 
+  // Bumped whenever the whole table is swapped out — restored, joined, or
+  // switched to. Views keyed on it can start over without having to guess from
+  // the table's contents whether this is the same table they were showing.
+  const [tableEpoch, setTableEpoch] = useState(0);
+
   const [state, rawDispatch] = useReducer(
     tableReducer,
     undefined,
@@ -67,6 +72,9 @@ export function useTableStore() {
   // collapsing a folder still works — it changes nothing anyone else can see.
   const dispatch = useCallback(
     (action) => {
+      if (action.type === 'table/replace' || action.type === 'table/adopt') {
+        setTableEpoch((epoch) => epoch + 1);
+      }
       if (!viewOnly) {
         rawDispatch(action);
         return;
@@ -151,6 +159,7 @@ export function useTableStore() {
       saveTable(nextCode, next);
       rememberTable(nextCode, name);
       setTableId(nextCode);
+      setTableEpoch((epoch) => epoch + 1);
       rawDispatch({ type: 'table/adopt', table: next, upgrade: isLegacyRemote(remote) });
       refreshTables();
     },
@@ -168,6 +177,7 @@ export function useTableStore() {
 
       const next = loadTable(nextId) || (nextId === LOCAL_TABLE_ID ? bootstrapLocalTable() : emptyTable());
       setTableId(nextId);
+      setTableEpoch((epoch) => epoch + 1);
       rawDispatch({ type: 'table/replace', table: next, fromRemote: true });
       rememberTable(nextId, next.settings.name || defaultName(nextId));
       refreshTables();
@@ -225,6 +235,7 @@ export function useTableStore() {
     const next = emptyTable();
     saveTable(id, next);
     setTableId(id);
+    setTableEpoch((epoch) => epoch + 1);
     rawDispatch({ type: 'table/replace', table: next, fromRemote: true });
     rememberTable(id, defaultName(id));
     refreshTables();
@@ -260,6 +271,7 @@ export function useTableStore() {
     saveTable(id, next);
     rememberTable(id, next.settings.name);
     setTableId(id);
+    setTableEpoch((epoch) => epoch + 1);
     rawDispatch({ type: 'table/replace', table: next, fromRemote: true });
     refreshTables();
     updateAddress(id);
@@ -280,6 +292,7 @@ export function useTableStore() {
     table,
     dispatch,
     tableId,
+    tableEpoch,
     code,
     tables,
     viewOnly,

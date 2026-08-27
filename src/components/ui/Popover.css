@@ -80,3 +80,14 @@
   border-radius: 3px;
   vertical-align: middle;
 }
+
+.term-row {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.term-row__select {
+  flex: 1;
+  min-width: 0;
+}

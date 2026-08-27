@@ -3,7 +3,7 @@ import Modal from '../ui/Modal';
 
 const NEW_FOLDER = '__new__';
 
-function AddEventDialog({ folders, dispatch, onClose }) {
+function AddEventDialog({ folders, terms = [], activeTermId, dispatch, onClose }) {
   const [form, setForm] = useState({
     name: '',
     startDate: '',
@@ -13,6 +13,7 @@ function AddEventDialog({ folders, dispatch, onClose }) {
     // events somewhere the user did not choose — invisibly, if it is collapsed.
     folderId: '',
     newFolderName: '',
+    termId: terms.some((term) => term.id === activeTermId) ? activeTermId : '',
   });
 
   const set = (changes) => setForm((current) => ({ ...current, ...changes }));
@@ -30,6 +31,7 @@ function AddEventDialog({ folders, dispatch, onClose }) {
       endDate: form.endDate || null,
       folderId: creatingFolder ? null : form.folderId || null,
       newFolderName: creatingFolder ? form.newFolderName.trim() : null,
+      termId: form.termId || null,
     });
     onClose();
   };
@@ -90,6 +92,22 @@ function AddEventDialog({ folders, dispatch, onClose }) {
             />
           </label>
         </div>
+
+        {terms.length > 0 && (
+          <label className="field">
+            <span>Term</span>
+            <select
+              className="select"
+              value={form.termId}
+              onChange={(event) => set({ termId: event.target.value })}
+            >
+              <option value="">No term</option>
+              {terms.map((term) => (
+                <option key={term.id} value={term.id}>{term.name}</option>
+              ))}
+            </select>
+          </label>
+        )}
 
         <label className="field">
           <span>Folder</span>

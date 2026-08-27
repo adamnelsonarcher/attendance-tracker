@@ -9,11 +9,18 @@
 
 export const SCHEMA_VERSION = 2;
 
+/**
+ * The default vocabulary, matching the legend CIR has kept in its check-in
+ * sheets: attended in person, attended online, missed but made it up, missed
+ * and still owes a make-up, missed, and a session that did not happen.
+ */
 export const DEFAULT_STATUSES = [
   { id: 'present', name: 'Present', credit: 1, color: '#dcf5e2' },
-  { id: 'late', name: 'Late', credit: 0.5, color: '#fdf0d5' },
+  { id: 'virtual', name: 'Virtual', credit: 1, color: '#dbeafe' },
+  { id: 'made-up', name: 'Made up', credit: 1, color: '#e6f6ea' },
+  { id: 'needs-makeup', name: 'Needs make-up', credit: 0, color: '#fdf0d5' },
   { id: 'absent', name: 'Absent', credit: 0, color: '#fbdedd' },
-  { id: 'excused', name: 'Excused', credit: null, color: '#e9ecef' },
+  { id: 'excused', name: 'Excused / holiday', credit: null, color: '#e9ecef' },
 ];
 
 export const DEFAULT_TABLE_NAME = 'Untitled table';
@@ -72,34 +79,72 @@ export function emptyTable() {
     people: [],
     groups: [],
     folders: [],
+    terms: [],
     events: [],
     attendance: {},
     settings: defaultSettings(),
   };
 }
 
+/* -------------------------------------------------------------------------- */
+/* terms                                                                      */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * A term is a stretch of the calendar — a semester. CIR kept one spreadsheet
+ * tab per semester, which meant the roster was retyped every time and nobody
+ * could see a student's history. Here the table is continuous and events are
+ * stamped with the term they belong to, so a semester is a lens rather than a
+ * separate file.
+ */
+export function termForDate(terms, date) {
+  const day = typeof date === 'string' ? date : toDateString(date);
+  return (
+    terms.find((term) => term.startDate && term.endDate && day >= term.startDate && day <= term.endDate) || null
+  );
+}
+
+/** The term to show on open: the one we are in, else the most recent to start. */
+export function currentTerm(terms, today = toDateString(new Date())) {
+  if (terms.length === 0) return null;
+  const active = termForDate(terms, today);
+  if (active) return active;
+
+  const started = terms.filter((term) => term.startDate && term.startDate <= today);
+  const pool = started.length > 0 ? started : terms;
+  return pool.reduce((latest, term) => ((term.startDate || '') > (latest.startDate || '') ? term : latest));
+}
+
+export function toDateString(date) {
+  const pad = (n) => String(n).padStart(2, '0');
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+}
+
 export function demoTable() {
   const table = emptyTable();
   table.settings.name = 'Example table';
+  // The demo carries a term so the semester switcher has something in it the
+  // first time someone opens the app.
+  table.terms = [{ id: 't_fall25', name: 'Fall 2025', startDate: '2025-08-01', endDate: '2025-12-31' }];
   table.folders = [
     { id: 'f_general', name: 'General Meetings', isOpen: true },
     { id: 'f_service', name: 'Service Events', isOpen: true },
   ];
   table.events = [
-    { id: 'e1', name: 'Kickoff', weight: 1, folderId: 'f_general', startDate: '2025-09-03', endDate: null },
-    { id: 'e2', name: 'Week 2', weight: 1, folderId: 'f_general', startDate: '2025-09-10', endDate: null },
-    { id: 'e3', name: 'Week 3', weight: 1, folderId: 'f_general', startDate: '2025-09-17', endDate: null },
-    { id: 'e4', name: 'Park Cleanup', weight: 2, folderId: 'f_service', startDate: '2025-09-13', endDate: null },
-    { id: 'e5', name: 'Food Bank', weight: 2, folderId: 'f_service', startDate: '2025-09-27', endDate: null },
-    { id: 'e6', name: 'Fall Retreat', weight: 3, folderId: null, startDate: '2025-10-04', endDate: '2025-10-05' },
+    { id: 'e1', name: 'Kickoff', weight: 1, termId: 't_fall25', folderId: 'f_general', startDate: '2025-09-03', endDate: null },
+    { id: 'e2', name: 'Week 2', weight: 1, termId: 't_fall25', folderId: 'f_general', startDate: '2025-09-10', endDate: null },
+    { id: 'e3', name: 'Week 3', weight: 1, termId: 't_fall25', folderId: 'f_general', startDate: '2025-09-17', endDate: null },
+    { id: 'e4', name: 'Park Cleanup', weight: 2, termId: 't_fall25', folderId: 'f_service', startDate: '2025-09-13', endDate: null },
+    { id: 'e5', name: 'Food Bank', weight: 2, termId: 't_fall25', folderId: 'f_service', startDate: '2025-09-27', endDate: null },
+    { id: 'e6', name: 'Fall Retreat', weight: 3, termId: 't_fall25', folderId: null, startDate: '2025-10-04', endDate: '2025-10-05' },
   ];
   table.people = [
-    { id: 'p1', name: 'Avery Chen' },
-    { id: 'p2', name: 'Jordan Blake' },
-    { id: 'p3', name: 'Riley Okafor' },
-    { id: 'p4', name: 'Sam Delgado' },
-    { id: 'p5', name: 'Taylor Nguyen' },
-    { id: 'p6', name: 'Morgan Reyes' },
+    { id: 'p1', name: 'Avery Chen', aliases: [] },
+    { id: 'p2', name: 'Jordan Blake', aliases: [] },
+    { id: 'p3', name: 'Riley Okafor', aliases: [] },
+    { id: 'p4', name: 'Sam Delgado', aliases: [] },
+    { id: 'p5', name: 'Taylor Nguyen', aliases: [] },
+    { id: 'p6', name: 'Morgan Reyes', aliases: [] },
   ];
   table.groups = [
     { id: 'g_exec', name: 'Exec Board', color: '#5b8def', memberIds: ['p1', 'p3'] },
@@ -107,11 +152,11 @@ export function demoTable() {
   ];
   table.attendance = {
     'p1-e1': 'present', 'p1-e2': 'present', 'p1-e3': 'present', 'p1-e4': 'present', 'p1-e6': 'present',
-    'p2-e1': 'present', 'p2-e2': 'late', 'p2-e3': 'present', 'p2-e4': 'absent',
+    'p2-e1': 'present', 'p2-e2': 'virtual', 'p2-e3': 'present', 'p2-e4': 'absent',
     'p3-e1': 'present', 'p3-e2': 'present', 'p3-e3': 'excused', 'p3-e5': 'present',
-    'p4-e1': 'absent', 'p4-e2': 'present', 'p4-e3': 'late',
+    'p4-e1': 'absent', 'p4-e2': 'present', 'p4-e3': 'needs-makeup',
     'p5-e1': 'present', 'p5-e2': 'present', 'p5-e4': 'present', 'p5-e5': 'present',
-    'p6-e2': 'late', 'p6-e3': 'absent',
+    'p6-e2': 'made-up', 'p6-e3': 'absent',
   };
   return table;
 }
@@ -135,7 +180,13 @@ export function normalizeTable(raw) {
 
   const people = asArray(source.people)
     .filter((p) => isObject(p) && p.id != null)
-    .map((p) => ({ id: String(p.id), name: typeof p.name === 'string' ? p.name : 'Unnamed' }));
+    .map((p) => ({
+      id: String(p.id),
+      name: typeof p.name === 'string' ? p.name : 'Unnamed',
+      // Other spellings this person is known by, so a pasted sign-in sheet
+      // saying "Liv" or "Charles LT" still finds them.
+      aliases: asArray(p.aliases).filter((a) => typeof a === 'string' && a.trim()).map((a) => a.trim()),
+    }));
 
   const groups = asArray(source.groups)
     .filter((g) => isObject(g) && g.id != null)
@@ -154,6 +205,17 @@ export function normalizeTable(raw) {
       isOpen: f.isOpen !== false,
     }));
 
+  const terms = asArray(source.terms)
+    .filter((t) => isObject(t) && t.id != null)
+    .map((t) => ({
+      id: String(t.id),
+      name: typeof t.name === 'string' ? t.name : 'Term',
+      startDate: asDate(t.startDate),
+      endDate: asDate(t.endDate),
+    }))
+    .sort((a, b) => (a.startDate || '').localeCompare(b.startDate || ''));
+
+  const termIds = new Set(terms.map((t) => t.id));
   const folderIds = new Set(folders.map((f) => f.id));
   const events = asArray(source.events)
     .filter((e) => isObject(e) && e.id != null)
@@ -162,6 +224,7 @@ export function normalizeTable(raw) {
       name: typeof e.name === 'string' ? e.name : 'Event',
       weight: clampWeight(e.weight),
       folderId: e.folderId != null && folderIds.has(String(e.folderId)) ? String(e.folderId) : null,
+      termId: e.termId != null && termIds.has(String(e.termId)) ? String(e.termId) : null,
       startDate: asDate(e.startDate),
       endDate: asDate(e.endDate),
     }));
@@ -174,6 +237,7 @@ export function normalizeTable(raw) {
     people,
     groups,
     folders,
+    terms,
     events,
     attendance: pruneAttendance(source.attendance, people, events, statusIds),
     settings,
@@ -278,6 +342,7 @@ function migrateV1(raw) {
     people: asArray(raw.people).map((p) => (isObject(p) ? { id: p.id, name: p.name } : p)),
     groups,
     folders,
+    terms: [],
     events,
     attendance: isObject(raw.attendance) ? raw.attendance : {},
     settings: {
