@@ -2,6 +2,7 @@ import { memo, useCallback, useMemo, useState } from 'react';
 import './AttendanceTable.css';
 import {
   ALL_TERMS,
+  buildApplicability,
   buildColumns,
   buildMembership,
   computeScores,
@@ -10,6 +11,7 @@ import {
   formatCount,
   formatScore,
   sortPeople,
+  withSessionsInView,
 } from '../../data/selectors';
 import { cellKey, formatDateRange } from '../../data/model';
 import EventMenu from './EventMenu';
@@ -36,6 +38,7 @@ function AttendanceTable({ table, dispatch, filters, sort, onSortChange, termId 
   const { settings } = table;
 
   const membership = useMemo(() => buildMembership(table.groups), [table.groups]);
+  const applies = useMemo(() => buildApplicability(table), [table]);
 
   // Scores describe the term on screen. A semester percentage that silently
   // included last year's sessions would be worse than useless.
@@ -57,14 +60,30 @@ function AttendanceTable({ table, dispatch, filters, sort, onSortChange, termId 
   );
 
   const visiblePeople = useMemo(() => {
-    const filtered = filterPeople(table.people, membership, filters.groups);
+    let filtered = filterPeople(table.people, membership, filters.groups);
+    // Narrowing the columns to one session narrows the roster to that session's
+    // students, so picking a session is a single action rather than two.
+    if (filters.onlyRelevantPeople !== false) {
+      filtered = withSessionsInView(filtered, columns, applies);
+    }
     return sortPeople(filtered, sort, {
       attendance: table.attendance,
       scores,
       membership,
       statusOrder,
     });
-  }, [table.people, table.attendance, membership, filters.groups, sort, scores, statusOrder]);
+  }, [
+    table.people,
+    table.attendance,
+    membership,
+    filters.groups,
+    filters.onlyRelevantPeople,
+    columns,
+    applies,
+    sort,
+    scores,
+    statusOrder,
+  ]);
 
   const setStatus = useCallback(
     (personId, eventId, statusId) => dispatch({ type: 'attendance/set', personId, eventId, statusId }),
@@ -84,7 +103,7 @@ function AttendanceTable({ table, dispatch, filters, sort, onSortChange, termId 
   );
 
   const eventColumns = columns.filter((column) => column.kind === 'event');
-  const isEmpty = table.people.length === 0 || eventColumns.length === 0;
+  const isEmpty = visiblePeople.length === 0 || eventColumns.length === 0;
   const hasTermFilter = termId !== ALL_TERMS && table.terms.length > 0;
 
   return (
@@ -133,6 +152,11 @@ function AttendanceTable({ table, dispatch, filters, sort, onSortChange, termId 
                   >
                     <span className="folder-toggle">{group.collapsed ? '▶' : '▼'}</span>
                     {group.folder.name}
+                    {group.folder.groupId && (
+                      <span className="col-folder__cohort" title="Only this group attends these sessions">
+                        {cohortSize(table, group.folder.groupId)}
+                      </span>
+                    )}
                     {group.collapsed && group.events.length > 0 && (
                       <span className="col-folder__count">{group.events.length}</span>
                     )}
@@ -231,6 +255,21 @@ function AttendanceTable({ table, dispatch, filters, sort, onSortChange, termId 
                     if (column.kind !== 'event') {
                       return <td key={column.id} className="col-collapsed" aria-hidden="true" />;
                     }
+                    // Not this person's session: no control, nothing to mark by
+                    // accident, and nothing counted either way.
+                    if (!applies(person.id, column.event)) {
+                      return (
+                        <td
+                          key={column.id}
+                          className={`col-event col-event--n-a${
+                            hoverColumn === column.id ? ' is-hover-column' : ''
+                          }`}
+                          data-column={column.id}
+                          title={`${person.name} is not in ${column.folder?.name || 'this session'}`}
+                        />
+                      );
+                    }
+
                     const statusId = table.attendance[cellKey(person.id, column.event.id)] || '';
                     return (
                       <AttendanceCell
@@ -265,9 +304,11 @@ function AttendanceTable({ table, dispatch, filters, sort, onSortChange, termId 
           <p className="table-empty">
             {table.people.length === 0
               ? 'No people yet — use Add → People to paste in your roster.'
-              : hasTermFilter && table.events.length > 0
+              : eventColumns.length === 0 && hasTermFilter && table.events.length > 0
                 ? 'Nothing scheduled in this term yet. Use Add → Weekly session, or switch to All terms.'
-                : 'No sessions yet — use Add → Weekly session to build out a term.'}
+                : eventColumns.length === 0
+                  ? 'No sessions yet — use Add → Weekly session to build out a term.'
+                  : 'Nobody attends the sessions in view. Clear the filter, or add people to this group.'}
           </p>
         )}
       </div>
@@ -282,7 +323,12 @@ function AttendanceTable({ table, dispatch, filters, sort, onSortChange, termId 
         />
       )}
       {folderMenu && (
-        <FolderMenu {...folderMenu} dispatch={dispatch} onClose={() => setFolderMenu(null)} />
+        <FolderMenu
+          {...folderMenu}
+          groups={table.groups}
+          dispatch={dispatch}
+          onClose={() => setFolderMenu(null)}
+        />
       )}
       {personMenu && (
         <PersonMenu
@@ -354,6 +400,11 @@ const AttendanceCell = memo(function AttendanceCell({
     </td>
   );
 });
+
+function cohortSize(table, groupId) {
+  const group = table.groups.find((entry) => entry.id === groupId);
+  return group ? `${group.memberIds.length}` : '';
+}
 
 function EventHeader({ event, rowSpan, sort, onSort, onMenu }) {
   const active = sort.type === 'event' && sort.eventId === event.id;

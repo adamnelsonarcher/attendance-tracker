@@ -323,7 +323,7 @@
   ],
   "groups": [
     {
-      "id": "g_seed0051",
+      "id": "g_seed0050",
       "name": "Monday 2pm",
       "color": "#5b8def",
       "memberIds": [
@@ -333,7 +333,7 @@
       ]
     },
     {
-      "id": "g_seed0067",
+      "id": "g_seed0066",
       "name": "Tuesday 10am",
       "color": "#e8955a",
       "memberIds": [
@@ -355,7 +355,7 @@
       ]
     },
     {
-      "id": "g_seed0083",
+      "id": "g_seed0082",
       "name": "Tuesday 3pm",
       "color": "#3fae7d",
       "memberIds": [
@@ -375,7 +375,7 @@
       ]
     },
     {
-      "id": "g_seed0099",
+      "id": "g_seed0098",
       "name": "Wednesday 10am",
       "color": "#b06ad8",
       "memberIds": [
@@ -386,7 +386,7 @@
       ]
     },
     {
-      "id": "g_seed0115",
+      "id": "g_seed0114",
       "name": "Wednesday 3pm",
       "color": "#d95b6b",
       "memberIds": [
@@ -400,7 +400,7 @@
       ]
     },
     {
-      "id": "g_seed0131",
+      "id": "g_seed0130",
       "name": "Thursday 10am",
       "color": "#3ca6b8",
       "memberIds": [
@@ -408,7 +408,7 @@
       ]
     },
     {
-      "id": "g_seed0147",
+      "id": "g_seed0146",
       "name": "Thursday 3pm",
       "color": "#c9a227",
       "memberIds": [
@@ -421,7 +421,7 @@
       ]
     },
     {
-      "id": "g_seed0163",
+      "id": "g_seed0162",
       "name": "Friday 2pm",
       "color": "#7a8290",
       "memberIds": []
@@ -429,49 +429,58 @@
   ],
   "folders": [
     {
-      "id": "f_seed0050",
+      "id": "f_seed0051",
       "name": "Monday 2pm",
-      "isOpen": true
+      "isOpen": true,
+      "groupId": "g_seed0050"
     },
     {
-      "id": "f_seed0066",
+      "id": "f_seed0067",
       "name": "Tuesday 10am",
-      "isOpen": true
+      "isOpen": true,
+      "groupId": "g_seed0066"
     },
     {
-      "id": "f_seed0082",
+      "id": "f_seed0083",
       "name": "Tuesday 3pm",
-      "isOpen": true
+      "isOpen": true,
+      "groupId": "g_seed0082"
     },
     {
-      "id": "f_seed0098",
+      "id": "f_seed0099",
       "name": "Wednesday 10am",
-      "isOpen": true
+      "isOpen": true,
+      "groupId": "g_seed0098"
     },
     {
-      "id": "f_seed0114",
+      "id": "f_seed0115",
       "name": "Wednesday 3pm",
-      "isOpen": true
+      "isOpen": true,
+      "groupId": "g_seed0114"
     },
     {
-      "id": "f_seed0130",
+      "id": "f_seed0131",
       "name": "Thursday 10am",
-      "isOpen": true
+      "isOpen": true,
+      "groupId": "g_seed0130"
     },
     {
-      "id": "f_seed0146",
+      "id": "f_seed0147",
       "name": "Thursday 3pm",
-      "isOpen": true
+      "isOpen": true,
+      "groupId": "g_seed0146"
     },
     {
-      "id": "f_seed0162",
+      "id": "f_seed0163",
       "name": "Friday 2pm",
-      "isOpen": true
+      "isOpen": true,
+      "groupId": "g_seed0162"
     },
     {
       "id": "f_seed0178",
       "name": "Community events",
-      "isOpen": true
+      "isOpen": true,
+      "groupId": null
     }
   ],
   "terms": [
@@ -487,7 +496,7 @@
       "id": "e_seed0052",
       "name": "8/24",
       "weight": 1,
-      "folderId": "f_seed0050",
+      "folderId": "f_seed0051",
       "termId": "t_seed0049",
       "startDate": "2026-08-24",
       "endDate": null
@@ -496,7 +505,7 @@
       "id": "e_seed0053",
       "name": "8/31",
       "weight": 1,
-      "folderId": "f_seed0050",
+      "folderId": "f_seed0051",
       "termId": "t_seed0049",
       "startDate": "2026-08-31",
       "endDate": null
@@ -505,7 +514,7 @@
       "id": "e_seed0054",
       "name": "9/7",
       "weight": 1,
-      "folderId": "f_seed0050",
+      "folderId": "f_seed0051",
       "termId": "t_seed0049",
       "startDate": "2026-09-07",
       "endDate": null
@@ -514,7 +523,7 @@
       "id": "e_seed0055",
       "name": "9/14",
       "weight": 1,
-      "folderId": "f_seed0050",
+      "folderId": "f_seed0051",
       "termId": "t_seed0049",
       "startDate": "2026-09-14",
       "endDate": null
@@ -523,7 +532,7 @@
       "id": "e_seed0056",
       "name": "9/21",
       "weight": 1,
-      "folderId": "f_seed0050",
+      "folderId": "f_seed0051",
       "termId": "t_seed0049",
       "startDate": "2026-09-21",
       "endDate": null
@@ -532,7 +541,7 @@
       "id": "e_seed0057",
       "name": "9/28",
       "weight": 1,
-      "folderId": "f_seed0050",
+      "folderId": "f_seed0051",
       "termId": "t_seed0049",
       "startDate": "2026-09-28",
       "endDate": null
@@ -541,7 +550,7 @@
       "id": "e_seed0058",
       "name": "10/5",
       "weight": 1,
-      "folderId": "f_seed0050",
+      "folderId": "f_seed0051",
       "termId": "t_seed0049",
       "startDate": "2026-10-05",
       "endDate": null
@@ -550,7 +559,7 @@
       "id": "e_seed0059",
       "name": "10/12",
       "weight": 1,
-      "folderId": "f_seed0050",
+      "folderId": "f_seed0051",
       "termId": "t_seed0049",
       "startDate": "2026-10-12",
       "endDate": null
@@ -559,7 +568,7 @@
       "id": "e_seed0060",
       "name": "10/19",
       "weight": 1,
-      "folderId": "f_seed0050",
+      "folderId": "f_seed0051",
       "termId": "t_seed0049",
       "startDate": "2026-10-19",
       "endDate": null
@@ -568,7 +577,7 @@
       "id": "e_seed0061",
       "name": "10/26",
       "weight": 1,
-      "folderId": "f_seed0050",
+      "folderId": "f_seed0051",
       "termId": "t_seed0049",
       "startDate": "2026-10-26",
       "endDate": null
@@ -577,7 +586,7 @@
       "id": "e_seed0062",
       "name": "11/2",
       "weight": 1,
-      "folderId": "f_seed0050",
+      "folderId": "f_seed0051",
       "termId": "t_seed0049",
       "startDate": "2026-11-02",
       "endDate": null
@@ -586,7 +595,7 @@
       "id": "e_seed0063",
       "name": "11/9",
       "weight": 1,
-      "folderId": "f_seed0050",
+      "folderId": "f_seed0051",
       "termId": "t_seed0049",
       "startDate": "2026-11-09",
       "endDate": null
@@ -595,7 +604,7 @@
       "id": "e_seed0064",
       "name": "11/16",
       "weight": 1,
-      "folderId": "f_seed0050",
+      "folderId": "f_seed0051",
       "termId": "t_seed0049",
       "startDate": "2026-11-16",
       "endDate": null
@@ -604,7 +613,7 @@
       "id": "e_seed0065",
       "name": "11/30",
       "weight": 1,
-      "folderId": "f_seed0050",
+      "folderId": "f_seed0051",
       "termId": "t_seed0049",
       "startDate": "2026-11-30",
       "endDate": null
@@ -613,7 +622,7 @@
       "id": "e_seed0068",
       "name": "8/25",
       "weight": 1,
-      "folderId": "f_seed0066",
+      "folderId": "f_seed0067",
       "termId": "t_seed0049",
       "startDate": "2026-08-25",
       "endDate": null
@@ -622,7 +631,7 @@
       "id": "e_seed0069",
       "name": "9/1",
       "weight": 1,
-      "folderId": "f_seed0066",
+      "folderId": "f_seed0067",
       "termId": "t_seed0049",
       "startDate": "2026-09-01",
       "endDate": null
@@ -631,7 +640,7 @@
       "id": "e_seed0070",
       "name": "9/8",
       "weight": 1,
-      "folderId": "f_seed0066",
+      "folderId": "f_seed0067",
       "termId": "t_seed0049",
       "startDate": "2026-09-08",
       "endDate": null
@@ -640,7 +649,7 @@
       "id": "e_seed0071",
       "name": "9/15",
       "weight": 1,
-      "folderId": "f_seed0066",
+      "folderId": "f_seed0067",
       "termId": "t_seed0049",
       "startDate": "2026-09-15",
       "endDate": null
@@ -649,7 +658,7 @@
       "id": "e_seed0072",
       "name": "9/22",
       "weight": 1,
-      "folderId": "f_seed0066",
+      "folderId": "f_seed0067",
       "termId": "t_seed0049",
       "startDate": "2026-09-22",
       "endDate": null
@@ -658,7 +667,7 @@
       "id": "e_seed0073",
       "name": "9/29",
       "weight": 1,
-      "folderId": "f_seed0066",
+      "folderId": "f_seed0067",
       "termId": "t_seed0049",
       "startDate": "2026-09-29",
       "endDate": null
@@ -667,7 +676,7 @@
       "id": "e_seed0074",
       "name": "10/6",
       "weight": 1,
-      "folderId": "f_seed0066",
+      "folderId": "f_seed0067",
       "termId": "t_seed0049",
       "startDate": "2026-10-06",
       "endDate": null
@@ -676,7 +685,7 @@
       "id": "e_seed0075",
       "name": "10/13",
       "weight": 1,
-      "folderId": "f_seed0066",
+      "folderId": "f_seed0067",
       "termId": "t_seed0049",
       "startDate": "2026-10-13",
       "endDate": null
@@ -685,7 +694,7 @@
       "id": "e_seed0076",
       "name": "10/20",
       "weight": 1,
-      "folderId": "f_seed0066",
+      "folderId": "f_seed0067",
       "termId": "t_seed0049",
       "startDate": "2026-10-20",
       "endDate": null
@@ -694,7 +703,7 @@
       "id": "e_seed0077",
       "name": "10/27",
       "weight": 1,
-      "folderId": "f_seed0066",
+      "folderId": "f_seed0067",
       "termId": "t_seed0049",
       "startDate": "2026-10-27",
       "endDate": null
@@ -703,7 +712,7 @@
       "id": "e_seed0078",
       "name": "11/3",
       "weight": 1,
-      "folderId": "f_seed0066",
+      "folderId": "f_seed0067",
       "termId": "t_seed0049",
       "startDate": "2026-11-03",
       "endDate": null
@@ -712,7 +721,7 @@
       "id": "e_seed0079",
       "name": "11/10",
       "weight": 1,
-      "folderId": "f_seed0066",
+      "folderId": "f_seed0067",
       "termId": "t_seed0049",
       "startDate": "2026-11-10",
       "endDate": null
@@ -721,7 +730,7 @@
       "id": "e_seed0080",
       "name": "11/17",
       "weight": 1,
-      "folderId": "f_seed0066",
+      "folderId": "f_seed0067",
       "termId": "t_seed0049",
       "startDate": "2026-11-17",
       "endDate": null
@@ -730,7 +739,7 @@
       "id": "e_seed0081",
       "name": "12/1",
       "weight": 1,
-      "folderId": "f_seed0066",
+      "folderId": "f_seed0067",
       "termId": "t_seed0049",
       "startDate": "2026-12-01",
       "endDate": null
@@ -739,7 +748,7 @@
       "id": "e_seed0084",
       "name": "8/25",
       "weight": 1,
-      "folderId": "f_seed0082",
+      "folderId": "f_seed0083",
       "termId": "t_seed0049",
       "startDate": "2026-08-25",
       "endDate": null
@@ -748,7 +757,7 @@
       "id": "e_seed0085",
       "name": "9/1",
       "weight": 1,
-      "folderId": "f_seed0082",
+      "folderId": "f_seed0083",
       "termId": "t_seed0049",
       "startDate": "2026-09-01",
       "endDate": null
@@ -757,7 +766,7 @@
       "id": "e_seed0086",
       "name": "9/8",
       "weight": 1,
-      "folderId": "f_seed0082",
+      "folderId": "f_seed0083",
       "termId": "t_seed0049",
       "startDate": "2026-09-08",
       "endDate": null
@@ -766,7 +775,7 @@
       "id": "e_seed0087",
       "name": "9/15",
       "weight": 1,
-      "folderId": "f_seed0082",
+      "folderId": "f_seed0083",
       "termId": "t_seed0049",
       "startDate": "2026-09-15",
       "endDate": null
@@ -775,7 +784,7 @@
       "id": "e_seed0088",
       "name": "9/22",
       "weight": 1,
-      "folderId": "f_seed0082",
+      "folderId": "f_seed0083",
       "termId": "t_seed0049",
       "startDate": "2026-09-22",
       "endDate": null
@@ -784,7 +793,7 @@
       "id": "e_seed0089",
       "name": "9/29",
       "weight": 1,
-      "folderId": "f_seed0082",
+      "folderId": "f_seed0083",
       "termId": "t_seed0049",
       "startDate": "2026-09-29",
       "endDate": null
@@ -793,7 +802,7 @@
       "id": "e_seed0090",
       "name": "10/6",
       "weight": 1,
-      "folderId": "f_seed0082",
+      "folderId": "f_seed0083",
       "termId": "t_seed0049",
       "startDate": "2026-10-06",
       "endDate": null
@@ -802,7 +811,7 @@
       "id": "e_seed0091",
       "name": "10/13",
       "weight": 1,
-      "folderId": "f_seed0082",
+      "folderId": "f_seed0083",
       "termId": "t_seed0049",
       "startDate": "2026-10-13",
       "endDate": null
@@ -811,7 +820,7 @@
       "id": "e_seed0092",
       "name": "10/20",
       "weight": 1,
-      "folderId": "f_seed0082",
+      "folderId": "f_seed0083",
       "termId": "t_seed0049",
       "startDate": "2026-10-20",
       "endDate": null
@@ -820,7 +829,7 @@
       "id": "e_seed0093",
       "name": "10/27",
       "weight": 1,
-      "folderId": "f_seed0082",
+      "folderId": "f_seed0083",
       "termId": "t_seed0049",
       "startDate": "2026-10-27",
       "endDate": null
@@ -829,7 +838,7 @@
       "id": "e_seed0094",
       "name": "11/3",
       "weight": 1,
-      "folderId": "f_seed0082",
+      "folderId": "f_seed0083",
       "termId": "t_seed0049",
       "startDate": "2026-11-03",
       "endDate": null
@@ -838,7 +847,7 @@
       "id": "e_seed0095",
       "name": "11/10",
       "weight": 1,
-      "folderId": "f_seed0082",
+      "folderId": "f_seed0083",
       "termId": "t_seed0049",
       "startDate": "2026-11-10",
       "endDate": null
@@ -847,7 +856,7 @@
       "id": "e_seed0096",
       "name": "11/17",
       "weight": 1,
-      "folderId": "f_seed0082",
+      "folderId": "f_seed0083",
       "termId": "t_seed0049",
       "startDate": "2026-11-17",
       "endDate": null
@@ -856,7 +865,7 @@
       "id": "e_seed0097",
       "name": "12/1",
       "weight": 1,
-      "folderId": "f_seed0082",
+      "folderId": "f_seed0083",
       "termId": "t_seed0049",
       "startDate": "2026-12-01",
       "endDate": null
@@ -865,7 +874,7 @@
       "id": "e_seed0100",
       "name": "8/26",
       "weight": 1,
-      "folderId": "f_seed0098",
+      "folderId": "f_seed0099",
       "termId": "t_seed0049",
       "startDate": "2026-08-26",
       "endDate": null
@@ -874,7 +883,7 @@
       "id": "e_seed0101",
       "name": "9/2",
       "weight": 1,
-      "folderId": "f_seed0098",
+      "folderId": "f_seed0099",
       "termId": "t_seed0049",
       "startDate": "2026-09-02",
       "endDate": null
@@ -883,7 +892,7 @@
       "id": "e_seed0102",
       "name": "9/9",
       "weight": 1,
-      "folderId": "f_seed0098",
+      "folderId": "f_seed0099",
       "termId": "t_seed0049",
       "startDate": "2026-09-09",
       "endDate": null
@@ -892,7 +901,7 @@
       "id": "e_seed0103",
       "name": "9/16",
       "weight": 1,
-      "folderId": "f_seed0098",
+      "folderId": "f_seed0099",
       "termId": "t_seed0049",
       "startDate": "2026-09-16",
       "endDate": null
@@ -901,7 +910,7 @@
       "id": "e_seed0104",
       "name": "9/23",
       "weight": 1,
-      "folderId": "f_seed0098",
+      "folderId": "f_seed0099",
       "termId": "t_seed0049",
       "startDate": "2026-09-23",
       "endDate": null
@@ -910,7 +919,7 @@
       "id": "e_seed0105",
       "name": "9/30",
       "weight": 1,
-      "folderId": "f_seed0098",
+      "folderId": "f_seed0099",
       "termId": "t_seed0049",
       "startDate": "2026-09-30",
       "endDate": null
@@ -919,7 +928,7 @@
       "id": "e_seed0106",
       "name": "10/7",
       "weight": 1,
-      "folderId": "f_seed0098",
+      "folderId": "f_seed0099",
       "termId": "t_seed0049",
       "startDate": "2026-10-07",
       "endDate": null
@@ -928,7 +937,7 @@
       "id": "e_seed0107",
       "name": "10/14",
       "weight": 1,
-      "folderId": "f_seed0098",
+      "folderId": "f_seed0099",
       "termId": "t_seed0049",
       "startDate": "2026-10-14",
       "endDate": null
@@ -937,7 +946,7 @@
       "id": "e_seed0108",
       "name": "10/21",
       "weight": 1,
-      "folderId": "f_seed0098",
+      "folderId": "f_seed0099",
       "termId": "t_seed0049",
       "startDate": "2026-10-21",
       "endDate": null
@@ -946,7 +955,7 @@
       "id": "e_seed0109",
       "name": "10/28",
       "weight": 1,
-      "folderId": "f_seed0098",
+      "folderId": "f_seed0099",
       "termId": "t_seed0049",
       "startDate": "2026-10-28",
       "endDate": null
@@ -955,7 +964,7 @@
       "id": "e_seed0110",
       "name": "11/4",
       "weight": 1,
-      "folderId": "f_seed0098",
+      "folderId": "f_seed0099",
       "termId": "t_seed0049",
       "startDate": "2026-11-04",
       "endDate": null
@@ -964,7 +973,7 @@
       "id": "e_seed0111",
       "name": "11/11",
       "weight": 1,
-      "folderId": "f_seed0098",
+      "folderId": "f_seed0099",
       "termId": "t_seed0049",
       "startDate": "2026-11-11",
       "endDate": null
@@ -973,7 +982,7 @@
       "id": "e_seed0112",
       "name": "11/18",
       "weight": 1,
-      "folderId": "f_seed0098",
+      "folderId": "f_seed0099",
       "termId": "t_seed0049",
       "startDate": "2026-11-18",
       "endDate": null
@@ -982,7 +991,7 @@
       "id": "e_seed0113",
       "name": "12/2",
       "weight": 1,
-      "folderId": "f_seed0098",
+      "folderId": "f_seed0099",
       "termId": "t_seed0049",
       "startDate": "2026-12-02",
       "endDate": null
@@ -991,7 +1000,7 @@
       "id": "e_seed0116",
       "name": "8/26",
       "weight": 1,
-      "folderId": "f_seed0114",
+      "folderId": "f_seed0115",
       "termId": "t_seed0049",
       "startDate": "2026-08-26",
       "endDate": null
@@ -1000,7 +1009,7 @@
       "id": "e_seed0117",
       "name": "9/2",
       "weight": 1,
-      "folderId": "f_seed0114",
+      "folderId": "f_seed0115",
       "termId": "t_seed0049",
       "startDate": "2026-09-02",
       "endDate": null
@@ -1009,7 +1018,7 @@
       "id": "e_seed0118",
       "name": "9/9",
       "weight": 1,
-      "folderId": "f_seed0114",
+      "folderId": "f_seed0115",
       "termId": "t_seed0049",
       "startDate": "2026-09-09",
       "endDate": null
@@ -1018,7 +1027,7 @@
       "id": "e_seed0119",
       "name": "9/16",
       "weight": 1,
-      "folderId": "f_seed0114",
+      "folderId": "f_seed0115",
       "termId": "t_seed0049",
       "startDate": "2026-09-16",
       "endDate": null
@@ -1027,7 +1036,7 @@
       "id": "e_seed0120",
       "name": "9/23",
       "weight": 1,
-      "folderId": "f_seed0114",
+      "folderId": "f_seed0115",
       "termId": "t_seed0049",
       "startDate": "2026-09-23",
       "endDate": null
@@ -1036,7 +1045,7 @@
       "id": "e_seed0121",
       "name": "9/30",
       "weight": 1,
-      "folderId": "f_seed0114",
+      "folderId": "f_seed0115",
       "termId": "t_seed0049",
       "startDate": "2026-09-30",
       "endDate": null
@@ -1045,7 +1054,7 @@
       "id": "e_seed0122",
       "name": "10/7",
       "weight": 1,
-      "folderId": "f_seed0114",
+      "folderId": "f_seed0115",
       "termId": "t_seed0049",
       "startDate": "2026-10-07",
       "endDate": null
@@ -1054,7 +1063,7 @@
       "id": "e_seed0123",
       "name": "10/14",
       "weight": 1,
-      "folderId": "f_seed0114",
+      "folderId": "f_seed0115",
       "termId": "t_seed0049",
       "startDate": "2026-10-14",
       "endDate": null
@@ -1063,7 +1072,7 @@
       "id": "e_seed0124",
       "name": "10/21",
       "weight": 1,
-      "folderId": "f_seed0114",
+      "folderId": "f_seed0115",
       "termId": "t_seed0049",
       "startDate": "2026-10-21",
       "endDate": null
@@ -1072,7 +1081,7 @@
       "id": "e_seed0125",
       "name": "10/28",
       "weight": 1,
-      "folderId": "f_seed0114",
+      "folderId": "f_seed0115",
       "termId": "t_seed0049",
       "startDate": "2026-10-28",
       "endDate": null
@@ -1081,7 +1090,7 @@
       "id": "e_seed0126",
       "name": "11/4",
       "weight": 1,
-      "folderId": "f_seed0114",
+      "folderId": "f_seed0115",
       "termId": "t_seed0049",
       "startDate": "2026-11-04",
       "endDate": null
@@ -1090,7 +1099,7 @@
       "id": "e_seed0127",
       "name": "11/11",
       "weight": 1,
-      "folderId": "f_seed0114",
+      "folderId": "f_seed0115",
       "termId": "t_seed0049",
       "startDate": "2026-11-11",
       "endDate": null
@@ -1099,7 +1108,7 @@
       "id": "e_seed0128",
       "name": "11/18",
       "weight": 1,
-      "folderId": "f_seed0114",
+      "folderId": "f_seed0115",
       "termId": "t_seed0049",
       "startDate": "2026-11-18",
       "endDate": null
@@ -1108,7 +1117,7 @@
       "id": "e_seed0129",
       "name": "12/2",
       "weight": 1,
-      "folderId": "f_seed0114",
+      "folderId": "f_seed0115",
       "termId": "t_seed0049",
       "startDate": "2026-12-02",
       "endDate": null
@@ -1117,7 +1126,7 @@
       "id": "e_seed0132",
       "name": "8/27",
       "weight": 1,
-      "folderId": "f_seed0130",
+      "folderId": "f_seed0131",
       "termId": "t_seed0049",
       "startDate": "2026-08-27",
       "endDate": null
@@ -1126,7 +1135,7 @@
       "id": "e_seed0133",
       "name": "9/3",
       "weight": 1,
-      "folderId": "f_seed0130",
+      "folderId": "f_seed0131",
       "termId": "t_seed0049",
       "startDate": "2026-09-03",
       "endDate": null
@@ -1135,7 +1144,7 @@
       "id": "e_seed0134",
       "name": "9/10",
       "weight": 1,
-      "folderId": "f_seed0130",
+      "folderId": "f_seed0131",
       "termId": "t_seed0049",
       "startDate": "2026-09-10",
       "endDate": null
@@ -1144,7 +1153,7 @@
       "id": "e_seed0135",
       "name": "9/17",
       "weight": 1,
-      "folderId": "f_seed0130",
+      "folderId": "f_seed0131",
       "termId": "t_seed0049",
       "startDate": "2026-09-17",
       "endDate": null
@@ -1153,7 +1162,7 @@
       "id": "e_seed0136",
       "name": "9/24",
       "weight": 1,
-      "folderId": "f_seed0130",
+      "folderId": "f_seed0131",
       "termId": "t_seed0049",
       "startDate": "2026-09-24",
       "endDate": null
@@ -1162,7 +1171,7 @@
       "id": "e_seed0137",
       "name": "10/1",
       "weight": 1,
-      "folderId": "f_seed0130",
+      "folderId": "f_seed0131",
       "termId": "t_seed0049",
       "startDate": "2026-10-01",
       "endDate": null
@@ -1171,7 +1180,7 @@
       "id": "e_seed0138",
       "name": "10/8",
       "weight": 1,
-      "folderId": "f_seed0130",
+      "folderId": "f_seed0131",
       "termId": "t_seed0049",
       "startDate": "2026-10-08",
       "endDate": null
@@ -1180,7 +1189,7 @@
       "id": "e_seed0139",
       "name": "10/15",
       "weight": 1,
-      "folderId": "f_seed0130",
+      "folderId": "f_seed0131",
       "termId": "t_seed0049",
       "startDate": "2026-10-15",
       "endDate": null
@@ -1189,7 +1198,7 @@
       "id": "e_seed0140",
       "name": "10/22",
       "weight": 1,
-      "folderId": "f_seed0130",
+      "folderId": "f_seed0131",
       "termId": "t_seed0049",
       "startDate": "2026-10-22",
       "endDate": null
@@ -1198,7 +1207,7 @@
       "id": "e_seed0141",
       "name": "10/29",
       "weight": 1,
-      "folderId": "f_seed0130",
+      "folderId": "f_seed0131",
       "termId": "t_seed0049",
       "startDate": "2026-10-29",
       "endDate": null
@@ -1207,7 +1216,7 @@
       "id": "e_seed0142",
       "name": "11/5",
       "weight": 1,
-      "folderId": "f_seed0130",
+      "folderId": "f_seed0131",
       "termId": "t_seed0049",
       "startDate": "2026-11-05",
       "endDate": null
@@ -1216,7 +1225,7 @@
       "id": "e_seed0143",
       "name": "11/12",
       "weight": 1,
-      "folderId": "f_seed0130",
+      "folderId": "f_seed0131",
       "termId": "t_seed0049",
       "startDate": "2026-11-12",
       "endDate": null
@@ -1225,7 +1234,7 @@
       "id": "e_seed0144",
       "name": "11/19",
       "weight": 1,
-      "folderId": "f_seed0130",
+      "folderId": "f_seed0131",
       "termId": "t_seed0049",
       "startDate": "2026-11-19",
       "endDate": null
@@ -1234,7 +1243,7 @@
       "id": "e_seed0145",
       "name": "12/3",
       "weight": 1,
-      "folderId": "f_seed0130",
+      "folderId": "f_seed0131",
       "termId": "t_seed0049",
       "startDate": "2026-12-03",
       "endDate": null
@@ -1243,7 +1252,7 @@
       "id": "e_seed0148",
       "name": "8/27",
       "weight": 1,
-      "folderId": "f_seed0146",
+      "folderId": "f_seed0147",
       "termId": "t_seed0049",
       "startDate": "2026-08-27",
       "endDate": null
@@ -1252,7 +1261,7 @@
       "id": "e_seed0149",
       "name": "9/3",
       "weight": 1,
-      "folderId": "f_seed0146",
+      "folderId": "f_seed0147",
       "termId": "t_seed0049",
       "startDate": "2026-09-03",
       "endDate": null
@@ -1261,7 +1270,7 @@
       "id": "e_seed0150",
       "name": "9/10",
       "weight": 1,
-      "folderId": "f_seed0146",
+      "folderId": "f_seed0147",
       "termId": "t_seed0049",
       "startDate": "2026-09-10",
       "endDate": null
@@ -1270,7 +1279,7 @@
       "id": "e_seed0151",
       "name": "9/17",
       "weight": 1,
-      "folderId": "f_seed0146",
+      "folderId": "f_seed0147",
       "termId": "t_seed0049",
       "startDate": "2026-09-17",
       "endDate": null
@@ -1279,7 +1288,7 @@
       "id": "e_seed0152",
       "name": "9/24",
       "weight": 1,
-      "folderId": "f_seed0146",
+      "folderId": "f_seed0147",
       "termId": "t_seed0049",
       "startDate": "2026-09-24",
       "endDate": null
@@ -1288,7 +1297,7 @@
       "id": "e_seed0153",
       "name": "10/1",
       "weight": 1,
-      "folderId": "f_seed0146",
+      "folderId": "f_seed0147",
       "termId": "t_seed0049",
       "startDate": "2026-10-01",
       "endDate": null
@@ -1297,7 +1306,7 @@
       "id": "e_seed0154",
       "name": "10/8",
       "weight": 1,
-      "folderId": "f_seed0146",
+      "folderId": "f_seed0147",
       "termId": "t_seed0049",
       "startDate": "2026-10-08",
       "endDate": null
@@ -1306,7 +1315,7 @@
       "id": "e_seed0155",
       "name": "10/15",
       "weight": 1,
-      "folderId": "f_seed0146",
+      "folderId": "f_seed0147",
       "termId": "t_seed0049",
       "startDate": "2026-10-15",
       "endDate": null
@@ -1315,7 +1324,7 @@
       "id": "e_seed0156",
       "name": "10/22",
       "weight": 1,
-      "folderId": "f_seed0146",
+      "folderId": "f_seed0147",
       "termId": "t_seed0049",
       "startDate": "2026-10-22",
       "endDate": null
@@ -1324,7 +1333,7 @@
       "id": "e_seed0157",
       "name": "10/29",
       "weight": 1,
-      "folderId": "f_seed0146",
+      "folderId": "f_seed0147",
       "termId": "t_seed0049",
       "startDate": "2026-10-29",
       "endDate": null
@@ -1333,7 +1342,7 @@
       "id": "e_seed0158",
       "name": "11/5",
       "weight": 1,
-      "folderId": "f_seed0146",
+      "folderId": "f_seed0147",
       "termId": "t_seed0049",
       "startDate": "2026-11-05",
       "endDate": null
@@ -1342,7 +1351,7 @@
       "id": "e_seed0159",
       "name": "11/12",
       "weight": 1,
-      "folderId": "f_seed0146",
+      "folderId": "f_seed0147",
       "termId": "t_seed0049",
       "startDate": "2026-11-12",
       "endDate": null
@@ -1351,7 +1360,7 @@
       "id": "e_seed0160",
       "name": "11/19",
       "weight": 1,
-      "folderId": "f_seed0146",
+      "folderId": "f_seed0147",
       "termId": "t_seed0049",
       "startDate": "2026-11-19",
       "endDate": null
@@ -1360,7 +1369,7 @@
       "id": "e_seed0161",
       "name": "12/3",
       "weight": 1,
-      "folderId": "f_seed0146",
+      "folderId": "f_seed0147",
       "termId": "t_seed0049",
       "startDate": "2026-12-03",
       "endDate": null
@@ -1369,7 +1378,7 @@
       "id": "e_seed0164",
       "name": "8/28",
       "weight": 1,
-      "folderId": "f_seed0162",
+      "folderId": "f_seed0163",
       "termId": "t_seed0049",
       "startDate": "2026-08-28",
       "endDate": null
@@ -1378,7 +1387,7 @@
       "id": "e_seed0165",
       "name": "9/4",
       "weight": 1,
-      "folderId": "f_seed0162",
+      "folderId": "f_seed0163",
       "termId": "t_seed0049",
       "startDate": "2026-09-04",
       "endDate": null
@@ -1387,7 +1396,7 @@
       "id": "e_seed0166",
       "name": "9/11",
       "weight": 1,
-      "folderId": "f_seed0162",
+      "folderId": "f_seed0163",
       "termId": "t_seed0049",
       "startDate": "2026-09-11",
       "endDate": null
@@ -1396,7 +1405,7 @@
       "id": "e_seed0167",
       "name": "9/18",
       "weight": 1,
-      "folderId": "f_seed0162",
+      "folderId": "f_seed0163",
       "termId": "t_seed0049",
       "startDate": "2026-09-18",
       "endDate": null
@@ -1405,7 +1414,7 @@
       "id": "e_seed0168",
       "name": "9/25",
       "weight": 1,
-      "folderId": "f_seed0162",
+      "folderId": "f_seed0163",
       "termId": "t_seed0049",
       "startDate": "2026-09-25",
       "endDate": null
@@ -1414,7 +1423,7 @@
       "id": "e_seed0169",
       "name": "10/2",
       "weight": 1,
-      "folderId": "f_seed0162",
+      "folderId": "f_seed0163",
       "termId": "t_seed0049",
       "startDate": "2026-10-02",
       "endDate": null
@@ -1423,7 +1432,7 @@
       "id": "e_seed0170",
       "name": "10/9",
       "weight": 1,
-      "folderId": "f_seed0162",
+      "folderId": "f_seed0163",
       "termId": "t_seed0049",
       "startDate": "2026-10-09",
       "endDate": null
@@ -1432,7 +1441,7 @@
       "id": "e_seed0171",
       "name": "10/16",
       "weight": 1,
-      "folderId": "f_seed0162",
+      "folderId": "f_seed0163",
       "termId": "t_seed0049",
       "startDate": "2026-10-16",
       "endDate": null
@@ -1441,7 +1450,7 @@
       "id": "e_seed0172",
       "name": "10/23",
       "weight": 1,
-      "folderId": "f_seed0162",
+      "folderId": "f_seed0163",
       "termId": "t_seed0049",
       "startDate": "2026-10-23",
       "endDate": null
@@ -1450,7 +1459,7 @@
       "id": "e_seed0173",
       "name": "10/30",
       "weight": 1,
-      "folderId": "f_seed0162",
+      "folderId": "f_seed0163",
       "termId": "t_seed0049",
       "startDate": "2026-10-30",
       "endDate": null
@@ -1459,7 +1468,7 @@
       "id": "e_seed0174",
       "name": "11/6",
       "weight": 1,
-      "folderId": "f_seed0162",
+      "folderId": "f_seed0163",
       "termId": "t_seed0049",
       "startDate": "2026-11-06",
       "endDate": null
@@ -1468,7 +1477,7 @@
       "id": "e_seed0175",
       "name": "11/13",
       "weight": 1,
-      "folderId": "f_seed0162",
+      "folderId": "f_seed0163",
       "termId": "t_seed0049",
       "startDate": "2026-11-13",
       "endDate": null
@@ -1477,7 +1486,7 @@
       "id": "e_seed0176",
       "name": "11/20",
       "weight": 1,
-      "folderId": "f_seed0162",
+      "folderId": "f_seed0163",
       "termId": "t_seed0049",
       "startDate": "2026-11-20",
       "endDate": null
@@ -1486,7 +1495,7 @@
       "id": "e_seed0177",
       "name": "12/4",
       "weight": 1,
-      "folderId": "f_seed0162",
+      "folderId": "f_seed0163",
       "termId": "t_seed0049",
       "startDate": "2026-12-04",
       "endDate": null

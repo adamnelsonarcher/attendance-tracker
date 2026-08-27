@@ -1,4 +1,13 @@
-import { buildColumns, computeScores, filterPeople, matchNames, sortPeople, buildMembership } from '../selectors';
+import {
+  buildApplicability,
+  buildColumns,
+  buildMembership,
+  computeScores,
+  filterPeople,
+  matchNames,
+  sortPeople,
+  withSessionsInView,
+} from '../selectors';
 import { DEFAULT_STATUSES, emptyTable } from '../model';
 
 function tableWith(overrides) {
@@ -263,5 +272,101 @@ describe('matchNames', () => {
       { id: 'p2', name: 'Charles Van Meter', aliases: [] },
     ];
     expect(matchNames(['Liv'], two).matched.map((p) => p.id)).toEqual(['p1']);
+  });
+});
+
+describe('who a session is for', () => {
+  /** Two weekly cohorts and one event open to everybody. */
+  function programme() {
+    const table = tableWith({
+      people: [
+        { id: 'p1', name: 'Monday Student', aliases: [] },
+        { id: 'p2', name: 'Tuesday Student', aliases: [] },
+      ],
+      groups: [
+        { id: 'gMon', name: 'Monday 2pm', color: '#000000', memberIds: ['p1'] },
+        { id: 'gTue', name: 'Tuesday 10am', color: '#111111', memberIds: ['p2'] },
+      ],
+      folders: [
+        { id: 'fMon', name: 'Monday 2pm', isOpen: true, groupId: 'gMon' },
+        { id: 'fTue', name: 'Tuesday 10am', isOpen: true, groupId: 'gTue' },
+        { id: 'fEvents', name: 'Community events', isOpen: true, groupId: null },
+      ],
+      events: [
+        { id: 'mon1', name: '8/24', weight: 1, folderId: 'fMon', termId: null, startDate: '2026-08-24', endDate: null },
+        { id: 'tue1', name: '8/25', weight: 1, folderId: 'fTue', termId: null, startDate: '2026-08-25', endDate: null },
+        { id: 'tail', name: 'Tailgate', weight: 1, folderId: 'fEvents', termId: null, startDate: '2026-09-12', endDate: null },
+      ],
+    });
+    return table;
+  }
+
+  it('gives a session only to its cohort', () => {
+    const table = programme();
+    const applies = buildApplicability(table);
+
+    expect(applies('p1', table.events[0])).toBe(true);
+    expect(applies('p2', table.events[0])).toBe(false);
+    expect(applies('p1', table.events[1])).toBe(false);
+  });
+
+  it('gives an uncohorted folder to everyone', () => {
+    const table = programme();
+    const applies = buildApplicability(table);
+
+    // A tailgate is open to the whole programme.
+    expect(applies('p1', table.events[2])).toBe(true);
+    expect(applies('p2', table.events[2])).toBe(true);
+  });
+
+  it('treats every session as everyone-s when no folder names a cohort', () => {
+    const table = programme();
+    const open = { ...table, folders: table.folders.map((f) => ({ ...f, groupId: null })) };
+    const applies = buildApplicability(open);
+
+    for (const event of open.events) {
+      expect(applies('p1', event)).toBe(true);
+      expect(applies('p2', event)).toBe(true);
+    }
+  });
+
+  it('scores a student on their own sessions only', () => {
+    const table = { ...programme(), settings: { ...programme().settings, countUnmarkedAsAbsent: true } };
+    const scores = computeScores(table);
+
+    // One weekly session plus the open event — not the other cohort's.
+    expect(scores.get('p1').counted).toBe(2);
+    expect(scores.get('p2').counted).toBe(2);
+  });
+
+  it('does not count a mark on a session that is not the person-s', () => {
+    // A stray mark left by an import or an earlier cohort must not move a score.
+    const table = programme();
+    const stray = { ...table, attendance: { 'p2-mon1': 'present' } };
+
+    expect(computeScores(stray).get('p2').counted).toBe(0);
+  });
+
+  it('narrows the roster to the cohort when the columns are narrowed', () => {
+    const table = programme();
+    const applies = buildApplicability(table);
+    const { columns } = buildColumns(table, { fMon: 1 });
+
+    const shown = withSessionsInView(table.people, columns, applies);
+    expect(shown.map((person) => person.id)).toEqual(['p1']);
+  });
+
+  it('keeps everyone when an open folder is the one in view', () => {
+    const table = programme();
+    const applies = buildApplicability(table);
+    const { columns } = buildColumns(table, { fEvents: 1 });
+
+    expect(withSessionsInView(table.people, columns, applies)).toHaveLength(2);
+  });
+
+  it('leaves the roster alone when there are no columns to judge by', () => {
+    const table = programme();
+    const applies = buildApplicability(table);
+    expect(withSessionsInView(table.people, [], applies)).toHaveLength(2);
   });
 });

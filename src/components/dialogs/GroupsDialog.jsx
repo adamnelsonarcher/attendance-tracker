@@ -15,13 +15,23 @@ function nextColor(groups) {
  * copy on each person and the two drifted, which is why some people's colour
  * bars and filters disagreed with the group editor.
  */
-function GroupsDialog({ groups, people, dispatch, onClose }) {
+function GroupsDialog({ groups, people, folders = [], dispatch, onClose }) {
   const [draft, setDraft] = useState(() => groups.map((group) => ({ ...group, memberIds: [...group.memberIds] })));
   const [selectedId, setSelectedId] = useState(groups[0]?.id || null);
   const [search, setSearch] = useState('');
   const [newName, setNewName] = useState('');
 
   const selected = draft.find((group) => group.id === selectedId) || null;
+
+  // Which groups a folder of sessions points at. Deleting one of these does not
+  // just remove a filter — it opens that whole series up to everybody.
+  const cohortNames = useMemo(() => {
+    const map = new Map();
+    for (const folder of folders) {
+      if (folder.groupId) map.set(folder.groupId, folder.name);
+    }
+    return map;
+  }, [folders]);
 
   const visiblePeople = useMemo(() => {
     const query = search.trim().toLowerCase();
@@ -57,7 +67,7 @@ function GroupsDialog({ groups, people, dispatch, onClose }) {
   return (
     <Modal
       title="Groups"
-      description="Groups colour-code the name column and drive the row filters."
+      description="A group marked “sessions” decides who attends that series. The rest are labels — a role, a status, a year."
       size="large"
       dismissOnOverlay={false}
       onClose={onClose}
@@ -112,6 +122,11 @@ function GroupsDialog({ groups, people, dispatch, onClose }) {
                   onChange={(event) => updateGroup(group.id, { name: event.target.value })}
                   aria-label="Group name"
                 />
+                {cohortNames.has(group.id) && (
+                  <span className="group-row__badge" title={`Attends ${cohortNames.get(group.id)}`}>
+                    sessions
+                  </span>
+                )}
                 <span className="group-row__count">{group.memberIds.length}</span>
                 <button
                   type="button"

@@ -4,6 +4,7 @@ import FilterMenu from '../Table/FilterMenu';
 import TableSwitcher from './TableSwitcher';
 import TermSwitcher from './TermSwitcher';
 import AddMenu from './AddMenu';
+import ViewMenu from './ViewMenu';
 import SyncBadge from './SyncBadge';
 import { ALL_TERMS } from '../../data/selectors';
 
@@ -24,9 +25,7 @@ function TopBar({
 }) {
   const [anchor, setAnchor] = useState(null);
 
-  const activeFilters =
-    Object.values(filters.groups).filter(Boolean).length +
-    Object.values(filters.folders).filter(Boolean).length;
+  const activeFilters = Object.values(filters.groups).filter(Boolean).length;
 
   const open = (menu) => (domEvent) => {
     const rect = domEvent.currentTarget.getBoundingClientRect();
@@ -36,6 +35,14 @@ function TopBar({
 
   const activeTerm = table.terms.find((term) => term.id === activeTermId);
   const termLabel = activeTermId === ALL_TERMS || !activeTerm ? 'All terms' : activeTerm.name;
+
+  const shown = Object.entries(filters.folders).filter(([, state]) => state === 1);
+  const viewLabel =
+    shown.length === 0
+      ? 'Everything'
+      : shown.length === 1
+        ? table.folders.find((folder) => folder.id === shown[0][0])?.name || 'Everything'
+        : `${shown.length} sessions`;
 
   return (
     <header className="top-bar">
@@ -51,6 +58,17 @@ function TopBar({
             at all, and which ones the scores are computed from. */}
         <button type="button" className="btn" onClick={open('terms')}>
           {termLabel}
+          <span className="table-name__caret">▾</span>
+        </button>
+
+        {/* The daily control: which session's register is on screen. */}
+        <button
+          type="button"
+          className={`btn${shown.length > 0 ? ' btn--active' : ''}`}
+          onClick={open('view')}
+          title="Which sessions the grid is showing"
+        >
+          {viewLabel}
           <span className="table-name__caret">▾</span>
         </button>
 
@@ -118,6 +136,17 @@ function TopBar({
           onSelect={onTermChange}
           dispatch={dispatch}
           readOnly={viewOnly}
+          onClose={close}
+        />
+      )}
+
+      {anchor?.menu === 'view' && (
+        <ViewMenu
+          x={anchor.x}
+          y={anchor.y}
+          folders={table.folders}
+          filters={filters}
+          onChange={onFiltersChange}
           onClose={close}
         />
       )}

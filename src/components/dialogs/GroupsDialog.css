@@ -105,3 +105,15 @@
 .member-row.is-selected {
   background: var(--accent-soft);
 }
+
+.group-row__badge {
+  flex: none;
+  padding: 1px 6px;
+  border-radius: 8px;
+  background: var(--accent-soft);
+  color: var(--accent-hover);
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}

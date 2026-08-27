@@ -69,3 +69,7 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+
+.filter-menu__toggle {
+  padding: var(--space-2);
+}

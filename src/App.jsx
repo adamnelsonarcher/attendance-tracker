@@ -116,6 +116,7 @@ function App() {
         <GroupsDialog
           groups={table.groups}
           people={table.people}
+          folders={table.folders}
           dispatch={dispatch}
           onClose={close}
         />

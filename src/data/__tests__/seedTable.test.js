@@ -1,6 +1,6 @@
 import seed from '../../../public/cir-fall-2026.json';
 import { cellKey, currentTerm, normalizeTable } from '../model';
-import { buildColumns, computeScores, eventsInTerm, matchNames } from '../selectors';
+import { buildApplicability, buildColumns, computeScores, eventsInTerm, matchNames } from '../selectors';
 import { toSlices } from '../../sync/slices';
 import { tableFromRemote } from '../../sync/remoteTable';
 
@@ -131,8 +131,13 @@ describe('the CIR starter table', () => {
   });
 
   it('can be marked and scored', () => {
-    const person = table.people[0];
-    const event = table.events.find((e) => e.folderId === table.folders[0].id);
+    // Pick someone who actually attends the session being marked.
+    const folder = table.folders.find(
+      (f) => f.groupId && table.groups.find((g) => g.id === f.groupId).memberIds.length > 0
+    );
+    const cohort = table.groups.find((g) => g.id === folder.groupId);
+    const person = table.people.find((p) => p.id === cohort.memberIds[0]);
+    const event = table.events.find((e) => e.folderId === folder.id);
     const marked = { ...table, attendance: { [cellKey(person.id, event.id)]: 'present' } };
 
     expect(computeScores(marked, eventsInTerm(marked, event.termId)).get(person.id)).toMatchObject({
@@ -140,6 +145,50 @@ describe('the CIR starter table', () => {
       present: 1,
       counted: 1,
     });
+  });
+
+  it('gives every weekly session a cohort, and leaves events open to all', () => {
+    for (const folder of table.folders) {
+      if (folder.name === 'Community events') expect(folder.groupId).toBeNull();
+      else expect(folder.groupId).not.toBeNull();
+    }
+  });
+
+  it('shows a student only the sessions they attend', () => {
+    // The whole point: 48 students x 112 weekly columns is 5,376 cells, of
+    // which fewer than 700 mean anything.
+    const applies = buildApplicability(table);
+    const weekly = table.events.filter(
+      (event) => table.folders.find((f) => f.id === event.folderId)?.groupId
+    );
+
+    let relevant = 0;
+    for (const person of table.people) {
+      for (const event of weekly) if (applies(person.id, event)) relevant += 1;
+    }
+
+    expect(relevant).toBeGreaterThan(0);
+    expect(relevant).toBeLessThan(table.people.length * weekly.length * 0.25);
+  });
+
+  it('scores a student against their own sessions, not everyone-s', () => {
+    // With unmarked cells counting, a student must not be measured against
+    // seven other cohorts' sessions.
+    const counting = { ...table, settings: { ...table.settings, countUnmarkedAsAbsent: true } };
+    const folder = table.folders.find(
+      (f) => f.groupId && table.groups.find((g) => g.id === f.groupId).memberIds.length > 0
+    );
+    const cohort = table.groups.find((g) => g.id === folder.groupId);
+    const person = table.people.find((p) => p.id === cohort.memberIds[0]);
+
+    const sessions = table.events.filter((event) => event.folderId === folder.id).length;
+    const openEvents = table.events.filter(
+      (event) => !table.folders.find((f) => f.id === event.folderId)?.groupId
+    ).length;
+
+    const score = computeScores(counting, eventsInTerm(counting, table.terms[0].id)).get(person.id);
+    expect(score.counted).toBe(sessions + openEvents);
+    expect(score.counted).toBeLessThan(table.events.length);
   });
 
   it('uploads and comes back unchanged', () => {

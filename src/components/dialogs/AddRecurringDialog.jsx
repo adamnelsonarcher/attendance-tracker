@@ -24,6 +24,7 @@ function AddRecurringDialog({ table, dispatch, activeTermId, onClose }) {
     weight: '1',
     folderId: NEW_FOLDER,
     newFolderName: '',
+    folderGroupId: '',
     termId: activeTermId === ALL_TERMS ? activeTerm?.id || '' : activeTermId || '',
   }));
 
@@ -56,6 +57,7 @@ function AddRecurringDialog({ table, dispatch, activeTermId, onClose }) {
       weight: form.weight,
       folderId: creatingFolder ? null : form.folderId || null,
       newFolderName: creatingFolder ? folderName : null,
+      folderGroupId: creatingFolder ? form.folderGroupId || null : null,
       termId: form.termId || null,
     });
     onClose();
@@ -171,6 +173,32 @@ function AddRecurringDialog({ table, dispatch, activeTermId, onClose }) {
             </label>
           )}
         </div>
+
+        {creatingFolder && (
+          <label className="field">
+            <span>Who attends</span>
+            <select
+              className="select"
+              value={form.folderGroupId}
+              onChange={(event) => set({ folderGroupId: event.target.value })}
+            >
+              <option value="">Everyone</option>
+              {table.groups.map((group) => (
+                <option key={group.id} value={group.id}>
+                  {group.name} ({group.memberIds.length})
+                </option>
+              ))}
+            </select>
+          </label>
+        )}
+
+        {creatingFolder && (
+          <p className="hint">
+            Naming a group here keeps the grid readable: only those people get a cell under these
+            sessions, and only they are scored on them. Leave it as Everyone for a one-off open to
+            the whole programme.
+          </p>
+        )}
 
         {dates.length > 0 ? (
           <p className="hint">

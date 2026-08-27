@@ -27,6 +27,7 @@ export function computeScores(table, scopedEvents) {
   const { people, attendance, settings } = table;
   const events = scopedEvents || table.events;
   const statusById = new Map(settings.statuses.map((s) => [s.id, s]));
+  const applies = buildApplicability(table);
   const scores = new Map();
 
   for (const person of people) {
@@ -37,6 +38,11 @@ export function computeScores(table, scopedEvents) {
     let weightTotal = 0;
 
     for (const event of events) {
+      // A session that is not this person's does not count for or against them.
+      // Without this, someone in one weekly cohort is measured against every
+      // other cohort's sessions too.
+      if (!applies(person.id, event)) continue;
+
       const statusId = attendance[cellKey(person.id, event.id)];
       let credit;
 
@@ -77,6 +83,35 @@ export function formatScore(value) {
 export function formatCount(score) {
   if (!score || score.counted === 0) return '—';
   return `${score.present}/${score.counted}`;
+}
+
+/* -------------------------------------------------------------------------- */
+/* who a session is for                                                       */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * `(personId, event) => boolean` — whether this session is one that person
+ * attends at all.
+ *
+ * A folder can name a cohort: "Monday 2pm" is a series only the Monday 2pm
+ * students ever attend. A folder with no cohort is open to everyone, which is
+ * what community events are. This is the difference between a grid where every
+ * student has a cell under every session and one that looks like the register
+ * it replaces.
+ */
+export function buildApplicability(table) {
+  const cohortByFolder = new Map(
+    table.folders.filter((folder) => folder.groupId).map((folder) => [folder.id, folder.groupId])
+  );
+  if (cohortByFolder.size === 0) return () => true;
+
+  const membersByGroup = new Map(table.groups.map((group) => [group.id, new Set(group.memberIds)]));
+
+  return (personId, event) => {
+    const groupId = event.folderId ? cohortByFolder.get(event.folderId) : null;
+    if (!groupId) return true;
+    return membersByGroup.get(groupId)?.has(personId) ?? false;
+  };
 }
 
 /* -------------------------------------------------------------------------- */
@@ -214,6 +249,19 @@ export function filterPeople(people, membership, groupFilters) {
     if (includes.size > 0 && !groups.some((g) => includes.has(g.id))) return false;
     return true;
   });
+}
+
+/**
+ * Drops people with no applicable session among the visible columns.
+ *
+ * This is what makes picking a session enough on its own: narrow the columns to
+ * "Monday 2pm" and the roster becomes the Monday 2pm students, with no second
+ * control to remember.
+ */
+export function withSessionsInView(people, columns, applies) {
+  const events = columns.filter((column) => column.kind === 'event').map((column) => column.event);
+  if (events.length === 0) return people;
+  return people.filter((person) => events.some((event) => applies(person.id, event)));
 }
 
 const firstName = (name) => name.trim().split(/\s+/)[0] || '';

@@ -6,13 +6,21 @@ const SYMBOL = { 0: '', 1: '+', '-1': '−' };
 const TITLE = { 0: 'Not filtered', 1: 'Only these', '-1': 'Hide these' };
 
 /**
- * Tri-state filters: neutral → only these → hide these. Groups filter rows,
- * folders filter columns.
+ * Which people are shown. Tri-state: neutral → only these → hide these.
+ *
+ * Columns are the view picker's job. Listing the folders here as well meant the
+ * same eight session names appeared twice in one menu, doing two different
+ * things, which is not a distinction worth asking anyone to hold.
  */
 function FilterMenu({ x, y, groups, folders, filters, onChange, onClose }) {
-  const activeCount =
-    Object.values(filters.groups).filter(Boolean).length +
-    Object.values(filters.folders).filter(Boolean).length;
+  // A group a folder points at is a session cohort — it says which sessions
+  // apply to someone. Every other group is a label: a role, a status, a cohort
+  // year. They filter the same way, but they answer different questions, and
+  // showing them in one undifferentiated list is what made "group" ambiguous.
+  const cohortIds = new Set(folders.map((folder) => folder.groupId).filter(Boolean));
+  const sessionGroups = groups.filter((group) => cohortIds.has(group.id));
+  const labelGroups = groups.filter((group) => !cohortIds.has(group.id));
+  const activeCount = Object.values(filters.groups).filter(Boolean).length;
 
   const cycle = (kind, id) => {
     const current = filters[kind][id] || 0;
@@ -50,29 +58,50 @@ function FilterMenu({ x, y, groups, folders, filters, onChange, onClose }) {
           type="button"
           className="btn btn--ghost btn--small"
           disabled={activeCount === 0}
-          onClick={() => onChange({ groups: {}, folders: {} })}
+          onClick={() => onChange({ ...filters, groups: {} })}
         >
           Clear
         </button>
       </div>
 
-      {groups.length > 0 && (
+      {labelGroups.length > 0 && (
         <>
-          <div className="menu-label">People in group</div>
-          {groups.map((group) => renderRow('groups', group, group.color))}
+          <div className="menu-label">Labels</div>
+          {labelGroups.map((group) => renderRow('groups', group, group.color))}
         </>
       )}
 
-      {folders.length > 0 && (
+      {sessionGroups.length > 0 && (
         <>
           <div className="menu-divider" />
-          <div className="menu-label">Event folders</div>
-          {folders.map((folder) => renderRow('folders', folder, null))}
+          <div className="menu-label">Session groups</div>
+          {sessionGroups.map((group) => renderRow('groups', group, group.color))}
         </>
       )}
 
-      {groups.length === 0 && folders.length === 0 && (
-        <p className="hint filter-menu__empty">Create a group or an event folder to filter by it.</p>
+      {groups.length > 0 && (
+        <>
+          <div className="menu-divider" />
+          <label className="checkbox-row filter-menu__toggle">
+            <input
+              type="checkbox"
+              checked={filters.onlyRelevantPeople !== false}
+              onChange={(event) =>
+                onChange({ ...filters, onlyRelevantPeople: event.target.checked })
+              }
+            />
+            <span>
+              <span className="checkbox-row__label">Hide people with nothing in view</span>
+              <span className="checkbox-row__hint">
+                So narrowing to one session shows only that session&rsquo;s students.
+              </span>
+            </span>
+          </label>
+        </>
+      )}
+
+      {groups.length === 0 && (
+        <p className="hint filter-menu__empty">Create a group to filter the roster by it.</p>
       )}
     </Popover>
   );

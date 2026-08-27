@@ -127,8 +127,9 @@ export function demoTable() {
   // first time someone opens the app.
   table.terms = [{ id: 't_fall25', name: 'Fall 2025', startDate: '2025-08-01', endDate: '2025-12-31' }];
   table.folders = [
-    { id: 'f_general', name: 'General Meetings', isOpen: true },
-    { id: 'f_service', name: 'Service Events', isOpen: true },
+    // Both open to everyone in the demo; a real weekly session names its cohort.
+    { id: 'f_general', name: 'General Meetings', isOpen: true, groupId: null },
+    { id: 'f_service', name: 'Service Events', isOpen: true, groupId: null },
   ];
   table.events = [
     { id: 'e1', name: 'Kickoff', weight: 1, termId: 't_fall25', folderId: 'f_general', startDate: '2025-09-03', endDate: null },
@@ -197,12 +198,17 @@ export function normalizeTable(raw) {
       memberIds: asArray(g.memberIds).map(String),
     }));
 
+  const groupIds = new Set(groups.map((g) => g.id));
   const folders = asArray(source.folders)
     .filter((f) => isObject(f) && f.id != null)
     .map((f) => ({
       id: String(f.id),
       name: typeof f.name === 'string' ? f.name : 'Folder',
       isOpen: f.isOpen !== false,
+      // The cohort this series of sessions is for. Null means everyone — a
+      // tailgate, a workshop. Set, it means only these people ever attend, so
+      // nobody else gets a cell or has it counted against them.
+      groupId: f.groupId != null && groupIds.has(String(f.groupId)) ? String(f.groupId) : null,
     }));
 
   const terms = asArray(source.terms)

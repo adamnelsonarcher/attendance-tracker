@@ -205,9 +205,22 @@ export function tableReducer(state, action) {
     /* --------------------------------------------------------------- folders */
 
     case 'folders/add': {
-      const folder = { id: newId('f'), name: action.name, isOpen: true };
+      const folder = { id: newId('f'), name: action.name, isOpen: true, groupId: action.groupId || null };
       return {
         table: { ...table, folders: [...table.folders, folder] },
+        outbox: mark(outbox, 'schedule'),
+      };
+    }
+
+    /** Points a series of sessions at the cohort that attends it, or at nobody. */
+    case 'folders/setGroup': {
+      return {
+        table: {
+          ...table,
+          folders: table.folders.map((f) =>
+            f.id === action.id ? { ...f, groupId: action.groupId || null } : f
+          ),
+        },
         outbox: mark(outbox, 'schedule'),
       };
     }
@@ -255,7 +268,12 @@ export function tableReducer(state, action) {
       let folderId = action.folderId || null;
 
       if (action.newFolderName) {
-        const folder = { id: newId('f'), name: action.newFolderName, isOpen: true };
+        const folder = {
+          id: newId('f'),
+          name: action.newFolderName,
+          isOpen: true,
+          groupId: action.folderGroupId || null,
+        };
         folders = [...folders, folder];
         folderId = folder.id;
       }
@@ -287,7 +305,12 @@ export function tableReducer(state, action) {
       let folderId = action.folderId || null;
 
       if (action.newFolderName) {
-        const folder = { id: newId('f'), name: action.newFolderName, isOpen: true };
+        const folder = {
+          id: newId('f'),
+          name: action.newFolderName,
+          isOpen: true,
+          groupId: action.folderGroupId || null,
+        };
         folders = [...folders, folder];
         folderId = folder.id;
       }

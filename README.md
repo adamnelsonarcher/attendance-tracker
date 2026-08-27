@@ -31,7 +31,7 @@ A table is five flat collections plus settings:
 | --- | --- |
 | `people` | `{ id, name, aliases[] }` |
 | `groups` | `{ id, name, color, memberIds[] }` |
-| `folders` | `{ id, name, isOpen }` |
+| `folders` | `{ id, name, isOpen, groupId }` |
 | `terms` | `{ id, name, startDate, endDate }` |
 | `events` | `{ id, name, weight, folderId, termId, startDate, endDate }` |
 | `attendance` | `{ "personId-eventId": statusId }` |
@@ -50,6 +50,30 @@ sort and is deliberately never sent.
 `normalizeTable` in [`src/data/model.js`](src/data/model.js) accepts any older
 shape — including tables written by the pre-0.9 versions — and upgrades it. It
 never throws; anything unrecognisable is dropped.
+
+### Who a session is for
+
+A folder of sessions can name a cohort — `folder.groupId`. "Monday 2pm" is a
+series only the Monday 2pm students ever attend, so only they get a cell under
+those dates and only they are scored on them. A folder with no cohort is open to
+everyone, which is what community events are.
+
+Without this the grid is a cross-product: 48 students against 112 weekly
+sessions is 5,376 cells, of which about 690 mean anything. The other 87% invite
+marking the wrong row, and make "count unmarked as missed" score the whole
+roster at around 11%.
+
+The **view picker** in the top bar is the daily control. Choosing "Tuesday
+10am" narrows the columns to that series and, because people with no applicable
+session in view are hidden, the roster to those students — the register as it
+appeared in the spreadsheet. "All weekly sessions" hides the one-off events;
+picking an event folder shows the whole programme against it.
+
+The **filter** is a separate question: which people, by label. Groups a folder
+points at are session cohorts and are marked as such; every other group is a
+label — a role, a status, a year — and they filter independently. Filtering to
+one cohort while viewing the events folder answers "which of my Tuesday
+students came to the tailgates".
 
 ### Terms
 

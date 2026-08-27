@@ -263,20 +263,24 @@ def weekly(weekday):
 
 folders, groups, events = [], [], []
 for label, weekday in SHIFTS:
-    folder = {'id': nid('f'), 'name': label, 'isOpen': True}
-    folders.append(folder)
-
     seen_ids = []
     for n in assign_by_shift.get(label, []):
         if n in by_name and by_name[n]['id'] not in seen_ids:
             seen_ids.append(by_name[n]['id'])
-    members = seen_ids
-    groups.append({
+
+    group = {
         'id': nid('g'),
         'name': label,
         'color': ['#5b8def', '#e8955a', '#3fae7d', '#b06ad8', '#d95b6b', '#3ca6b8', '#c9a227', '#7a8290'][len(groups) % 8],
-        'memberIds': members,
-    })
+        'memberIds': seen_ids,
+    }
+    groups.append(group)
+
+    # The series belongs to its cohort. Only these students get a cell under
+    # these dates, and only they are scored on them — which is how the block
+    # read in the spreadsheet this replaces.
+    folder = {'id': nid('f'), 'name': label, 'isOpen': True, 'groupId': group['id']}
+    folders.append(folder)
 
     for date in weekly(weekday):
         m, d = date.split('-')[1:]
@@ -304,7 +308,8 @@ if unplaced:
 
 # ------------------------------------------------------------ community events
 # The recurring fixtures from the events workbook, so staff recognise the shape.
-EVENT_FOLDER = {'id': nid('f'), 'name': 'Community events', 'isOpen': True}
+# No cohort: anyone in the programme can turn up to a tailgate.
+EVENT_FOLDER = {'id': nid('f'), 'name': 'Community events', 'isOpen': True, 'groupId': None}
 folders.append(EVENT_FOLDER)
 
 # Read from the FY26 workbook's own Fall 26 tab rather than guessed at, so
@@ -363,5 +368,6 @@ print(f'groups   {len(groups)} (assigned: {sum(len(g["memberIds"]) for g in grou
 print(f'folders  {len(folders)}')
 print(f'events   {len(events)}')
 for g in groups:
-    print(f'  {g["name"]:<16} {len(g["memberIds"])} members')
+    linked = next((f['name'] for f in folders if f.get('groupId') == g['id']), '-')
+    print(f'  {g["name"]:<16} {len(g["memberIds"]):>2} members   sessions: {linked}')
 print('wrote', out)

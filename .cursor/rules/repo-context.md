@@ -9,7 +9,7 @@ A table is five flat collections plus settings. Nothing nests.
 ```
 people      { id, name, aliases[] }
 groups      { id, name, color, memberIds[] }
-folders     { id, name, isOpen }
+folders     { id, name, isOpen, groupId }
 terms       { id, name, startDate, endDate }
 events      { id, name, weight, folderId, termId, startDate, endDate }
 attendance  { "personId-eventId": statusId }
@@ -28,6 +28,14 @@ settings    { name, statuses[], countUnmarkedAsAbsent, showTitle, colorCells,
 - **IDs are opaque.** Generate with `newId(prefix)`. Never parse or coerce one.
 - **Dates are `YYYY-MM-DD` strings**, parsed at noon UTC via `parseDate` so a day
   never slips backwards west of UTC.
+- **A folder can name the cohort that attends it** (`folder.groupId`). Anything
+  that renders a cell, computes a score, or counts a denominator must go through
+  `buildApplicability(table)` first — a session that is not a person's is not
+  theirs to mark and must not count either way. A folder with no `groupId` is
+  open to everyone.
+- **The view picker owns columns; the filter owns rows.** Do not reintroduce
+  folder filters into the filter menu — the same names appearing twice in one
+  menu doing two different things is what that split fixed.
 - **A term is a lens, not a copy.** Events carry `termId`; the selected term is
   per-viewer state in `App`, never stored. Scores are always computed from the
   events of the term on screen (`eventsInTerm`), never from `table.events`.
