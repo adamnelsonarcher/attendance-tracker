@@ -29,10 +29,11 @@ A table is five flat collections plus settings:
 
 | Collection | Shape |
 | --- | --- |
-| `people` | `{ id, name }` |
+| `people` | `{ id, name, aliases[] }` |
 | `groups` | `{ id, name, color, memberIds[] }` |
 | `folders` | `{ id, name, isOpen }` |
-| `events` | `{ id, name, weight, folderId, startDate, endDate }` |
+| `terms` | `{ id, name, startDate, endDate }` |
+| `events` | `{ id, name, weight, folderId, termId, startDate, endDate }` |
 | `attendance` | `{ "personId-eventId": statusId }` |
 | `settings` | name, statuses, scoring and display options |
 
@@ -49,6 +50,56 @@ sort and is deliberately never sent.
 `normalizeTable` in [`src/data/model.js`](src/data/model.js) accepts any older
 shape — including tables written by the pre-0.9 versions — and upgrades it. It
 never throws; anything unrecognisable is dropped.
+
+### Terms
+
+A term is a semester. Events are stamped with the one they belong to, and the
+term picker in the top bar decides which sessions the grid shows and which ones
+the scores are computed from. The table itself is continuous — one roster, one
+history — so a student can be followed across years, and nobody retypes the
+roster in August.
+
+Whether a folder is collapsed, which filters are on, how the grid is sorted and
+which term is selected are all per-viewer. Everything else about a table is
+shared.
+
+### Bringing a spreadsheet across
+
+**Add → Import a spreadsheet** takes a block copied straight out of Excel: the
+row of dates, then a row per person. It reads several stacked blocks at once,
+ignores the `score` and `times present` columns, and turns each block into a
+folder of sessions plus a group of the people in it.
+
+Marks are *detected, not assumed*. The mark vocabulary in these sheets changed
+three times — `1`/`x`, then `✓`/`✕`/`V`, then emoji — and one legend defines the
+same symbol twice, so every distinct symbol is listed with its count and a
+suggested meaning for someone to confirm. Nothing is written until the preview
+is accepted.
+
+Re-importing is safe. People are matched by name and by alias, folders and
+groups of the same name are reused, and a session already recorded on the same
+date is not duplicated. The term is chosen from the pasted dates rather than
+from whatever is on screen, so importing last year's sheet does not file it
+under this year.
+
+**Add → Weekly session** builds a term of one weekday in a single step, which is
+the shape of every check-in block in those sheets — and removes the class of
+error where a hand-typed column picks up a date from the wrong semester.
+
+### Names
+
+The same student appears as `Matt Hwang` and `Matt Huang`, `Liv` and
+`Olivia Frank`, `Charles LT` and `Charles Levy-Thiebaut`. Each person carries a
+list of aliases, matched whenever a name is looked up — pasted sign-in sheets,
+bulk marking, imports. Right-click a name for **Also known as**, or **Merge
+with…** to fold a duplicate row in: its marks fill the gaps in the kept row, its
+groups carry over, and its name becomes an alias.
+
+### Getting data out
+
+Settings → Data exports the visible grid as CSV, or the whole table — every
+term, every mark — as JSON, which can be restored later. The table is never the
+only copy.
 
 ### State
 

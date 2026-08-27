@@ -12,7 +12,7 @@ function seed() {
     { id: 'e1', name: 'One', weight: 1, folderId: 'f1', startDate: null, endDate: null },
     { id: 'e2', name: 'Two', weight: 1, folderId: null, startDate: null, endDate: null },
   ];
-  table.attendance = { 'p1-e1': 'present', 'p2-e1': 'absent', 'p1-e2': 'late' };
+  table.attendance = { 'p1-e1': 'present', 'p2-e1': 'absent', 'p1-e2': 'virtual' };
   table.groups = [{ id: 'g1', name: 'Exec', color: '#000000', memberIds: ['p1', 'p2'] }];
   return initialState(table);
 }
@@ -35,7 +35,7 @@ describe('removing things', () => {
 
   it('clears an event out of attendance too', () => {
     const next = run(seed(), { type: 'events/remove', id: 'e1' });
-    expect(next.table.attendance).toEqual({ 'p1-e2': 'late' });
+    expect(next.table.attendance).toEqual({ 'p1-e2': 'virtual' });
   });
 
   it('releases a deleted folder-s events instead of deleting them', () => {
@@ -74,14 +74,14 @@ describe('attendance', () => {
 
   it('clears a whole column for the rows it was given', () => {
     const next = run(seed(), { type: 'attendance/clearColumn', eventId: 'e1', personIds: ['p1', 'p2'] });
-    expect(next.table.attendance).toEqual({ 'p1-e2': 'late' });
+    expect(next.table.attendance).toEqual({ 'p1-e2': 'virtual' });
   });
 });
 
 describe('statuses', () => {
   it('unmarks cells whose status was deleted', () => {
     const state = seed();
-    const remaining = state.table.settings.statuses.filter((status) => status.id !== 'late');
+    const remaining = state.table.settings.statuses.filter((status) => status.id !== 'virtual');
     const next = run(state, { type: 'settings/setStatuses', statuses: remaining });
 
     expect('p1-e2' in next.table.attendance).toBe(false);
@@ -107,7 +107,7 @@ describe('sync bookkeeping', () => {
 
     expect(next.table.attendance['p2-e2']).toBe('present');
     expect('p1-e1' in next.table.attendance).toBe(false);
-    expect(next.table.attendance['p1-e2']).toBe('late');
+    expect(next.table.attendance['p1-e2']).toBe('virtual');
   });
 
   it('does not queue a remote merge for sending back', () => {
@@ -282,11 +282,11 @@ describe('remote payloads are untrusted', () => {
     const next = run(seed(), {
       type: 'remote/merge',
       slice: 'attendance',
-      data: { 'p1-e1': { nested: true }, 'p2-e1': 'late' },
+      data: { 'p1-e1': { nested: true }, 'p2-e1': 'virtual' },
     });
 
     expect(next.table.attendance['p1-e1']).toBe('present');
-    expect(next.table.attendance['p2-e1']).toBe('late');
+    expect(next.table.attendance['p2-e1']).toBe('virtual');
   });
 });
 

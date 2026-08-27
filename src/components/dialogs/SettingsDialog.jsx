@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import Modal from '../ui/Modal';
 import StatusEditor from './StatusEditor';
-import { MAX_TABLE_NAME } from '../../data/model';
+import { MAX_TABLE_NAME, normalizeTable } from '../../data/model';
+import { download, exportName, toCsv, toJson } from '../../data/exportTable';
 import { APP_VERSION } from '../../version';
 import './SettingsDialog.css';
 
@@ -13,7 +14,7 @@ const DISPLAY_OPTIONS = [
   { key: 'showTitle', label: 'Show the page title' },
 ];
 
-function SettingsDialog({ table, dispatch, tableId, code, sync, actions, readOnly, onClose }) {
+function SettingsDialog({ table, dispatch, tableId, code, sync, actions, readOnly, termId, onClose }) {
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [draftName, setDraftName] = useState(settingsName(table));
   const nameFocused = useRef(false);
@@ -53,6 +54,35 @@ function SettingsDialog({ table, dispatch, tableId, code, sync, actions, readOnl
     } catch (error) {
       setUploadState(error.message || 'Upload failed');
     }
+  };
+
+  const [importError, setImportError] = useState(null);
+
+  const loadBackup = (file) => {
+    if (!file) return;
+    setImportError(null);
+    const reader = new FileReader();
+    reader.onerror = () => setImportError('That file could not be read.');
+    reader.onload = () => {
+      try {
+        const parsed = JSON.parse(String(reader.result));
+        const next = normalizeTable(parsed);
+        if (next.people.length === 0 && next.events.length === 0) {
+          setImportError('That file has no people or sessions in it.');
+          return;
+        }
+        const message =
+          `Replace this table with the backup?\n\n` +
+          `${next.people.length} people, ${next.events.length} sessions, ` +
+          `${next.terms.length} terms.\n\nThe table open now is overwritten.`;
+        if (!window.confirm(message)) return;
+        dispatch({ type: 'table/replace', table: next });
+        onClose();
+      } catch {
+        setImportError('That does not look like a table backup.');
+      }
+    };
+    reader.readAsText(file);
   };
 
   const clearTable = () => {
@@ -172,6 +202,60 @@ function SettingsDialog({ table, dispatch, tableId, code, sync, actions, readOnl
             </span>
           </label>
         ))}
+      </section>
+
+      <section className="settings-section">
+        <h3>Data</h3>
+        <p className="hint">
+          Everything here stays readable outside this app, so the table is never the only copy.
+        </p>
+        <div className="settings-danger">
+          <div>
+            <strong>Export the grid (CSV)</strong>
+            <p className="hint">
+              The sessions currently on screen, with each person&rsquo;s totals. Opens in Excel.
+            </p>
+          </div>
+          <button
+            type="button"
+            className="btn"
+            onClick={() => download(exportName(settings.name, 'csv'), toCsv(table, termId), 'text/csv')}
+          >
+            Export CSV
+          </button>
+        </div>
+
+        <div className="settings-danger">
+          <div>
+            <strong>Back up everything (JSON)</strong>
+            <p className="hint">Every term, every mark, the roster and the settings.</p>
+            {importError && <p className="error-text">{importError}</p>}
+          </div>
+          <div className="settings-actions">
+            <button
+              type="button"
+              className="btn"
+              onClick={() =>
+                download(exportName(settings.name, 'json', 'backup'), toJson(table), 'application/json')
+              }
+            >
+              Back up
+            </button>
+            <label className={`btn${readOnly ? ' btn--disabled' : ''}`}>
+              Restore…
+              <input
+                type="file"
+                accept="application/json,.json"
+                className="visually-hidden"
+                disabled={readOnly}
+                onChange={(event) => {
+                  loadBackup(event.target.files?.[0]);
+                  event.target.value = '';
+                }}
+              />
+            </label>
+          </div>
+        </div>
       </section>
 
       <section className="settings-section">

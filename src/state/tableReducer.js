@@ -18,6 +18,7 @@ import {
   normalizeTable,
   pruneAttendance,
 } from '../data/model';
+import { weeklyDates } from '../data/recurrence';
 
 export function initialState(table) {
   return { table, outbox: emptyOutbox() };
@@ -52,11 +53,70 @@ export function tableReducer(state, action) {
     /* ---------------------------------------------------------------- people */
 
     case 'people/add': {
-      const people = action.names.map((name) => ({ id: newId('p'), name }));
+      const people = action.names.map((name) => ({ id: newId('p'), name, aliases: [] }));
       if (people.length === 0) return state;
       return {
         table: { ...table, people: [...table.people, ...people] },
         outbox: mark(outbox, 'roster'),
+      };
+    }
+
+    /** Records another spelling of someone's name, for matching pasted lists. */
+    case 'people/setAliases': {
+      return {
+        table: {
+          ...table,
+          people: table.people.map((person) =>
+            person.id === action.id ? { ...person, aliases: action.aliases } : person
+          ),
+        },
+        outbox: mark(outbox, 'roster'),
+      };
+    }
+
+    /**
+     * Folds one person into another: alias lists, group memberships, and any
+     * marks the loser has that the winner does not. The old rosters are full of
+     * the same student under two spellings, so this is the cleanup after an
+     * import.
+     */
+    case 'people/merge': {
+      const winner = table.people.find((p) => p.id === action.keepId);
+      const loser = table.people.find((p) => p.id === action.mergeId);
+      if (!winner || !loser || winner.id === loser.id) return state;
+
+      const aliases = Array.from(new Set([...winner.aliases, ...loser.aliases, loser.name]));
+      const attendance = { ...table.attendance };
+      const cells = {};
+
+      for (const event of table.events) {
+        const from = cellKey(loser.id, event.id);
+        const to = cellKey(winner.id, event.id);
+        if (!(from in attendance)) continue;
+        // The kept person's own marks win; only their gaps are filled.
+        if (!(to in attendance)) {
+          attendance[to] = attendance[from];
+          cells[to] = attendance[from];
+        }
+        delete attendance[from];
+        cells[from] = null;
+      }
+
+      return {
+        table: {
+          ...table,
+          people: table.people
+            .filter((p) => p.id !== loser.id)
+            .map((p) => (p.id === winner.id ? { ...p, aliases } : p)),
+          groups: table.groups.map((group) => ({
+            ...group,
+            memberIds: group.memberIds.includes(loser.id)
+              ? Array.from(new Set(group.memberIds.map((id) => (id === loser.id ? winner.id : id))))
+              : group.memberIds,
+          })),
+          attendance,
+        },
+        outbox: markCells(mark(outbox, 'roster'), cells),
       };
     }
 
@@ -98,6 +158,46 @@ export function tableReducer(state, action) {
         memberIds: group.memberIds.filter((id) => known.has(id)),
       }));
       return { table: { ...table, groups }, outbox: mark(outbox, 'roster') };
+    }
+
+    /* ----------------------------------------------------------------- terms */
+
+    case 'terms/add': {
+      const term = {
+        id: newId('t'),
+        name: action.name,
+        startDate: action.startDate || null,
+        endDate: action.endDate || null,
+      };
+      return {
+        table: { ...table, terms: sortTerms([...table.terms, term]) },
+        outbox: mark(outbox, 'schedule'),
+      };
+    }
+
+    case 'terms/update': {
+      return {
+        table: {
+          ...table,
+          terms: sortTerms(
+            table.terms.map((term) => (term.id === action.id ? { ...term, ...action.changes } : term))
+          ),
+        },
+        outbox: mark(outbox, 'schedule'),
+      };
+    }
+
+    case 'terms/remove': {
+      // The events survive and simply stop belonging to a term, so removing one
+      // never destroys a semester's attendance.
+      return {
+        table: {
+          ...table,
+          terms: table.terms.filter((term) => term.id !== action.id),
+          events: table.events.map((e) => (e.termId === action.id ? { ...e, termId: null } : e)),
+        },
+        outbox: mark(outbox, 'schedule'),
+      };
     }
 
     /* --------------------------------------------------------------- folders */
@@ -163,12 +263,72 @@ export function tableReducer(state, action) {
         name: action.name,
         weight: clampWeight(action.weight),
         folderId,
+        termId: action.termId || null,
         startDate: action.startDate || null,
         endDate: action.endDate || null,
       };
       return {
         table: { ...table, folders, events: [...table.events, event] },
         outbox: mark(outbox, 'schedule'),
+      };
+    }
+
+    /**
+     * Builds a whole semester of a weekly meeting at once.
+     *
+     * Every check-in block in the old spreadsheets is exactly this shape — one
+     * weekday, fifteen weeks — and every one was typed out by hand. One of them
+     * has a date from the wrong semester in the middle of it.
+     */
+    case 'events/addRecurring': {
+      let folders = table.folders;
+      let folderId = action.folderId || null;
+
+      if (action.newFolderName) {
+        const folder = { id: newId('f'), name: action.newFolderName, isOpen: true };
+        folders = [...folders, folder];
+        folderId = folder.id;
+      }
+
+      const dates = weeklyDates(action.startDate, action.endDate, action.weekday);
+      if (dates.length === 0) return state;
+
+      const events = dates.map((date) => ({
+        id: newId('e'),
+        name: action.name,
+        weight: clampWeight(action.weight),
+        folderId,
+        termId: action.termId || null,
+        startDate: date,
+        endDate: null,
+      }));
+
+      return {
+        table: { ...table, folders, events: [...table.events, ...events] },
+        outbox: mark(outbox, 'schedule'),
+      };
+    }
+
+    /**
+     * Applies a whole imported grid at once — new people, groups, folders,
+     * terms, events and every mark — as a single action, so it is one step and
+     * one sync write rather than hundreds.
+     */
+    case 'table/import': {
+      const payload = action.payload || {};
+      const attendance = payload.attendance || {};
+
+      return {
+        table: {
+          ...table,
+          people: [...table.people, ...(payload.people || [])],
+          groups: mergeGroups(table.groups, payload.groups || []),
+          folders: [...table.folders, ...(payload.folders || [])],
+          terms: sortTerms([...table.terms, ...(payload.terms || [])]),
+          events: [...table.events, ...(payload.events || [])],
+          attendance: { ...table.attendance, ...attendance },
+        },
+        outbox: markCells(mark(outbox, 'roster', 'schedule'), attendance),
       };
     }
 
@@ -339,6 +499,25 @@ export function tableReducer(state, action) {
 /* helpers                                                                     */
 /* -------------------------------------------------------------------------- */
 
+const sortTerms = (terms) =>
+  terms.slice().sort((a, b) => (a.startDate || '').localeCompare(b.startDate || ''));
+
+/** An imported group folds into the existing one it matches, by id or by name. */
+function mergeGroups(existing, incoming) {
+  const merged = existing.map((group) => ({ ...group }));
+  const byId = new Map(merged.map((group) => [group.id, group]));
+  const byName = new Map(merged.map((group) => [group.name.toLowerCase(), group]));
+  const added = [];
+
+  for (const group of incoming) {
+    const match = byId.get(group.id) || byName.get(group.name.toLowerCase());
+    if (match) match.memberIds = Array.from(new Set([...match.memberIds, ...group.memberIds]));
+    else added.push(group);
+  }
+
+  return [...merged, ...added];
+}
+
 function without(source, keys) {
   if (keys.length === 0) return source;
   const next = { ...source };
@@ -398,6 +577,7 @@ function mergeSlice(table, slice, data) {
         ...table,
         folders: Array.isArray(data.folders) ? withLocalCollapse(data.folders, table.folders) : table.folders,
         events: Array.isArray(data.events) ? data.events : table.events,
+        terms: Array.isArray(data.terms) ? data.terms : table.terms,
       };
     case 'settings':
       return {

@@ -1,37 +1,61 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import './App.css';
 import './components/dialogs/dialogs.css';
 import TopBar from './components/TopBar/TopBar';
 import AttendanceTable from './components/Table/AttendanceTable';
 import AddPeopleDialog from './components/dialogs/AddPeopleDialog';
 import AddEventDialog from './components/dialogs/AddEventDialog';
+import AddRecurringDialog from './components/dialogs/AddRecurringDialog';
+import ImportGridDialog from './components/dialogs/ImportGridDialog';
 import GroupsDialog from './components/dialogs/GroupsDialog';
 import SettingsDialog from './components/dialogs/SettingsDialog';
 import ShareDialog from './components/dialogs/ShareDialog';
 import JoinDialog from './components/dialogs/JoinDialog';
 import { useTableStore } from './state/useTableStore';
+import { ALL_TERMS } from './data/selectors';
+import { currentTerm } from './data/model';
 
 const NO_FILTERS = { groups: {}, folders: {} };
 const NO_SORT = { type: 'none', direction: 'asc', eventId: null, scoreType: null };
 
 function App() {
   const store = useTableStore();
-  const { table, dispatch, tableId, code, tables, viewOnly, sync, join, actions } = store;
+  const { table, dispatch, tableId, tableEpoch, code, tables, viewOnly, sync, join, actions } = store;
 
-  // Filters and sort are per-view, not part of the table: they should not sync
-  // to everyone else, and they should not persist as data.
+  // Filters, sort and the chosen term are per-view, not part of the table: they
+  // should not sync to everyone else, and they are not data.
   const [filters, setFilters] = useState(NO_FILTERS);
   const [sort, setSort] = useState(NO_SORT);
   const [dialog, setDialog] = useState(null);
+  const [activeTermId, setActiveTermId] = useState(null);
+
+  // Open on the term we are actually in. "All terms" is a deliberate choice and
+  // is left alone — but opening a different table starts that choice over, or a
+  // restored table would sit on All terms with a year of history in one grid.
+  const lastEpoch = useRef(null);
+
+  useEffect(() => {
+    const swapped = lastEpoch.current !== tableEpoch;
+    lastEpoch.current = tableEpoch;
+
+    setActiveTermId((current) => {
+      const stillValid =
+        !swapped && current && (current === ALL_TERMS || table.terms.some((term) => term.id === current));
+      if (stillValid) return current;
+      return currentTerm(table.terms)?.id || ALL_TERMS;
+    });
+  }, [table.terms, tableEpoch]);
 
   const close = useCallback(() => setDialog(null), []);
   // The name lives in the table, so it is the same for everyone sharing it.
   const tableName = table.settings.name;
+  const termId = activeTermId || ALL_TERMS;
 
   return (
     <div className="app">
       <TopBar
         table={table}
+        dispatch={dispatch}
         filters={filters}
         onFiltersChange={setFilters}
         tables={tables}
@@ -40,6 +64,8 @@ function App() {
         sync={sync}
         viewOnly={viewOnly}
         actions={actions}
+        activeTermId={termId}
+        onTermChange={setActiveTermId}
         onOpen={setDialog}
       />
 
@@ -58,6 +84,7 @@ function App() {
         filters={filters}
         sort={sort}
         onSortChange={setSort}
+        termId={termId}
         readOnly={viewOnly}
       />
 
@@ -65,7 +92,19 @@ function App() {
         <AddPeopleDialog people={table.people} dispatch={dispatch} onClose={close} />
       )}
       {dialog === 'event' && (
-        <AddEventDialog folders={table.folders} dispatch={dispatch} onClose={close} />
+        <AddEventDialog
+          folders={table.folders}
+          terms={table.terms}
+          activeTermId={termId}
+          dispatch={dispatch}
+          onClose={close}
+        />
+      )}
+      {dialog === 'recurring' && (
+        <AddRecurringDialog table={table} dispatch={dispatch} activeTermId={termId} onClose={close} />
+      )}
+      {dialog === 'import' && (
+        <ImportGridDialog table={table} dispatch={dispatch} activeTermId={termId} onClose={close} />
       )}
       {dialog === 'groups' && (
         <GroupsDialog
@@ -95,6 +134,7 @@ function App() {
           sync={sync}
           actions={actions}
           readOnly={viewOnly}
+          termId={termId}
           onClose={close}
         />
       )}

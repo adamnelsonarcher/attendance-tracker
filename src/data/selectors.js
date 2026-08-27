@@ -23,14 +23,16 @@ import { cellKey, parseDate } from './model';
  * `null` means nothing counted for that person — rendered as "—", because 0%
  * and "no data yet" are not the same thing.
  */
-export function computeScores(table) {
-  const { people, events, attendance, settings } = table;
+export function computeScores(table, scopedEvents) {
+  const { people, attendance, settings } = table;
+  const events = scopedEvents || table.events;
   const statusById = new Map(settings.statuses.map((s) => [s.id, s]));
   const scores = new Map();
 
   for (const person of people) {
     let credits = 0;
     let counted = 0;
+    let present = 0;
     let weightedCredits = 0;
     let weightTotal = 0;
 
@@ -48,6 +50,7 @@ export function computeScores(table) {
       }
 
       counted += 1;
+      if (credit >= 1) present += 1;
       credits += credit;
       weightTotal += event.weight;
       weightedCredits += event.weight * credit;
@@ -56,6 +59,10 @@ export function computeScores(table) {
     scores.set(person.id, {
       raw: counted > 0 ? (credits / counted) * 100 : null,
       weighted: weightTotal > 0 ? (weightedCredits / weightTotal) * 100 : null,
+      // The old sheets kept a "times present" column beside the percentage, and
+      // it answers a different question: how many sessions someone actually
+      // made, rather than what share of the ones that counted.
+      present,
       counted,
     });
   }
@@ -65,6 +72,11 @@ export function computeScores(table) {
 
 export function formatScore(value) {
   return value === null || value === undefined ? '—' : `${Math.round(value)}%`;
+}
+
+export function formatCount(score) {
+  if (!score || score.counted === 0) return '—';
+  return `${score.present}/${score.counted}`;
 }
 
 /* -------------------------------------------------------------------------- */
@@ -90,6 +102,19 @@ export function buildMembership(groups) {
 /* columns                                                                    */
 /* -------------------------------------------------------------------------- */
 
+/** The sentinel for "show every term at once". */
+export const ALL_TERMS = '__all__';
+
+/**
+ * The events a term covers. A term is a lens over one continuous table rather
+ * than a separate copy of it, so switching terms changes what is shown and what
+ * the scores are computed from — not which table is open.
+ */
+export function eventsInTerm(table, termId) {
+  if (!termId || termId === ALL_TERMS) return table.events;
+  return table.events.filter((event) => event.termId === termId);
+}
+
 const byDateThenName = (a, b) => {
   const dateA = parseDate(a.startDate);
   const dateB = parseDate(b.startDate);
@@ -107,12 +132,12 @@ const byDateThenName = (a, b) => {
  * Returns `groups` (what the top header row spans) and `columns` (the flat list
  * of body cells), which always line up.
  */
-export function buildColumns(table, folderFilters = {}) {
+export function buildColumns(table, folderFilters = {}, termId = ALL_TERMS) {
   const included = includedFolders(table.folders, folderFilters);
   const eventsByFolder = new Map(table.folders.map((f) => [f.id, []]));
   const loose = [];
 
-  for (const event of table.events) {
+  for (const event of eventsInTerm(table, termId)) {
     const bucket = event.folderId ? eventsByFolder.get(event.folderId) : null;
     if (bucket) bucket.push(event);
     else loose.push(event);
@@ -253,10 +278,14 @@ const normalize = (value) =>
  * ambiguous entries rather than silently guessing.
  */
 export function matchNames(rawNames, people) {
-  const roster = people.map((person) => {
-    const full = normalize(person.name);
-    return { person, full, tokens: full.split(/\s+/).filter(Boolean) };
-  });
+  // Each alias is matchable in its own right, so "Liv" and "Charles LT" find
+  // the same students the roster spells out in full.
+  const roster = people.flatMap((person) =>
+    [person.name, ...(person.aliases || [])].map((label) => {
+      const full = normalize(label);
+      return { person, full, tokens: full.split(/\s+/).filter(Boolean) };
+    })
+  );
 
   const matched = new Map();
   const unmatched = [];
@@ -275,9 +304,13 @@ export function matchNames(rawNames, people) {
       );
     }
 
-    if (hits.length === 0) unmatched.push(raw.trim());
-    else if (hits.length > 1) ambiguous.push({ query: raw.trim(), candidates: hits.map((h) => h.person) });
-    else matched.set(hits[0].person.id, hits[0].person);
+    // Two aliases of the same person are one hit, not an ambiguity.
+    const people_ = new Map(hits.map((hit) => [hit.person.id, hit.person]));
+
+    if (people_.size === 0) unmatched.push(raw.trim());
+    else if (people_.size > 1) {
+      ambiguous.push({ query: raw.trim(), candidates: Array.from(people_.values()) });
+    } else matched.set(hits[0].person.id, hits[0].person);
   }
 
   return { matched: Array.from(matched.values()), unmatched, ambiguous };

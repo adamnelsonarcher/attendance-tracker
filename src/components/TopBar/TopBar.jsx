@@ -2,10 +2,14 @@ import { useState } from 'react';
 import './TopBar.css';
 import FilterMenu from '../Table/FilterMenu';
 import TableSwitcher from './TableSwitcher';
+import TermSwitcher from './TermSwitcher';
+import AddMenu from './AddMenu';
 import SyncBadge from './SyncBadge';
+import { ALL_TERMS } from '../../data/selectors';
 
 function TopBar({
   table,
+  dispatch,
   filters,
   onFiltersChange,
   tables,
@@ -14,33 +18,48 @@ function TopBar({
   sync,
   viewOnly,
   actions,
+  activeTermId,
+  onTermChange,
   onOpen,
 }) {
-  const [filterAnchor, setFilterAnchor] = useState(null);
-  const [switcherAnchor, setSwitcherAnchor] = useState(null);
+  const [anchor, setAnchor] = useState(null);
 
   const activeFilters =
     Object.values(filters.groups).filter(Boolean).length +
     Object.values(filters.folders).filter(Boolean).length;
 
-  const openBelow = (domEvent, setAnchor) => {
+  const open = (menu) => (domEvent) => {
     const rect = domEvent.currentTarget.getBoundingClientRect();
-    setAnchor({ x: rect.left, y: rect.bottom + 4 });
+    setAnchor({ menu, x: rect.left, y: rect.bottom + 4 });
   };
+  const close = () => setAnchor(null);
+
+  const activeTerm = table.terms.find((term) => term.id === activeTermId);
+  const termLabel = activeTermId === ALL_TERMS || !activeTerm ? 'All terms' : activeTerm.name;
 
   return (
     <header className="top-bar">
       <div className="top-bar__group">
-        <button type="button" className="btn btn--ghost table-name" onClick={(e) => openBelow(e, setSwitcherAnchor)}>
+        <button type="button" className="btn btn--ghost table-name" onClick={open('tables')}>
           <strong>{table.settings.name}</strong>
+          <span className="table-name__caret">▾</span>
+        </button>
+
+        <span className="top-bar__divider" />
+
+        {/* The term comes first: it decides which sessions the grid is showing
+            at all, and which ones the scores are computed from. */}
+        <button type="button" className="btn" onClick={open('terms')}>
+          {termLabel}
           <span className="table-name__caret">▾</span>
         </button>
 
         {!viewOnly && (
           <>
-            <span className="top-bar__divider" />
-            <button type="button" className="btn" onClick={() => onOpen('people')}>Add people</button>
-            <button type="button" className="btn" onClick={() => onOpen('event')}>Add event</button>
+            <button type="button" className="btn btn--primary" onClick={open('add')}>
+              Add
+              <span className="table-name__caret">▾</span>
+            </button>
             <button type="button" className="btn" onClick={() => onOpen('groups')}>Groups</button>
           </>
         )}
@@ -48,7 +67,7 @@ function TopBar({
         <button
           type="button"
           className={`btn${activeFilters > 0 ? ' btn--active' : ''}`}
-          onClick={(e) => openBelow(e, setFilterAnchor)}
+          onClick={open('filter')}
         >
           Filter
           {activeFilters > 0 && <span className="badge">{activeFilters}</span>}
@@ -66,27 +85,44 @@ function TopBar({
         </button>
       </div>
 
-      {filterAnchor && (
+      {anchor?.menu === 'filter' && (
         <FilterMenu
-          {...filterAnchor}
+          x={anchor.x}
+          y={anchor.y}
           groups={table.groups}
           folders={table.folders}
           filters={filters}
           onChange={onFiltersChange}
-          onClose={() => setFilterAnchor(null)}
+          onClose={close}
         />
       )}
 
-      {switcherAnchor && (
+      {anchor?.menu === 'tables' && (
         <TableSwitcher
-          {...switcherAnchor}
+          x={anchor.x}
+          y={anchor.y}
           tables={tables}
           tableId={tableId}
           actions={actions}
           onJoin={() => onOpen('join')}
-          onClose={() => setSwitcherAnchor(null)}
+          onClose={close}
         />
       )}
+
+      {anchor?.menu === 'terms' && (
+        <TermSwitcher
+          x={anchor.x}
+          y={anchor.y}
+          terms={table.terms}
+          activeTermId={activeTermId}
+          onSelect={onTermChange}
+          dispatch={dispatch}
+          readOnly={viewOnly}
+          onClose={close}
+        />
+      )}
+
+      {anchor?.menu === 'add' && <AddMenu x={anchor.x} y={anchor.y} onOpen={onOpen} onClose={close} />}
     </header>
   );
 }

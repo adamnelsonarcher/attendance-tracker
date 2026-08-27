@@ -77,13 +77,31 @@ describe('computeScores', () => {
   });
 
   it('gives partial credit for a partial-credit status', () => {
+    const base = emptyTable();
     const table = tableWith({
       people,
       events: [events[0]],
-      attendance: { 'p1-e1': 'late' },
+      attendance: { 'p1-e1': 'half' },
+      settings: {
+        ...base.settings,
+        statuses: [...base.settings.statuses, { id: 'half', name: 'Half', credit: 0.5, color: '#eeeeee' }],
+      },
     });
 
     expect(computeScores(table).get('p1').raw).toBe(50);
+  });
+
+  it('counts times present alongside the percentage', () => {
+    const table = tableWith({
+      people,
+      events,
+      // Virtual counts as a full session, the way the old sheets treated it.
+      attendance: { 'p1-e1': 'present', 'p1-e2': 'virtual', 'p2-e1': 'absent' },
+    });
+
+    const scores = computeScores(table);
+    expect(scores.get('p1')).toMatchObject({ present: 2, counted: 2 });
+    expect(scores.get('p2')).toMatchObject({ present: 0, counted: 1 });
   });
 
   it('returns null rather than 0 when nothing counted', () => {

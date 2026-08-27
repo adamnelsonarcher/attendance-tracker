@@ -7,10 +7,11 @@ Invariants for anything under `src/`. Read before changing data, state or sync.
 A table is five flat collections plus settings. Nothing nests.
 
 ```
-people      { id, name }
+people      { id, name, aliases[] }
 groups      { id, name, color, memberIds[] }
 folders     { id, name, isOpen }
-events      { id, name, weight, folderId, startDate, endDate }
+terms       { id, name, startDate, endDate }
+events      { id, name, weight, folderId, termId, startDate, endDate }
 attendance  { "personId-eventId": statusId }
 settings    { name, statuses[], countUnmarkedAsAbsent, showTitle, colorCells,
               colorDropdown, highlightHover, stickyColumns }
@@ -27,6 +28,15 @@ settings    { name, statuses[], countUnmarkedAsAbsent, showTitle, colorCells,
 - **IDs are opaque.** Generate with `newId(prefix)`. Never parse or coerce one.
 - **Dates are `YYYY-MM-DD` strings**, parsed at noon UTC via `parseDate` so a day
   never slips backwards west of UTC.
+- **A term is a lens, not a copy.** Events carry `termId`; the selected term is
+  per-viewer state in `App`, never stored. Scores are always computed from the
+  events of the term on screen (`eventsInTerm`), never from `table.events`.
+- **Names are matched through aliases.** Anything resolving a typed or pasted
+  name must go through `matchNames`, which searches `person.aliases` too.
+- **Imports never write directly.** `buildImport` returns a payload and a
+  summary; the dialog shows the summary and only then dispatches `table/import`.
+  Re-importing must stay idempotent: match people by name and alias, reuse
+  folders and groups by name, and reuse a session already on the same date.
 - **Everything in `settings` is shared**, the table name included — it is the
   synced slice. The registry name in localStorage is only a cache of it. The one
   thing that must NOT sync is `folders[].isOpen`; `folders/toggle` deliberately

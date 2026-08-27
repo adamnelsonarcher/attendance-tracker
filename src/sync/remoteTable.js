@@ -44,6 +44,7 @@ export function tableFromRemote(remote) {
     people: remote.roster?.people,
     groups: remote.roster?.groups,
     folders: remote.schedule?.folders,
+    terms: remote.schedule?.terms,
     events: remote.schedule?.events,
     settings: remote.settings,
     attendance: remote.attendance,

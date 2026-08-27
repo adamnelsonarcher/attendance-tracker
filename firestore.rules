@@ -29,7 +29,7 @@ service cloud.firestore {
                 && data.keys().hasOnly(['people', 'groups'])
                 && data.people is list && data.groups is list)
           || (slice == 'schedule'
-                && data.keys().hasOnly(['folders', 'events'])
+                && data.keys().hasOnly(['folders', 'events', 'terms'])
                 && data.folders is list && data.events is list)
           || (slice == 'settings'
                 && (!data.keys().hasAny(['statuses']) || data.statuses is list))

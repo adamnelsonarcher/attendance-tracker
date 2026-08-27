@@ -21,6 +21,7 @@ export const SLICE_PAYLOAD = {
     // else's folders to match the writer's screen.
     folders: table.folders.map(({ isOpen, ...folder }) => folder),
     events: table.events,
+    terms: table.terms,
   }),
   settings: (table) => table.settings,
 };
